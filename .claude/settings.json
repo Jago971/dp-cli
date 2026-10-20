@@ -1,0 +1,14 @@
+{
+  "extraKnownMarketplaces": {
+    "datumpin": {
+      "source": {
+        "source": "git",
+        "url": "git@gitea:Datumpin/DEVKIT.git",
+        "ref": "main"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "datumpin@datumpin": true
+  }
+}
