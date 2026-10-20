@@ -1,0 +1,115 @@
+name: Publish Python package
+# Builds, checks, tests and publishes one Python package of a monorepo to the
+# Gitea PyPI registry (the gitea-workflows skill, package-publishing). PACKAGES
+# calls it once per changed package:
+#
+#   publish-tables:
+#     needs: detect
+#     if: needs.detect.outputs.tables == 'true'
+#     uses: Datumpin/DEVKIT/.gitea/workflows/publish-python.yml@main
+#     with:
+#       package-dir: packages/tables
+#       siblings: ../identity ../events
+#     secrets:
+#       PKG_USER: ${{ secrets.PKG_REGISTRY_USER }}
+#       PKG_WRITE_TOKEN: ${{ secrets.PKG_REGISTRY_TOKEN }}
+#
+# `prep` publishes pre-release versions and `main` finals; each skips the
+# other kind (ci/release-channel.sh). Siblings install editable first, so the
+# build and tests run against the repo's own copies. Gitea's registry has no
+# --skip-existing, so each file uploads on its own and 409 means "already
+# published": a re-run is harmless and a half-published version completes.
+on:
+  workflow_call:
+    inputs:
+      package-dir:
+        type: string
+        required: true
+      siblings:
+        description: Space-separated sibling package paths (relative to package-dir) to install editable first
+        type: string
+        default: ""
+      test-deps:
+        type: string
+        default: pytest pytest-asyncio
+    secrets:
+      PKG_USER:
+        required: true
+      PKG_WRITE_TOKEN:
+        required: true
+
+jobs:
+  publish:
+    name: publish ${{ inputs.package-dir }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.package-dir }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch release-channel.sh from DEVKIT main
+        uses: actions/checkout@v4
+        with:
+          repository: Datumpin/DEVKIT
+          ref: main
+          path: .devkit
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install the package and build tooling
+        env:
+          SIBLINGS: ${{ inputs.siblings }}
+          TEST_DEPS: ${{ inputs.test-deps }}
+        run: |
+          EDITABLE=()
+          for SIBLING in $SIBLINGS; do EDITABLE+=(-e "$SIBLING"); done
+          # shellcheck disable=SC2086
+          python -m pip install --quiet "${EDITABLE[@]}" -e . build twine $TEST_DEPS
+
+      - name: Build
+        run: python -m build
+
+      - name: Check the built metadata
+        # A published version can never be replaced, so catch a malformed
+        # README or classifier first.
+        run: python -m twine check dist/*
+
+      - name: Check the declared version is consistent
+        run: python -m pytest tests/test_version.py -q
+
+      - name: Run the tests
+        run: python -m pytest tests/ -q
+
+      - name: Decide whether this branch publishes this version
+        id: channel
+        # The sdist name ends in the version as published (normalised PEP 440).
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          SDIST="$(basename dist/*.tar.gz .tar.gz)"
+          bash "${GITHUB_WORKSPACE}/.devkit/ci/release-channel.sh" "$BRANCH" "${SDIST##*-}"
+
+      - name: Publish
+        if: ${{ steps.channel.outputs.publish == 'true' }}
+        env:
+          TWINE_USERNAME: ${{ secrets.PKG_USER }}
+          TWINE_PASSWORD: ${{ secrets.PKG_WRITE_TOKEN }}
+          TWINE_REPOSITORY_URL: http://${{ vars.PKG_REGISTRY_HOST }}/api/packages/${{ vars.PKG_REGISTRY_OWNER }}/pypi
+        run: |
+          for FILE in dist/*; do
+            set +e
+            OUT="$(python -m twine upload "$FILE" 2>&1)"
+            CODE=$?
+            set -e
+            echo "$OUT"
+            if [ "$CODE" -ne 0 ]; then
+              if echo "$OUT" | grep -q "409 Conflict"; then
+                echo "$FILE is already published (the registry answered 409); nothing to do."
+              else
+                exit "$CODE"
+              fi
+            fi
+          done

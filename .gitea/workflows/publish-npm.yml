@@ -1,0 +1,89 @@
+name: Publish npm package
+# Tests and publishes one JS package of a monorepo to the Gitea npm registry
+# (the gitea-workflows skill, package-publishing). PACKAGES calls it once per
+# changed package:
+#
+#   publish-npm-theme:
+#     needs: detect
+#     if: needs.detect.outputs.theme == 'true'
+#     uses: Datumpin/DEVKIT/.gitea/workflows/publish-npm.yml@main
+#     with:
+#       package-dir: packages/theme
+#     secrets:
+#       PKG_WRITE_TOKEN: ${{ secrets.PKG_REGISTRY_TOKEN }}
+#
+# `prep` publishes pre-release versions under the `next` dist-tag and `main`
+# finals under `latest`; each skips the other kind (ci/release-channel.sh).
+# npm has no --skip-existing, so `npm view` checks the version first. The
+# token goes in a temporary user-level config: npm ignores a workspace
+# member's own .npmrc.
+on:
+  workflow_call:
+    inputs:
+      package-dir:
+        type: string
+        required: true
+      node-version:
+        type: string
+        default: "20"
+    secrets:
+      PKG_WRITE_TOKEN:
+        required: true
+
+jobs:
+  publish:
+    name: publish ${{ inputs.package-dir }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.package-dir }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch release-channel.sh from DEVKIT main
+        uses: actions/checkout@v4
+        with:
+          repository: Datumpin/DEVKIT
+          ref: main
+          path: .devkit
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run the tests
+        run: npm test
+
+      - name: Check what would be published
+        # Lists the tarball's files, so a stray test or token shows in the
+        # log before it is published for good.
+        run: npm pack --dry-run
+
+      - name: Decide whether this branch publishes this version
+        id: channel
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: bash "${GITHUB_WORKSPACE}/.devkit/ci/release-channel.sh" "$BRANCH" "$(node -p "require('./package.json').version")"
+
+      - name: Publish
+        if: ${{ steps.channel.outputs.publish == 'true' }}
+        env:
+          HOST: ${{ vars.PKG_REGISTRY_HOST }}
+          OWNER: ${{ vars.PKG_REGISTRY_OWNER }}
+          TOKEN: ${{ secrets.PKG_WRITE_TOKEN }}
+          NPM_TAG: ${{ steps.channel.outputs.npm_tag }}
+        run: |
+          REGISTRY="http://${HOST}/api/packages/${OWNER}/npm/"
+          NPM_CONFIG_USERCONFIG="$(mktemp)"
+          export NPM_CONFIG_USERCONFIG
+          trap 'rm -f "$NPM_CONFIG_USERCONFIG"' EXIT
+          echo "//${HOST}/api/packages/${OWNER}/npm/:_authToken=${TOKEN}" > "$NPM_CONFIG_USERCONFIG"
+          SPEC="$(node -p "require('./package.json').name + '@' + require('./package.json').version")"
+          if npm view "$SPEC" version --registry "$REGISTRY" >/dev/null 2>&1; then
+            echo "$SPEC is already published; skipping"
+          else
+            npm publish --registry "$REGISTRY" --tag "$NPM_TAG"
+          fi
