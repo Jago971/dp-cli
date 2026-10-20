@@ -68,9 +68,12 @@ jobs:
       - name: Scan dependencies
         # Exit 1 means known vulnerabilities; 128 means the repo has no
         # requirements file or lockfile to scan, which is not a failure.
+        # --no-resolve checks the pinned packages as listed: resolving their
+        # transitive dependencies goes through the public deps.dev index,
+        # which cannot see the private datumpin packages and fails the run.
         run: |
           set +e
-          /tmp/osv-scanner scan source --recursive .
+          /tmp/osv-scanner scan source --recursive --no-resolve .
           CODE=$?
           if [ "$CODE" -eq 128 ]; then
             echo "No requirements files or lockfiles found; nothing to scan."
