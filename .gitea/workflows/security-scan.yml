@@ -100,5 +100,9 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Report pins that differ from the master copies
-        run: python .devkit/ci/versions.py .
+      - name: Check pins against the master copies
+        # DEVKIT checks itself with the PR's own script and masters, so a
+        # change to either is tested on the PR that makes it.
+        env:
+          SCRIPT: ${{ github.repository == 'Datumpin/DEVKIT' && 'ci/versions.py' || '.devkit/ci/versions.py' }}
+        run: python "$SCRIPT" .
