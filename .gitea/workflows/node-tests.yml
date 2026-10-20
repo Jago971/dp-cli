@@ -48,6 +48,19 @@ jobs:
           export NPM_CONFIG_USERCONFIG
           trap 'rm -f "$NPM_CONFIG_USERCONFIG"' EXIT
           printf '%s\n' "@datumpin:registry=http://${REGISTRY}" "//${REGISTRY}:_authToken=${TOKEN}" > "$NPM_CONFIG_USERCONFIG"
+          # npm reports a refused @datumpin fetch as an unrelated crash
+          # ("reading 'edgesOut'"), so check registry access first and name
+          # the cause plainly.
+          FIRST="$(node -p "Object.keys({...require('./package.json').dependencies, ...require('./package.json').devDependencies}).find(n => n.startsWith('@datumpin/')) || ''")"
+          if [ -n "$FIRST" ]; then
+            URL="http://${REGISTRY}$(echo "$FIRST" | sed 's#/#%2f#')"
+            CODE="$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${TOKEN}" "$URL")"
+            echo "Registry check for ${FIRST}: HTTP ${CODE}"
+            if [ "$CODE" != 200 ]; then
+              echo "::error::The registry refused ${FIRST} (HTTP ${CODE}). Check that PKG_READ_TOKEN has package read access."
+              exit 1
+            fi
+          fi
           if [ -f package-lock.json ]; then
             npm ci --no-audit --no-fund
           else
