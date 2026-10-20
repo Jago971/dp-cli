@@ -1,0 +1,13 @@
+name: Board
+# Moves DEVKIT's tickets across its Board as pull requests progress. Calls
+# board-sync from this checkout; other repos call it @main.
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, closed]
+  issues:
+    types: [closed, reopened]
+
+jobs:
+  board:
+    uses: ./.gitea/workflows/board-sync.yml
+    secrets: inherit

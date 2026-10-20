@@ -1,0 +1,45 @@
+name: Board sync
+# Moves tickets across the repo's Board as their pull requests progress
+# (ci/board_sync.py has the rules): opened -> Review, merged to prep ->
+# Testing, issue closed -> Done, reopened -> Backlog. A repo calls it from
+# .gitea/workflows/board.yml, on the events ci.yml does not receive:
+#
+#   on:
+#     pull_request:
+#       types: [opened, reopened, ready_for_review, closed]
+#     issues:
+#       types: [closed, reopened]
+#   jobs:
+#     board:
+#       uses: Datumpin/DEVKIT/.gitea/workflows/board-sync.yml@main
+#       secrets: inherit
+#
+# BOARD_TOKEN is the org secret for the bot account that writes to the Board.
+on:
+  workflow_call:
+    secrets:
+      BOARD_TOKEN:
+        required: true
+
+jobs:
+  board:
+    name: board sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch board_sync.py from DEVKIT main
+        uses: actions/checkout@v4
+        with:
+          repository: Datumpin/DEVKIT
+          ref: main
+          path: .devkit
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Move the tickets
+        env:
+          API_URL: ${{ github.api_url }}
+          REPOSITORY: ${{ github.repository }}
+          TOKEN: ${{ secrets.BOARD_TOKEN }}
+        run: python .devkit/ci/board_sync.py
