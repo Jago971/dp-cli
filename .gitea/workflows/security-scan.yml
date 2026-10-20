@@ -9,6 +9,8 @@ name: Security scan
 # event) with its default rules, plus the calling repo's own .gitleaks.toml
 # when it has one. osv-scanner checks every requirements file and lockfile
 # against osv.dev; private datumpin packages simply find no advisories.
+# A third job fails when a listed package is pinned to another version
+# than the fleet's master copies (ci/master/, ci/versions.py).
 # npm audit is deliberately not used: it posts the whole dependency tree,
 # private @datumpin names included, to the public npm registry.
 #
@@ -80,3 +82,23 @@ jobs:
             exit 0
           fi
           exit "$CODE"
+
+  versions:
+    name: versions (master copies)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch the master copies from DEVKIT main
+        uses: actions/checkout@v4
+        with:
+          repository: Datumpin/DEVKIT
+          ref: main
+          path: .devkit
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Report pins that differ from the master copies
+        run: python .devkit/ci/versions.py .
