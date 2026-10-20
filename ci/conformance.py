@@ -117,6 +117,17 @@ def check_ci(root):
     return True, f"ci.yml calls DEVKIT @main ({len(calls)} jobs)"
 
 
+def check_board(root):
+    text = read(root, ".gitea/workflows/board.yml")
+    if text is None:
+        return False, ".gitea/workflows/board.yml is missing"
+    if (root / ".claude-plugin" / "marketplace.json").exists():
+        ok = "uses: ./.gitea/workflows/board-sync.yml" in text
+    else:
+        ok = "uses: Datumpin/DEVKIT/.gitea/workflows/board-sync.yml@main" in text
+    return ok, "board.yml calls DEVKIT's board-sync" if ok else "board.yml must call DEVKIT's board-sync (@main)"
+
+
 def doc_check(rel):
     def check(root):
         if not (root / rel).exists():
@@ -133,6 +144,7 @@ CHECKS = {
     "factory-ignored": check_factory_ignored,
     "no-skills-copy": check_no_skills_copy,
     "ci": check_ci,
+    "board": check_board,
     **{name: doc_check(rel) for name, rel in DOCS.items()},
 }
 

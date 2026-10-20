@@ -16,6 +16,7 @@
 | Registration | `hammond-runner`, id 16, in the `act_runner_data` volume at `/data/.runner` |
 | Labels | `ubuntu-latest`, `ubuntu-24.04`, `ubuntu-22.04`, each a `docker.gitea.com/runner-images` job image |
 | Docker | The host's socket is mounted, so jobs run as sibling containers on Hammond's Docker |
+| Config | `/data/config.yaml` in the volume: `capacity: 2` (two jobs at once); everything else is the default |
 
 The image was `gitea/act_runner` up to v0.6.1; it is now `gitea/runner`, and the binary is `gitea-runner`. A Gitea 28 server needs a current runner for reusable workflows shared across repos.
 
@@ -30,13 +31,15 @@ umask 077; ENVF=$(mktemp)
 printf '%s\n' \
   GITEA_INSTANCE_URL=http://192.168.10.101:3393 \
   GITEA_RUNNER_NAME=hammond-runner \
-  "GITEA_RUNNER_REGISTRATION_TOKEN=<token>" > "$ENVF"
+  "GITEA_RUNNER_REGISTRATION_TOKEN=<token>"   CONFIG_FILE=/data/config.yaml > "$ENVF"
 docker run -d --name gitea-runner --restart unless-stopped --env-file "$ENVF" \
   -v act_runner_data:/data -v /var/run/docker.sock:/var/run/docker.sock \
   docker.io/gitea/runner:5
 rm -f "$ENVF"
 docker logs gitea-runner 2>&1 | tail -3   # "... with version: v5.x.y ... declare successfully"
 ```
+
+Capacity: Hammond has 4 cores and 11 GB; two concurrent jobs leave room for the services it hosts. Raise `capacity` in `/data/config.yaml` and restart the container to change it; a second runner, on another machine, is the next step if CI outgrows that.
 
 ## Upgrade
 
@@ -66,3 +69,4 @@ Changing it needs sudo and a Docker restart, which briefly stops every container
 ## History
 
 - 2026-10-20: `gitea/act_runner:latest` (v0.6.1) replaced by `gitea/runner:5` (v5.1.1), same registration (DEVKIT#7).
+- 2026-10-20: capacity 1 → 2 through `/data/config.yaml`.
