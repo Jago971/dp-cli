@@ -53,7 +53,7 @@ jobs:
           # the cause plainly.
           FIRST="$(node -p "Object.keys({...require('./package.json').dependencies, ...require('./package.json').devDependencies}).find(n => n.startsWith('@datumpin/')) || ''")"
           if [ -n "$FIRST" ]; then
-            URL="http://${REGISTRY}$(echo "$FIRST" | sed 's#/#%2f#')"
+            URL="http://${REGISTRY}${FIRST/\//%2f}"
             CODE="$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${TOKEN}" "$URL")"
             echo "Registry check for ${FIRST}: HTTP ${CODE}"
             if [ "$CODE" != 200 ]; then
