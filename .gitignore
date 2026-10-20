@@ -1,0 +1,6 @@
+# Python
+__pycache__/
+*.pyc
+
+# Agentic workflow local cache (board snapshot, offline ticket outbox)
+.factory/

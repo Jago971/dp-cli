@@ -1,0 +1,18 @@
+# Plugin defaults for the agentic workflow, in workflow order.
+# A repo overrides any key in its own .claude/flow.yaml; unset keys use these.
+# Only settings a built flow reads live here. Later flows add their own blocks.
+
+gitea:
+  agent_login: squire   # tea login the agent writes as; humans keep their own
+
+# Each repo declares its own: COMPONENT/<NAME> label -> folder globs.
+# A ticket carries the component of every folder it touches.
+components: {}
+
+board:
+  suggest: 3            # how many next tickets /board proposes
+
+align:
+  review:               # the three read-only review subagents
+    model: sonnet
+    effort: medium

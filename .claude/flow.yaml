@@ -1,0 +1,8 @@
+# DEVKIT overrides of the datumpin plugin defaults
+# (plugins/datumpin/defaults/flow.yaml). Unset keys use the defaults.
+
+# COMPONENT/<NAME> label -> the folders it covers. A ticket carries the
+# component of every folder it touches; docs-only work carries none.
+components:
+  PLUGIN: ["plugins/**", ".claude-plugin/**"]
+  CI: [".gitea/**"]

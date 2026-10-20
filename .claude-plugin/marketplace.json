@@ -1,0 +1,14 @@
+{
+  "name": "datumpin",
+  "description": "Datumpin plugins for Claude Code, served from the DEVKIT repo.",
+  "owner": {
+    "name": "Datumpin"
+  },
+  "plugins": [
+    {
+      "name": "datumpin",
+      "source": "./plugins/datumpin",
+      "description": "Datumpin conventions and the agentic workflow: Gitea-led tickets, board, shape, align."
+    }
+  ]
+}
