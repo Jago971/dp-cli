@@ -47,6 +47,7 @@ Page through `issues ls` with `--page` until a page returns fewer than the limit
 - Closing an issue, or closing or deleting a project, is a human's action.
 - Every write needs the user's OK inside the running flow, and prints one log line.
 - Everything written takes its shape from `formats`: tickets, milestones, comments (pointer, scope or question) and PRs.
+- An improvement to the plugin or the shared CI found while working in any repo becomes a ticket in `Datumpin/DEVKIT`, in Triage, with a pointer to where it was found. A fix small enough to make in the same change is made there instead.
 
 ## Labels
 
