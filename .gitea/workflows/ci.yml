@@ -1,0 +1,9 @@
+name: CI
+# DEVKIT's own checks on every pull request. It calls its shared workflows
+# from this checkout, so a change to one is tested on the PR that makes it.
+on:
+  pull_request:
+
+jobs:
+  security:
+    uses: ./.gitea/workflows/security-scan.yml
