@@ -23,6 +23,10 @@ on:
       node-version:
         type: string
         default: "20"
+      npm-version:
+        description: npm to install over the one bundled with Node
+        type: string
+        default: "11.20.0"
     secrets:
       PKG_READ_TOKEN:
         required: true
@@ -38,6 +42,14 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
+      - name: Install npm
+        # Node 20's bundled npm 10 crashes resolving peer dependencies
+        # ("Cannot read properties of null (reading 'edgesOut')"); the repos'
+        # Dockerfiles pin the same npm for the same reason.
+        env:
+          NPM_VERSION: ${{ inputs.npm-version }}
+        run: npm install --global "npm@${NPM_VERSION}" && npm --version
+
       - name: Install dependencies
         working-directory: ${{ inputs.working-directory }}
         env:
@@ -48,10 +60,26 @@ jobs:
           export NPM_CONFIG_USERCONFIG
           trap 'rm -f "$NPM_CONFIG_USERCONFIG"' EXIT
           printf '%s\n' "@datumpin:registry=http://${REGISTRY}" "//${REGISTRY}:_authToken=${TOKEN}" > "$NPM_CONFIG_USERCONFIG"
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          else
-            npm install --no-audit --no-fund
+          # npm reports a refused @datumpin fetch as an unrelated crash
+          # ("reading 'edgesOut'"), so check registry access first and name
+          # the cause plainly.
+          FIRST="$(node -p "Object.keys({...require('./package.json').dependencies, ...require('./package.json').devDependencies}).find(n => n.startsWith('@datumpin/')) || ''")"
+          if [ -n "$FIRST" ]; then
+            URL="http://${REGISTRY}${FIRST/\//%2f}"
+            CODE="$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${TOKEN}" "$URL")"
+            echo "Registry check for ${FIRST}: HTTP ${CODE}"
+            if [ "$CODE" != 200 ]; then
+              echo "::error::The registry refused ${FIRST} (HTTP ${CODE}). Check that PKG_READ_TOKEN has package read access."
+              exit 1
+            fi
+          fi
+          INSTALL=install
+          [ -f package-lock.json ] && INSTALL=ci
+          if ! npm "$INSTALL" --no-audit --no-fund; then
+            # npm's own message is often not the cause; its debug log names
+            # the refused fetch or the failing step.
+            grep -h -E "http fetch [A-Z]+ [^2]|verbose stack|error code" ~/.npm/_logs/*.log | head -40
+            exit 1
           fi
 
       - name: Run tests
