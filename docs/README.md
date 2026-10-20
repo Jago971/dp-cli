@@ -10,5 +10,6 @@
 - [plan/ROADMAP.md](plan/ROADMAP.md): where DEVKIT is heading, its milestones and standing decisions.
 - [log/CHANGELOG.md](log/CHANGELOG.md): what changed, newest first.
 - [runner.md](runner.md): the Gitea Actions runner on Hammond.
+- [../ci/master/README.md](../ci/master/README.md): the approved dependency versions.
 - [../plugins/datumpin/README.md](../plugins/datumpin/README.md): the plugin, onboarding a repo, releasing.
 - [../plugins/datumpin/skills/README.md](../plugins/datumpin/skills/README.md): every skill.

@@ -8,11 +8,10 @@
 
 ## Where we are heading
 
-1. **Shared CI everywhere:** every repo's `ci.yml` calls DEVKIT's tests, security scan and conformance check, so CI is green and the same in every repo.
-2. **Images by channel:** `prep` builds `:prep` images, a `vX.Y.Z` tag on `main` builds `:X.Y.Z`, and Hammond deploys by pulling them.
-3. **Package publishing from shared actions:** PACKAGES' publish jobs call DEVKIT instead of copies.
-4. **Standards still to write:** API hardening, logging and errors, dependency policy, performance KPIs.
-5. **TLS for Gitea**, which retires the plain-HTTP registry setting.
+1. **Deploy from images:** every repo's `ci.yml`, `board.yml` and image builds already come from DEVKIT (2026-10-20); Hammond still builds from source and moves to `docker compose pull` of the `:prep` images (BDS, AHJ, CURATOR tickets).
+2. **Dependency-Track:** the master copies reviewed there, and image SBOMs sent once a server URL is set.
+3. **Standards still to write:** API hardening, logging and errors, performance KPIs; npm lockfiles (#32).
+4. **TLS for Gitea**, which retires the plain-HTTP registry setting.
 
 ## Where the work is tracked
 
