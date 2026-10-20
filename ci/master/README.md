@@ -1,0 +1,12 @@
+# Master copies
+
+**Scope:** The fleet's approved dependency versions, which the `versions` job compares every repo against. Not the policy itself (the `gitea-workflows` skill, Dependency versions).
+**Status:** current
+**Last reviewed:** 2026-10-20
+
+---
+
+- `requirements.txt`: approved Python versions, `name==version`.
+- `package.json`: approved npm versions, in `dependencies` and `devDependencies`.
+
+Moved from WIKI `security/dependency_tracking/` on 2026-10-20 (last WIKI change `0b32dc9`), unchanged. To change a version: review it in OWASP Dependency-Track, then open a DEVKIT PR; an Owner approves it.
