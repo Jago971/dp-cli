@@ -1,0 +1,162 @@
+name: Docker image
+# Shared image build. One image per app serves every instance (the
+# config-led-deployment skill), so an image is named for the app, never the
+# instance. Images follow the same channels as packages:
+#
+#   push to prep            -> :prep and :prep-<short sha>
+#   tag vX.Y.Z on main      -> :X.Y.Z
+#   anything else           -> built and scanned, not pushed
+#
+# A repo calls it from .gitea/workflows/image.yml, once per image:
+#
+#   on:
+#     push:
+#       branches: [prep]
+#       tags: ["v*"]
+#   jobs:
+#     api:
+#       uses: Datumpin/DEVKIT/.gitea/workflows/docker-image.yml@main
+#       with:
+#         image: bds-api
+#         context: services/api
+#       secrets: inherit
+#
+# Private packages install through BuildKit secrets (gitea_user, gitea_token,
+# gitea_host, gitea_package_owner, as every Dockerfile reads them), so no
+# credential reaches a layer. The read token builds; only the push uses the
+# write token. trivy fails the job on a CRITICAL vulnerability that has a
+# fix, and lists HIGH ones. When the org variable DEPENDENCY_TRACK_URL is
+# set, the image's CycloneDX SBOM goes to OWASP Dependency-Track.
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: Image name, the app's (e.g. bds-api); lower case
+        type: string
+        required: true
+      context:
+        description: Build context folder
+        type: string
+        required: true
+      dockerfile:
+        description: Dockerfile, relative to the context
+        type: string
+        default: Dockerfile
+    secrets:
+      PKG_USER:
+        required: true
+      PKG_READ_TOKEN:
+        required: true
+      PKG_WRITE_TOKEN:
+        required: true
+      DEPENDENCY_TRACK_API_KEY:
+        required: false
+
+env:
+  TRIVY_VERSION: "0.76.0"
+  TRIVY_SHA256: "e24b1c51293c1b15e4ba8d45bbc7891ba053f90278ec2698f3562c993e145fe7"
+
+jobs:
+  image:
+    name: image (${{ inputs.image }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Work out the tags
+        id: tags
+        env:
+          REGISTRY: ${{ vars.PKG_REGISTRY_HOST }}
+          OWNER: ${{ vars.PKG_REGISTRY_OWNER }}
+          IMAGE: ${{ inputs.image }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          REPO="${REGISTRY}/${OWNER,,}/${IMAGE}"
+          if [ "$REF_TYPE" = tag ] && [[ "$REF_NAME" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            TAGS="${REPO}:${BASH_REMATCH[1]}"
+          elif [ "$REF_TYPE" = branch ] && [ "$REF_NAME" = prep ]; then
+            TAGS="${REPO}:prep ${REPO}:prep-${SHA::7}"
+          else
+            TAGS=""
+          fi
+          {
+            echo "repo=${REPO}"
+            echo "local=${REPO}:ci-${SHA::7}"
+            echo "push=${TAGS}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Will push: ${TAGS:-nothing (not prep, not a release tag)}"
+
+      - name: Build
+        env:
+          GITEA_USER: ${{ secrets.PKG_USER }}
+          GITEA_TOKEN: ${{ secrets.PKG_READ_TOKEN }}
+          GITEA_HOST: ${{ vars.PKG_REGISTRY_HOST }}
+          GITEA_PACKAGE_OWNER: ${{ vars.PKG_REGISTRY_OWNER }}
+          CONTEXT: ${{ inputs.context }}
+          DOCKERFILE: ${{ inputs.dockerfile }}
+          LOCAL: ${{ steps.tags.outputs.local }}
+        run: |
+          DOCKER_BUILDKIT=1 docker build \
+            --secret id=gitea_user,env=GITEA_USER \
+            --secret id=gitea_token,env=GITEA_TOKEN \
+            --secret id=gitea_host,env=GITEA_HOST \
+            --secret id=gitea_package_owner,env=GITEA_PACKAGE_OWNER \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+            -f "${CONTEXT}/${DOCKERFILE}" -t "$LOCAL" "$CONTEXT"
+
+      - name: Install trivy
+        run: |
+          curl -sSfL -o /tmp/trivy.tar.gz \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          echo "${TRIVY_SHA256}  /tmp/trivy.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/trivy.tar.gz -C /tmp trivy
+
+      - name: Scan the image
+        env:
+          LOCAL: ${{ steps.tags.outputs.local }}
+        run: |
+          /tmp/trivy image --quiet --severity HIGH --ignore-unfixed "$LOCAL"
+          /tmp/trivy image --quiet --severity CRITICAL --ignore-unfixed --exit-code 1 "$LOCAL"
+
+      - name: Send the SBOM to Dependency-Track
+        if: ${{ vars.DEPENDENCY_TRACK_URL != '' && steps.tags.outputs.push != '' }}
+        env:
+          LOCAL: ${{ steps.tags.outputs.local }}
+          DT_URL: ${{ vars.DEPENDENCY_TRACK_URL }}
+          DT_KEY: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          PROJECT: ${{ inputs.image }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          /tmp/trivy image --quiet --format cyclonedx --output /tmp/sbom.json "$LOCAL"
+          curl -sSf -X POST "${DT_URL%/}/api/v1/bom" -H "X-Api-Key: ${DT_KEY}" \
+            -F "autoCreate=true" -F "projectName=${PROJECT}" -F "projectVersion=${VERSION}" \
+            -F "bom=@/tmp/sbom.json"
+
+      - name: Push
+        if: ${{ steps.tags.outputs.push != '' }}
+        env:
+          REGISTRY: ${{ vars.PKG_REGISTRY_HOST }}
+          USER: ${{ secrets.PKG_USER }}
+          TOKEN: ${{ secrets.PKG_WRITE_TOKEN }}
+          LOCAL: ${{ steps.tags.outputs.local }}
+          TAGS: ${{ steps.tags.outputs.push }}
+        run: |
+          echo "$TOKEN" | docker login "$REGISTRY" -u "$USER" --password-stdin
+          trap 'docker logout "$REGISTRY"' EXIT
+          for TAG in $TAGS; do
+            docker tag "$LOCAL" "$TAG"
+            docker push "$TAG"
+          done
+
+      - name: Remove the local image
+        if: always()
+        env:
+          LOCAL: ${{ steps.tags.outputs.local }}
+          TAGS: ${{ steps.tags.outputs.push }}
+        # Jobs share Hammond's Docker, so a build leaves nothing behind.
+        run: |
+          # shellcheck disable=SC2086
+          docker image rm -f "$LOCAL" $TAGS >/dev/null 2>&1 || true
