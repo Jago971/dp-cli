@@ -57,7 +57,7 @@ The standard rule, applied under the repo owner's own login (an admin action): `
 `main` takes the same rule with `"rule_name": "main"`, `"enable_merge_whitelist": true` and `"merge_whitelist_teams": ["Owners"]`.
 
 - One approval means every agent PR needs a human's approval before it merges. A repo admin can override the approval on their own PR.
-- Once a repo's CI is green, set `"enable_status_check": true` and list its job names in `status_check_contexts`.
+- Required checks: `"enable_status_check": true` with `"status_check_contexts": ["CI / *"]`, which requires every job of the repo's `ci.yml` (Gitea matches the pattern against `CI / <job> (pull_request)`). A repo with its own test workflow adds it (PACKAGES: `"Test Suite / *"`).
 - A repo whose work still lands directly on `main` takes the rule at onboarding, after its work moves to `prep`.
 
 ## Merge gate
