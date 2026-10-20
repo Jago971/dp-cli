@@ -60,6 +60,16 @@ Ask in order:
 - Use a comparison table for parallel variants (dev against prod, tier A against tier B): one column per dimension, one row per variant.
 - Docs stand alone months later: name no ticket, PR or meeting, and link to another doc where the content already lives.
 
+## Diagrams
+
+Draw a flow, a lifecycle or an architecture when a picture says it faster than a paragraph; otherwise write prose.
+
+- Use a Mermaid block (` ```mermaid `) in the markdown file. Gitea renders it, and it diffs like text. No image files for what Mermaid can draw.
+- One idea per diagram, about 15 nodes at most. Split a bigger one.
+- Prose beside it says what the reader should take from it; the diagram never replaces the text.
+- Label nodes with the names used in the code and docs.
+- Check it renders in Gitea before merging.
+
 ## Auditing an existing docs tree
 
 Check each of these and fix links to the exact on-disk name, case included (Linux and Gitea links are case-sensitive):

@@ -59,12 +59,7 @@ repo once it installs the plugin and drops its copy.
 
 ## How to use these in a new project
 
-1. Install the plugin in the project (see [../README.md](../README.md)).
-2. Write a short root `CLAUDE.md` using the `claude-md-authoring` skill —
-   it should mostly just point at these skills and at the project's own
-   `docs/_meta/` governing docs, not restate their content.
-3. Run `documentation-cross-cutting` once at project start to scaffold the
-   docs layout, then let the per-topic skills apply themselves as work happens.
+Follow the onboarding list in the plugin [README](../README.md#bringing-a-repo-into-the-workflow): it installs the plugin, sets up the Board and CI, and writes the `CLAUDE.md` section (`claude-md-authoring`). The docs layout comes from `documentation-cross-cutting` and `quickstart-guide`; the `conformance` CI job checks the mechanical parts.
 
 ## Credits
 

@@ -1,0 +1,36 @@
+name: Conformance
+# Fails when a repo drifts from the standard use of the datumpin plugin and
+# workflow: plugin source and pin, flow.yaml, CLAUDE.md sections and order,
+# the .factory/ ignore, the required docs, and ci.yml calling DEVKIT @main.
+# The rules live in the plugin's skills; ci/conformance.py checks the
+# mechanical ones. A repo's CI calls it:
+#
+#   jobs:
+#     conformance:
+#       uses: Datumpin/DEVKIT/.gitea/workflows/conformance.yml@main
+#
+# A check that does not apply to a repo is skipped in its .claude/flow.yaml
+# (conformance.skip), with a comment saying why.
+on:
+  workflow_call:
+
+jobs:
+  conformance:
+    name: plugin conformance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch the conformance check from DEVKIT main
+        uses: actions/checkout@v4
+        with:
+          repository: Datumpin/DEVKIT
+          ref: main
+          path: .devkit
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check conformance
+        run: python .devkit/ci/conformance.py .
