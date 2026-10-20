@@ -11,7 +11,7 @@ One file per repo, `docs/QUICKSTART.md`, first in `docs/README.md`'s index. It t
 
 1. **What this is**: 2-3 plain sentences, acronyms expanded on first use.
 2. **Quick-start**: copy-pasteable commands to clone, create env files from the `.example` files, and bring it up in containers.
-3. **Map of the pieces**: one line per service or component (name, purpose, where it lives).
+3. **Map of the pieces**: one line per service or component (name, purpose, where it lives). A Mermaid diagram of how they connect goes here when it helps (`documentation-cross-cutting`, Diagrams).
 4. **How to deploy**: the real command, or a one-line pointer to the doc that has it.
 5. **Common maintenance tasks**: migrations, adding a seed, restarting a service. One line each.
 6. **Where to go deeper**: a table of topic against the governing doc (`docs/reference/...`, a folder README, `docs/plan/ROADMAP.md`). Everything past a one-liner lives behind this table.

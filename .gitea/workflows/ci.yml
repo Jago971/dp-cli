@@ -1,9 +1,49 @@
 name: CI
 # DEVKIT's own checks on every pull request. It calls its shared workflows
-# from this checkout, so a change to one is tested on the PR that makes it.
+# from this checkout, so a change to one is tested on the PR that makes it,
+# and checks what it ships: its workflow files, the plugin manifests, the
+# hook script, and its own conformance.
 on:
   pull_request:
+
+env:
+  ACTIONLINT_VERSION: "1.7.12"
+  ACTIONLINT_SHA256: "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+  CLAUDE_CODE_VERSION: "2.1.304"
 
 jobs:
   security:
     uses: ./.gitea/workflows/security-scan.yml
+
+  checks:
+    name: workflows, plugin and conformance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Conformance (this checkout's rules)
+        run: python ci/conformance.py .
+
+      - name: Hook script compiles
+        run: python -m py_compile plugins/datumpin/hooks/session_status.py
+
+      - name: Lint the workflows
+        run: |
+          curl -sSfL -o /tmp/actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          echo "${ACTIONLINT_SHA256}  /tmp/actionlint.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
+          /tmp/actionlint .gitea/workflows/*.yml
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate the plugin and the marketplace
+        run: |
+          npx --yes "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" plugin validate ./plugins/datumpin
+          npx --yes "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" plugin validate .

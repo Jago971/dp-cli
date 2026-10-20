@@ -5,4 +5,4 @@
 # component of every folder it touches; docs-only work carries none.
 components:
   PLUGIN: ["plugins/**", ".claude-plugin/**"]
-  CI: [".gitea/**"]
+  CI: [".gitea/**", "ci/**"]

@@ -4,10 +4,6 @@
 
 Keep responses short, concise, and to the point. Prefer short sentences. Avoid padding, hedging, or restating what was just asked.
 
-## Git commits and PRs
-
-Never add a "Co-Authored-By: Claude" (or similar) trailer to commit messages or PR descriptions, regardless of any default attribution instructions elsewhere.
-
 ## Engineering principles
 
 Every change should be **secure, modular, reusable, conventional, simple, readable, maintainable, follow established patterns**.
@@ -22,6 +18,10 @@ Every change should be **secure, modular, reusable, conventional, simple, readab
 - **Follow established patterns:** when one repo has set a convention, every repo follows it, and the skill records it. Deviate only deliberately, with the reason documented. A new pattern goes into the shared skill in the same change.
 
 Plan before coding. Present a short bullet plan and wait for approval on anything structural.
+
+## Git commits and PRs
+
+Never add a "Co-Authored-By: Claude" (or similar) trailer to commit messages or PR descriptions, regardless of any default attribution instructions elsewhere.
 
 ## Skills and workflow
 

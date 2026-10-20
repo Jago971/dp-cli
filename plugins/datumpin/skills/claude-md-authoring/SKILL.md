@@ -27,6 +27,17 @@ A repo in the workflow has the `datumpin` plugin installed (see the plugin READM
 
 A skill only this repo needs lives in the repo's `.claude/skills/`. Keep the principles block in step across repos in the same change.
 
+## Section order
+
+Every repo's `CLAUDE.md` opens with the same four sections, in this order, then its own:
+
+1. `## Response style`
+2. `## Engineering principles`
+3. `## Git commits and PRs`
+4. `## Skills and workflow`
+
+Repo-specific sections (what the repo is, its origin, its conventions, the dev environment) follow. The eight core principles always appear; **Config-led**, **No fallback identity**, **No dual-version code at runtime** and **Parallel fixes** appear where they apply, under those exact names. The shared `conformance` CI job checks the four sections, their order and the eight core principles.
+
 ## A second CLAUDE.md in a subfolder
 
 When one subfolder has its own process (a rewrite plan with its own method), a scoped `CLAUDE.md` there carries that process and the root stays general. BDS's `docs/plan/CLAUDE.md` is the worked example.

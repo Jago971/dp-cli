@@ -6,9 +6,11 @@ Datumpin's fleet engineering tooling, shared by BDS, AHJ, CURATOR and PACKAGES.
 |---|---|
 | [plugins/datumpin/](plugins/datumpin/README.md) | The `datumpin` Claude Code plugin: the convention skills and the agentic workflow (`board`, `shape`, `align`) |
 | [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json) | The marketplace that lists the plugin |
+| [docs/](docs/README.md) | Quickstart, roadmap, changelog |
+| [ci/](ci/conformance.py) | The conformance check the shared `conformance` workflow runs |
 | [docs/runner.md](docs/runner.md) | The Actions runner on Hammond: start, upgrade, roll back, and the Docker settings CI needs |
 
-The shared CI pieces the repos call will live here too.
+The shared CI workflows the repos call are in `.gitea/workflows/`. New here: [docs/QUICKSTART.md](docs/QUICKSTART.md).
 
 ## Branches and releases
 

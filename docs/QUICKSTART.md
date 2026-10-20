@@ -1,0 +1,79 @@
+# Quickstart
+
+**Scope:** The short tour of DEVKIT and the datumpin workflow: set a machine up, use the flows day to day, release a change, and where to look when stuck.
+**Status:** current
+**Last reviewed:** 2026-10-20
+
+---
+
+## What this is
+
+DEVKIT holds Datumpin's fleet engineering tooling: the `datumpin` Claude Code plugin (the convention skills and the ticket workflow) and the shared CI workflows every repo calls. BDS, AHJ, CURATOR, PACKAGES and DEVKIT itself all use it the same way; the `conformance` CI job checks that they do.
+
+## Quick-start
+
+On a new machine, once:
+
+1. Add the `gitea` SSH alias (`Host gitea`, `HostName 192.168.10.101`, `Port 2222`, `User git`) to `~/.ssh/config`.
+2. Check it: `git ls-remote git@gitea:Datumpin/DEVKIT.git main` prints a commit.
+3. Install `tea` and add two logins: your own (the default) and `squire`.
+4. In each repo you work in: `claude plugin install datumpin@datumpin --scope project` (the repo's committed `.claude/settings.json` names the marketplace).
+
+A new session starts with a `datumpin status` line: Triage counts and open PRs. Start with `/datumpin:board`.
+
+## Map of the pieces
+
+```mermaid
+flowchart LR
+  subgraph DEVKIT["Datumpin/DEVKIT, main"]
+    P["datumpin plugin: skills, flows, status hook"]
+    W["shared CI: .gitea/workflows"]
+  end
+  R["BDS, AHJ, CURATOR, PACKAGES"] -- ".claude/settings.json, ref main" --> P
+  R -- "ci.yml, uses ...@main" --> W
+  W -- "runs on" --> H["gitea-runner on Hammond"]
+  R -- "tickets" --> G["one Board per repo"]
+```
+
+- `plugins/datumpin/`: the plugin ([README](../plugins/datumpin/README.md)); `skills/` holds every skill and flow.
+- `.gitea/workflows/`: `python-tests`, `node-tests`, `compose-check`, `security-scan`, `conformance`, and DEVKIT's own `ci.yml`.
+- `ci/conformance.py`: the mechanical rules `conformance` checks.
+
+## How to deploy
+
+A DEVKIT release is a promotion: merge PRs into `prep`, then an Owner merges a `prep` → `main` PR. Repos follow `main`, so nothing reaches them before that. Then, in each repo: `claude plugin marketplace update datumpin` and `claude plugin update datumpin@datumpin --scope project`. A plugin change bumps `plugins/datumpin/.claude-plugin/plugin.json`.
+
+## Common maintenance tasks
+
+```mermaid
+flowchart LR
+  T[Triage] --> B[Backlog] --> I["In Progress: branch"] --> V["Review: PR to prep"] --> S["Testing: merged, on Hammond"] --> D[DoD] --> N["Done: released on main"]
+```
+
+- **Pick up work:** `/datumpin:board`, then work a ticket on `<type>/<issue>-<slug>`.
+- **Scope an idea into tickets:** `/datumpin:shape` (switch to Opus first).
+- **Find drift between code, tickets and plans:** `/datumpin:align`.
+- **End a session:** `/datumpin:handoff`, then `/datumpin:retro`; accepted findings become tickets.
+- **Found a plugin or CI improvement elsewhere:** a DEVKIT ticket in Triage.
+- **Bring a repo into the workflow:** the plugin README's onboarding list.
+- **Upgrade the runner:** [runner.md](runner.md).
+
+## Where to go deeper
+
+| Topic | Doc |
+|---|---|
+| Plugin contents, onboarding a repo, releasing | [plugins/datumpin/README.md](../plugins/datumpin/README.md) |
+| Every skill | [plugins/datumpin/skills/README.md](../plugins/datumpin/skills/README.md) |
+| Output shapes (tickets, PRs, log lines) | `formats` skill |
+| Shared CI and branch protection | `gitea-workflows` skill |
+| The Actions runner | [runner.md](runner.md) |
+| Direction and milestones | [plan/ROADMAP.md](plan/ROADMAP.md) |
+| The workflow's design | WIKI `business_processes/proposals/agentic_workflow.md` |
+
+## When stuck
+
+- **`/datumpin:...` is missing:** run the two update commands in How to deploy, then start a new session.
+- **No status line:** `python` and `tea` must be on the PATH, and Gitea reachable.
+- **A CI call to `@main` fails with "object does not exist":** the workflow is not released to DEVKIT `main` yet.
+- **`conformance` fails:** its log names the rule; the skill it cites says how to fix it.
+- Then: [CLAUDE.md](../CLAUDE.md), the skills, and the DEVKIT Board.
