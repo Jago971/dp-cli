@@ -23,6 +23,10 @@ on:
       node-version:
         type: string
         default: "20"
+      npm-version:
+        description: npm to install over the one bundled with Node
+        type: string
+        default: "11.20.0"
     secrets:
       PKG_READ_TOKEN:
         required: true
@@ -37,6 +41,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
+
+      - name: Install npm
+        # Node 20's bundled npm 10 crashes resolving peer dependencies
+        # ("Cannot read properties of null (reading 'edgesOut')"); the repos'
+        # Dockerfiles pin the same npm for the same reason.
+        env:
+          NPM_VERSION: ${{ inputs.npm-version }}
+        run: npm install --global "npm@${NPM_VERSION}" && npm --version
 
       - name: Install dependencies
         working-directory: ${{ inputs.working-directory }}
