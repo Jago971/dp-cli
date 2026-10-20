@@ -24,6 +24,8 @@ The user has asked for a **retrospective**. You are suggesting improvements to t
 
 4. Present these candidates to the user, in order of severity.
 
+5. Draft each candidate the user accepts as a ticket (`gitea`, shapes from `formats`): a change to the plugin or the shared CI goes to `Datumpin/DEVKIT`, anything else to the repo it concerns, both in Triage. Show the draft list and push on the user's yes.
+
 ## Reference
 
 ### Implementation vs Review

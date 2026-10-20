@@ -1,0 +1,18 @@
+{
+  "description": "Session-start status line: this repo's and DEVKIT's Triage counts and open PRs",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/session_status.py"],
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

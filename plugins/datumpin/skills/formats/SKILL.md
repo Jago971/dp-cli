@@ -14,6 +14,7 @@ A flow that prints or writes something new adds its shape to this file before it
 | Any event or result in the terminal | Log line |
 | A yes/no or choice for the user | Prompt |
 | The kanban | Board view |
+| Parked work at session start | Status line |
 | Drift between code, tickets and plans | Drift report |
 | Tickets or milestones before pushing | Draft list |
 | A scoping question | Shaping question |
@@ -41,6 +42,14 @@ A flow that prints or writes something new adds its shape to this file before it
 [shape] FAILED · Gitea unreachable · 2 drafts saved to .factory/outbox/
 [shape] DONE · 3 created · 0 failed
 ```
+
+### Status line
+
+Printed by the plugin's session-start hook, one line, ASCII only:
+
+`datumpin status | <Owner/Repo>: Triage <n>, open PRs <n> | Datumpin/DEVKIT: Triage <n>. If Triage is not empty, offer the user a short sort (/datumpin:board).`
+
+`-` stands for a repo with no Board. When a count is above zero, mention it once in the first reply; do not repeat it.
 
 ### Prompt
 
