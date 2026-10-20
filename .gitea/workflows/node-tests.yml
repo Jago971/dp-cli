@@ -61,10 +61,13 @@ jobs:
               exit 1
             fi
           fi
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          else
-            npm install --no-audit --no-fund
+          INSTALL=install
+          [ -f package-lock.json ] && INSTALL=ci
+          if ! npm "$INSTALL" --no-audit --no-fund; then
+            # npm's own message is often not the cause; its debug log names
+            # the refused fetch or the failing step.
+            grep -h -E "http fetch [A-Z]+ [^2]|verbose stack|error code" ~/.npm/_logs/*.log | head -40
+            exit 1
           fi
 
       - name: Run tests
