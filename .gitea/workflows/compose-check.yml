@@ -1,0 +1,25 @@
+name: Compose check
+# Fails when a repo's generated compose files are out of date with its
+# instance folders (the config-led-deployment skill). A repo's CI calls it:
+#
+#   jobs:
+#     compose:
+#       uses: Datumpin/DEVKIT/.gitea/workflows/compose-check.yml@main
+#
+# scripts/compose.py uses only the standard library, so no install step.
+on:
+  workflow_call:
+
+jobs:
+  compose:
+    name: compose files up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check the generated compose files
+        run: python scripts/compose.py --check

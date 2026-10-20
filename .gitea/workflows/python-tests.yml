@@ -1,0 +1,65 @@
+name: Python tests
+# Shared pytest job for one Python service or package. A repo's CI calls it
+# once per folder:
+#
+#   jobs:
+#     api:
+#       uses: Datumpin/DEVKIT/.gitea/workflows/python-tests.yml@main
+#       with:
+#         working-directory: services/api
+#       secrets: inherit
+#
+# Private datumpin-* packages install from the Gitea registry through the
+# org's read-only token (PKG_USER, PKG_READ_TOKEN) and the org variables
+# PKG_REGISTRY_HOST and PKG_REGISTRY_OWNER. setup-python provides its own
+# interpreter, so pip never touches the runner image's PEP 668-managed one.
+# Contract tests need a live dependent service and stay out of CI (the
+# testing-conventions skill), hence the default marker selection.
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: Folder holding the requirements file and the tests
+        type: string
+        required: true
+      python-version:
+        type: string
+        default: "3.11"
+      requirements:
+        description: Requirements file, relative to working-directory
+        type: string
+        default: requirements.txt
+      markers:
+        description: pytest -m expression
+        type: string
+        default: unit or integration
+    secrets:
+      PKG_USER:
+        required: true
+      PKG_READ_TOKEN:
+        required: true
+
+jobs:
+  pytest:
+    name: pytest (${{ inputs.working-directory }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install dependencies
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          PIP_EXTRA_INDEX_URL: http://${{ secrets.PKG_USER }}:${{ secrets.PKG_READ_TOKEN }}@${{ vars.PKG_REGISTRY_HOST }}/api/packages/${{ vars.PKG_REGISTRY_OWNER }}/pypi/simple/
+          PIP_TRUSTED_HOST: ${{ vars.PKG_REGISTRY_HOST }}
+          REQUIREMENTS: ${{ inputs.requirements }}
+        run: python -m pip install --quiet -r "$REQUIREMENTS"
+
+      - name: Run tests
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          MARKERS: ${{ inputs.markers }}
+        run: python -m pytest -m "$MARKERS"

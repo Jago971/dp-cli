@@ -1,0 +1,59 @@
+name: Node tests
+# Shared npm test job for one frontend or JS package. A repo's CI calls it:
+#
+#   jobs:
+#     frontend:
+#       uses: Datumpin/DEVKIT/.gitea/workflows/node-tests.yml@main
+#       with:
+#         working-directory: frontend
+#       secrets: inherit
+#
+# @datumpin packages install from the Gitea registry with the org's read-only
+# token. The token goes in a temporary user-level npm config, never a .npmrc
+# in the repo: npm ignores a workspace member's own .npmrc, and a file in the
+# checkout could be picked up by a later step. `npm ci` when a lockfile is
+# committed, `npm install` otherwise.
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: Folder holding package.json
+        type: string
+        required: true
+      node-version:
+        type: string
+        default: "20"
+    secrets:
+      PKG_READ_TOKEN:
+        required: true
+
+jobs:
+  npm-test:
+    name: npm test (${{ inputs.working-directory }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Install dependencies
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          REGISTRY: ${{ vars.PKG_REGISTRY_HOST }}/api/packages/${{ vars.PKG_REGISTRY_OWNER }}/npm/
+          TOKEN: ${{ secrets.PKG_READ_TOKEN }}
+        run: |
+          NPM_CONFIG_USERCONFIG="$(mktemp)"
+          export NPM_CONFIG_USERCONFIG
+          trap 'rm -f "$NPM_CONFIG_USERCONFIG"' EXIT
+          printf '%s\n' "@datumpin:registry=http://${REGISTRY}" "//${REGISTRY}:_authToken=${TOKEN}" > "$NPM_CONFIG_USERCONFIG"
+          if [ -f package-lock.json ]; then
+            npm ci --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
+
+      - name: Run tests
+        working-directory: ${{ inputs.working-directory }}
+        run: npm test
