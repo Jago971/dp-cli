@@ -7,14 +7,15 @@ Run by the `versions` job of DEVKIT's security-scan workflow, or by hand:
 The master copies (ci/master/requirements.txt and ci/master/package.json) are
 the fleet's approved versions: changing one is a DEVKIT PR, reviewed in OWASP
 Dependency-Track and approved by an Owner (the gitea-workflows skill,
-Dependency versions). This only reports, and always exits 0: osv-scanner is
-the blocking check for known vulnerabilities, and a newer patch in one repo
-should not stop a PR.
+Dependency versions). A repo conforms to them: any listed package pinned to
+another version fails the job, so the master changes first and the repos
+follow.
 
     DRIFT  a different minor or patch version than the master
     MAJOR  a different major version (louder: a breaking upgrade or a lag)
 
-Packages the masters do not list are counted, not reported one by one.
+Packages the masters do not list are counted, not failed: osv-scanner covers
+them until they are added.
 Standard library only.
 """
 import json
@@ -86,7 +87,9 @@ def main(root):
         print(line)
     print(f"{checked} files checked: {sum(l.startswith('DRIFT') for l in lines)} drift, "
           f"{sum(l.startswith('MAJOR') for l in lines)} major, {unlisted} pins not in the masters")
-    return 0
+    if lines:
+        print("Pins must match the master copies (DEVKIT ci/master/). Change the master first, through a reviewed DEVKIT PR.")
+    return 1 if lines else 0
 
 
 if __name__ == "__main__":

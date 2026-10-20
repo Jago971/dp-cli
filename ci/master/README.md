@@ -9,4 +9,4 @@
 - `requirements.txt`: approved Python versions, `name==version`.
 - `package.json`: approved npm versions, in `dependencies` and `devDependencies`.
 
-Moved from WIKI `security/dependency_tracking/` on 2026-10-20 (last WIKI change `0b32dc9`), unchanged. To change a version: review it in OWASP Dependency-Track, then open a DEVKIT PR; an Owner approves it.
+Moved from WIKI `security/dependency_tracking/` on 2026-10-20 (last WIKI change `0b32dc9`). Revised the same day where osv-scanner flagged a master version (flask, requests, python-multipart, python-dotenv), react and react-dom moved to 18.3.1 as two repos run, and pytest, pytest-asyncio and pillow added at the versions the repos run. To change a version: review it in OWASP Dependency-Track, then open a DEVKIT PR; an Owner approves it.
