@@ -75,7 +75,11 @@ Start Dockerfiles with `# syntax=docker/dockerfile:1`. Build-time credentials us
 
 ## SBOM
 
-Each container writes a dated software bill of materials (`cyclonedx-py`) at boot into `./sboms:/sboms`. Every repo gitignores `sboms/`.
+Every image carries its software bill of materials at `/sbom.json`, built in the image (`cyclonedx-py` for Python). Every repo gitignores `sboms/`.
+
+- A backend container, and a dev frontend, also writes a dated SBOM at boot into `./sboms:/sboms`.
+- A prod nginx frontend keeps it in the image: [frontend.md](frontend.md).
+- What CI sends to Dependency-Track: `gitea-workflows`, Dependency versions.
 
 ## Done when
 

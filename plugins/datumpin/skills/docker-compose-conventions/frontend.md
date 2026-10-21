@@ -18,4 +18,5 @@ EXPOSE 3000
   - any other backend path the app loads, such as `/static/`, proxied with its path kept;
   - `client_max_body_size` on `/api/` when uploads go through it. nginx refuses bodies over 1 MB by default, and the dev proxy has no limit, so this shows only in prod.
 - **Compose:** the frontend keeps the image's own entrypoint and command, because nginx's template step runs there. The backend's service name comes from the instance env file, the frontend shares the backend's network (both in `config-led-deployment`), and branding is mounted as `config-led-deployment/branding.md` describes.
+- **SBOM:** the builder stage writes `/sbom.json` with `@cyclonedx/cyclonedx-npm` and the serve stage copies it. nginx runs as a user that cannot write the host's `./sboms`, so the SBOM stays in the image and compose mounts no `./sboms`; read it with `docker cp <container>:/sbom.json <file>`.
 - **Check:** a frontend image can have a smoke test (`gitea-workflows`, Images) that starts it beside a stub backend and requests `/`, a deep link, `/api` and the branding.
