@@ -4,10 +4,12 @@ Summary: books each turn's usage to a flow step.
 Input:   the lines of a session log (~/.claude/projects/<project>/<session>.jsonl).
 Process: a turn is one API response; the log writes one line per content block
          and repeats the response's usage on each, so lines sharing a message id
-         are one turn. A state write is a Write or Edit of .factory/guide.yaml,
-         or a shell command redirecting into it; when the log has one, a turn
-         belongs to the step the next write names, otherwise a step starts at
-         each Skill call.
+         are one turn. A job prompt is a typed prompt naming a `dp guide`
+         brief, .factory/jobs/<ticket>/<step>.md. A state write is a Write or
+         Edit of .factory/guide.yaml, or a shell command redirecting into it.
+         With job prompts in the log, a turn belongs to the step the last
+         prompt named; else, with state writes, to the step the next write
+         names; else a step starts at each Skill call.
 Output:  one row per step (turns, tools, input, cache_read, cache_write, output)
          and, as text, a TOTAL row.
 """
@@ -17,20 +19,32 @@ import re
 STATE_FILE = ".factory/guide.yaml"
 STATE_REDIRECT = re.compile(r">\s*[\"']?[^\s\"'|;&]*" + re.escape(STATE_FILE))
 STEP = re.compile(r"step: ([\w-]+)")
+JOB = re.compile(r"\.factory[/\\]jobs[/\\][^/\\\s]+[/\\]([\w-]+)\.md")
 COUNTS = ("turns", "tools", "input", "cache_read", "cache_write", "output")
 USAGE = {"input": "input_tokens", "cache_read": "cache_read_input_tokens",
          "cache_write": "cache_creation_input_tokens", "output": "output_tokens"}
 
 
+def typed(message):
+    """The text of a prompt the person typed; a tool result has none."""
+    content = message.get("content")
+    if isinstance(content, str):
+        return content
+    return " ".join(block.get("text", "") for block in content or [] if block.get("type") == "text")
+
+
 def turns(lines):
-    """Assistant turns in log order, as (usage, tool_use blocks)."""
-    by_id = {}
+    """Assistant turns in log order, as (usage, tool_use blocks, the step the last job prompt named)."""
+    by_id, job = {}, None
     for number, line in enumerate(lines):
         entry = json.loads(line)
+        if entry.get("type") == "user":
+            named = JOB.findall(typed(entry.get("message", {})))
+            job = named[-1] if named else job
         if entry.get("type") != "assistant":
             continue
         message = entry["message"]
-        turn = by_id.setdefault(message.get("id") or number, (message.get("usage", {}), []))
+        turn = by_id.setdefault(message.get("id") or number, (message.get("usage", {}), [], job))
         turn[1].extend(block for block in message["content"] if block.get("type") == "tool_use")
     return list(by_id.values())
 
@@ -60,12 +74,16 @@ def state_write(tools):
 def steps(log):
     """The step each turn is booked to.
 
-    Process: with any state write in the log, walk back from the last one so
-    each turn takes the step its next write names, and turns after the last
-    write keep that step. Without one, a step starts at each Skill call, and
-    the turns before the first call are "start".
+    Process: with any job prompt in the log, each turn takes the step the
+    last one before it named. Else, with any state write, walk back from the
+    last one so each turn takes the step its next write names, and turns
+    after the last write keep that step. Else a step starts at each Skill
+    call. Turns before the first prompt or call are "start".
     """
-    written = [state_write(tools) for _, tools in log]
+    jobs = [job for _, _, job in log]
+    if any(jobs):
+        return [job or "start" for job in jobs]
+    written = [state_write(tools) for _, tools, _ in log]
     if any(written):
         booked, step = [], next(name for name in reversed(written) if name)
         for name in reversed(written):
@@ -73,7 +91,7 @@ def steps(log):
             booked.append(step)
         return booked[::-1]
     booked, step = [], "start"
-    for _, tools in log:
+    for _, tools, _ in log:
         step = next((tool["input"]["skill"] for tool in tools if tool["name"] == "Skill"), step)
         booked.append(step)
     return booked
@@ -83,7 +101,7 @@ def report(lines):
     """One row per step, in the order the steps first appear."""
     log = turns(lines)
     rows = {}
-    for (usage, tools), step in zip(log, steps(log)):
+    for (usage, tools, _), step in zip(log, steps(log)):
         row = rows.setdefault(step, {"step": step, **dict.fromkeys(COUNTS, 0)})
         row["turns"] += 1
         row["tools"] += len(tools)

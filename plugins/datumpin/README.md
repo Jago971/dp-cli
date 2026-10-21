@@ -12,9 +12,9 @@
 | Folder | Holds |
 |---|---|
 | [skills/](skills/README.md) | The Datumpin convention skills, the process skills, and the workflow flows (`board`, `shape`, `align`, `guide`) with their references (`gitea`, `formats`) |
-| [flows.yaml](flows.yaml) | The flow map the `guide` skill walks: each flow's steps, their skills and environments |
+| [flows.yaml](flows.yaml) | The flow map `dp guide` and the `guide` skill walk: each flow's steps, their skills, environments and brief sections, and where a board column places a ticket |
 | [hooks/](hooks/hooks.json) | A session-start status line: this repo's Triage count and open PRs, and DEVKIT's Triage count, so parked tickets and plugin findings are seen. It needs `python` and `tea` on the PATH and prints nothing when Gitea is unreachable. |
-| [dp/](dp/pyproject.toml) | `dp`, the flows' command line: one call each for the Board listing, moving a ticket, opening a PR and posting a Pointer (the `gitea` skill), and `dp tokens` (see Token usage). Installed on the host with pipx; its version is the plugin's. |
+| [dp/](dp/pyproject.toml) | `dp`, the flows' command line: one call each for the Board listing, moving a ticket, opening a PR and posting a Pointer (the `gitea` skill), `dp guide` (see The guide at a terminal) and `dp tokens` (see Token usage). Installed on the host with pipx; its version is the plugin's, and it carries that version's `flows.yaml` and skills. |
 | [defaults/flow.yaml](defaults/flow.yaml) | Workflow settings in flow order. A repo overrides any key in its own `.claude/flow.yaml`. |
 | `.claude-plugin/plugin.json` | Name and version |
 
@@ -70,9 +70,21 @@ The board needs Gitea 28 or later (the project API).
 
 To pick up a new plugin version: `claude plugin marketplace update datumpin`, then `claude plugin update datumpin@datumpin`, then reinstall `dp` from the new version (Each machine, step 5).
 
+## The guide at a terminal
+
+`dp guide`, in a repo, walks the flows with no session, so finding the position and the next step costs no tokens. It prints the position (the state file `.factory/guide.yaml`, corrected from the ticket's board column) and offers the next steps as an arrow-key menu. A chosen step runs by its kind:
+
+- **A person's gate:** `pick` lists the Backlog, moves the chosen ticket to In Progress (into the open milestone due first, when it has none) and branches from `prep`; `merge`, `try` and `sign-off` ask whether it is done; leaving `review` asks a disposition for each finding in `findings.json`.
+- **An agent step:** it writes a brief to `.factory/jobs/<ticket>/<step>.md` (the ticket, its comments and column, the diff stat, and the skill text the step needs: the map's `brief` sections, else the whole skill) and prints a Job prompt (`formats`) to paste into a session.
+- **A user-invoked skill** (`handoff`, `retro`): it prints the command to type in the session you worked in.
+
+`tag` first asks whether the release PR is merged on `main`. Before any brief but a review's, undecided findings are asked for. The look follows the DP palette (cyan, pink, yellow) with a rail of the flow's usual path, a spinner while Gitea answers, number shortcuts in menus, and the Job prompt in a panel, copied to the clipboard when the system has `clip`, `pbcopy`, `wl-copy` or `xclip`; `NO_COLOR` turns colour off.
+
+Each step reached is written to the state file, so the `guide` skill carries on where `dp guide` stopped. Off a terminal it prints the Guide prompt and exits; `--json` gives the position and choices, which the `guide` skill reads.
+
 ## Token usage
 
-`dp tokens <log>` prints the turns, tool calls and tokens (input, cache read, cache write, output) each flow step of one session used, with a total. A turn belongs to the step named by the guide's next write to `.factory/guide.yaml` (a Write or Edit of it, or a shell redirect into it); in a session without the guide, a step starts at each Skill call. `--json` gives the rows.
+`dp tokens <log>` prints the turns, tool calls and tokens (input, cache read, cache write, output) each flow step of one session used, with a total. A turn belongs to the step named by the last Job prompt before it; in a session without one, to the step named by the guide's next write to `.factory/guide.yaml` (a Write or Edit of it, or a shell redirect into it); in a session without either, a step starts at each Skill call. `--json` gives the rows.
 
 1. **Find the log:** sessions are logged at `~/.claude/projects/<project>/<session-id>.jsonl`, where `<project>` is the repo path with `:` and `\` as `-` (for example `c--Users-mattm-Documents-BDS`). The newest file is the latest session.
 2. **Run it:** `dp tokens <log>`.

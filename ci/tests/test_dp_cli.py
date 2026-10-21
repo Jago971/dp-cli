@@ -84,3 +84,32 @@ def test_a_gitea_error_prints_one_line_and_exits_1(monkeypatch):
 
     assert result.exit_code == 1
     assert result.output.strip() == "dp: Gitea unreachable: connection refused"
+
+
+@pytest.mark.unit
+def test_guide_json_prints_the_position_and_the_choices(gitea, tmp_path, monkeypatch):
+    monkeypatch.setattr(cli, "repo_root", lambda: tmp_path)
+    (tmp_path / ".factory").mkdir()
+    (tmp_path / ".factory" / "guide.yaml").write_text("flow: ticket\nstep: review\nticket: 4\n")
+    gitea.add_issue(4)
+    gitea.put("In Progress", 4)
+
+    result = run("guide", "--json")
+
+    assert result.exit_code == 0
+    shown = json.loads(result.output)
+    assert shown["position"] == {"flow": "ticket", "step": "review", "ticket": 4}
+    assert shown["env"] == "dev"
+    assert [choice["step"] for choice in shown["choices"]] == ["fix", "pr"]
+
+
+@pytest.mark.unit
+def test_guide_off_a_terminal_prints_the_guide_prompt(gitea, tmp_path, monkeypatch):
+    monkeypatch.setattr(cli, "repo_root", lambda: tmp_path)
+
+    result = run("guide")
+
+    assert result.exit_code == 0
+    assert result.output.splitlines()[0] == "Guide · no position"
+    assert "1. ticket" in result.output
+    assert result.output.rstrip().endswith("? Next? (1 / 2 / 3 / 4 / 5 / 6)")
