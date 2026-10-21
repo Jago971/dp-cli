@@ -14,7 +14,7 @@ Package monorepo publishing (PACKAGES): [package-publishing.md](package-publishi
 | File | Trigger | Calls |
 |---|---|---|
 | `ci.yml` | `pull_request` | `python-tests` or `node-tests` per service, `compose-check`, `security-scan` (gitleaks, osv-scanner, `versions`), `conformance` |
-| `board.yml` | PR opened, reopened, closed; issue closed, reopened | `board-sync` |
+| `board.yml` | PR opened, reopened, closed; issue opened, closed, reopened | `board-sync` |
 | `image.yml` | push to `prep`, `v*` tags | `docker-image`, once per app |
 
 A repo keeps a workflow of its own only for what no shared one does (PACKAGES' `test_suite/test.yml` tests only the packages a PR touches). Credentials are org secrets (`PKG_USER`, `PKG_READ_TOKEN`, `PKG_WRITE_TOKEN`, `BOARD_TOKEN`) and variables (`PKG_REGISTRY_HOST`, `PKG_REGISTRY_OWNER`); the read token installs, only image and package publishing use the write token. Pin action versions (`actions/checkout@v4`) and tool binaries (version plus SHA-256).

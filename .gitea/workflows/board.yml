@@ -5,7 +5,7 @@ on:
   pull_request:
     types: [opened, reopened, ready_for_review, closed]
   issues:
-    types: [closed, reopened]
+    types: [opened, closed, reopened]
 
 jobs:
   board:

@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - board-sync puts new issues in Triage (plugin 0.6.3)
+
+- An issue opened by any route lands in Triage; one already on the Board keeps its column (#44). Each repo's `board.yml` adds `opened` to its `issues` types.
+
+---
+
 ### [CHANGED] 2026-10-21 - PRs name related tickets under See (plugin 0.6.2)
 
 - The `formats` PR shape keeps `Refs #N` for the tickets a PR works on and adds a `See #N` line for related ones. board-sync moves only `Refs` and branch tickets, so a related ticket keeps its column (#40).
