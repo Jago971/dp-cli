@@ -30,7 +30,9 @@ name: Docker image
 # runs when `smoke-test` names one, and trivy fails the job on a
 # CRITICAL vulnerability that has a fix, and lists HIGH ones. When the org
 # variable DEPENDENCY_TRACK_URL is set, the image's CycloneDX SBOM goes to
-# OWASP Dependency-Track.
+# OWASP Dependency-Track. The runner shares the host's Docker, where deployed
+# stacks run from the same tags, so ci/push-image.sh puts each tag back on the
+# image it had, and one push of an image waits for another to finish.
 on:
   workflow_call:
     inputs:
@@ -67,6 +69,10 @@ env:
 jobs:
   image:
     name: image (${{ inputs.image }})
+    # Two pushes of one image at once could each restore the other's tag.
+    concurrency:
+      group: docker-image-${{ github.repository }}-${{ inputs.image }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -115,7 +121,7 @@ jobs:
             --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
             -f "${CONTEXT}/${DOCKERFILE}" -t "$LOCAL" "$CONTEXT"
 
-      - name: Fetch the entrypoint check from DEVKIT main
+      - name: Fetch DEVKIT's image scripts from main
         uses: actions/checkout@v4
         with:
           repository: Datumpin/DEVKIT
@@ -182,20 +188,22 @@ jobs:
           TOKEN: ${{ secrets.PKG_WRITE_TOKEN }}
           LOCAL: ${{ steps.tags.outputs.local }}
           TAGS: ${{ steps.tags.outputs.push }}
+        # The runner shares the host's Docker, where deployed stacks run from
+        # these same tags, so push-image.sh puts each tag back as it was.
         run: |
           echo "$TOKEN" | docker login "$REGISTRY" -u "$USER" --password-stdin
           trap 'docker logout "$REGISTRY"' EXIT
-          for TAG in $TAGS; do
-            docker tag "$LOCAL" "$TAG"
-            docker push "$TAG"
-          done
+          SCRIPT=.devkit/ci/push-image.sh
+          if [ ! -f "$SCRIPT" ]; then
+            echo "FAIL  $SCRIPT is not on DEVKIT main; release DEVKIT before calling this workflow from a branch"
+            exit 1
+          fi
+          # shellcheck disable=SC2086
+          bash "$SCRIPT" "$LOCAL" $TAGS
 
       - name: Remove the local image
         if: always()
         env:
           LOCAL: ${{ steps.tags.outputs.local }}
-          TAGS: ${{ steps.tags.outputs.push }}
-        # Jobs share Hammond's Docker, so a build leaves nothing behind.
-        run: |
-          # shellcheck disable=SC2086
-          docker image rm -f "$LOCAL" $TAGS >/dev/null 2>&1 || true
+        # The runner shares the host's Docker, so a build leaves only what was there.
+        run: docker image rm -f "$LOCAL" >/dev/null 2>&1 || true
