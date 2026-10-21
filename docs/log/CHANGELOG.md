@@ -4,6 +4,14 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [ADDED] 2026-10-21 - Images: a repo's smoke test before the push (plugin 0.5.6)
+
+- `docker-image` takes an optional `smoke-test` input: a script in the repo, run with the built image's tag after the entrypoint check; a failure stops the push.
+- `gitea-workflows` records the contract: requests from inside a Docker network, never host ports, since CI jobs are sibling containers. `ci/tests/smoke-example.sh` is the example, tested as CI runs it.
+- `.gitattributes` keeps shell scripts LF, so a Windows checkout can run them.
+
+---
+
 ### [ADDED] 2026-10-21 - Images: entrypoint check before the push (plugin 0.5.5)
 
 - `ci/check-entrypoint.sh`: fails an image whose `ENTRYPOINT` file is missing or not executable, by running `test -x` inside it; `docker-image` runs it after the build, before the scan and push. BDS's api image shipped that fault and failed only on Hammond.

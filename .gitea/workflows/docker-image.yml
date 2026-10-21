@@ -19,13 +19,15 @@ name: Docker image
 #       with:
 #         image: bds-api
 #         context: services/api
+#         smoke-test: services/api/tests/smoke-image.sh   # optional
 #       secrets: inherit
 #
 # Private packages install through BuildKit secrets (gitea_user, gitea_token,
 # gitea_host, gitea_package_owner, as every Dockerfile reads them), so no
 # credential reaches a layer. The read token builds; only the push uses the
 # write token. Before the push, ci/check-entrypoint.sh fails an image whose
-# ENTRYPOINT file is missing or not executable, and trivy fails the job on a
+# ENTRYPOINT file is missing or not executable, the repo's own smoke test
+# runs when `smoke-test` names one, and trivy fails the job on a
 # CRITICAL vulnerability that has a fix, and lists HIGH ones. When the org
 # variable DEPENDENCY_TRACK_URL is set, the image's CycloneDX SBOM goes to
 # OWASP Dependency-Track.
@@ -44,6 +46,10 @@ on:
         description: Dockerfile, relative to the context
         type: string
         default: Dockerfile
+      smoke-test:
+        description: Optional script in the repo, run with the built image's tag before the push (the smoke-test contract, gitea-workflows Images)
+        type: string
+        default: ""
     secrets:
       PKG_USER:
         required: true
@@ -131,6 +137,14 @@ jobs:
             exit 0
           fi
           bash "$SCRIPT" "$LOCAL"
+
+      - name: Smoke test
+        if: inputs.smoke-test != ''
+        timeout-minutes: 5
+        env:
+          LOCAL: ${{ steps.tags.outputs.local }}
+          SMOKE_TEST: ${{ inputs.smoke-test }}
+        run: bash "$SMOKE_TEST" "$LOCAL"
 
       - name: Install trivy
         run: |

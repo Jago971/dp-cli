@@ -3,18 +3,13 @@
 Integration tier: needs a Docker daemon, and skips without one.
 """
 import os
-import shutil
 import subprocess
 import uuid
 
 import pytest
+from conftest import docker_works
 
 SCRIPT = os.path.join(os.path.dirname(__file__), "..", "check-entrypoint.sh")
-
-
-def docker_works():
-    return shutil.which("docker") and subprocess.run(
-        ["docker", "info"], capture_output=True).returncode == 0
 
 
 pytestmark = [pytest.mark.integration,
