@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - PRs name related tickets under See (plugin 0.6.2)
+
+- The `formats` PR shape keeps `Refs #N` for the tickets a PR works on and adds a `See #N` line for related ones. board-sync moves only `Refs` and branch tickets, so a related ticket keeps its column (#40).
+
+---
+
 ### [CHANGED] 2026-10-21 - board picks from the current milestone first (plugin 0.6.1)
 
 - `board` suggests the earliest open milestone's tickets first (CRITICAL anywhere still first), then priority; the board view gains a `Milestones` line with each open milestone's progress. Its sync reads every page of each column, as board-sync does since #53.

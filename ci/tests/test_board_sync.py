@@ -1,4 +1,4 @@
-"""Tests for ci/board_sync.py at its tickets_named() and move() seams, move() against an in-memory Gitea."""
+"""Tests for ci/board_sync.py at its tickets_named() and move() seams; move() runs against an in-memory Gitea."""
 import os
 import sys
 
