@@ -28,7 +28,7 @@ Three levels use the same idea:
 **Behaviour**
 - [ ] New behaviour has `unit` or `integration` tests (`testing-conventions`), written at agreed seams (`tdd`).
 - [ ] A bug fix has a regression test that failed before the fix (`diagnosing-bugs`).
-- [ ] `python -m pytest -q` exits 0 inside the container.
+- [ ] The tests pass in the dev container before the push (`testing-conventions`, The local loop); CI runs them again.
 - [ ] Errors raise specific exceptions with clear messages, inputs are validated at the boundary, and logs carry no secrets or personal data.
 - [ ] A change that adds a schema column has its Alembic revision (`alembic-migrations`).
 

@@ -62,9 +62,22 @@ A suite's README names the specific real bugs it caught, with root cause and fix
 instead of the no-op its docstring promised — fixed, with a regression test.
 ```
 
+## The local loop
+
+Every change is built and tested in dev, the laptop's containers (`gitea-workflows`, Environments), before it is pushed; CI then runs the same tests again. People and agents run tests only in dev (`gitea-workflows`, Environments). The commands, per repo kind; for an app, `<dev>` is `--env-file .env.<app>-<instance>.dev -f docker-compose.dev.yml --profile <instance>`:
+
+| Repo kind | Start the dev stack | Run the tests |
+|---|---|---|
+| FastAPI app (BDS, AHJ and CURATOR backends) | `docker compose <dev> up -d --build` | `docker compose <dev> exec <service> python -m pytest -q -m "unit or integration"`, with `<service>` such as `dp-api`, `ahj-dp-backend`, `curator-dp-backend` |
+| React frontend (AHJ, CURATOR) | the same stack | `docker compose <dev> exec <frontend service> npm test`, with the service such as `ahj-dp-frontend`, `curator-dp-frontend` |
+| Package monorepo (PACKAGES) | `docker compose -f docker-compose.dev.yml up -d` | `docker compose -f docker-compose.dev.yml exec <package service> python -m pytest tests/`; for a JS package `npm test` or `node --test`, as its QUICKSTART lists |
+| DEVKIT | none | `ci/tests/README.md`, Running locally |
+
+The marker set matches CI's `python-tests` (`unit or integration`); `contract` tests stay manual.
+
 ## Running tests
 
-- Run `python -m pytest -q` inside the service's container (`docker compose ... exec <service> python -m pytest -q`), so the working directory is on `sys.path` and local and CI runs match.
+- Run the tests inside the service's container (The local loop), so the working directory is on `sys.path` and local and CI runs match.
 - Run pytest directly and read its exit code. A pipe through `tail` or `head` returns the last command's status, so a killed run (exit 137) looks like success. Redirect long output to a file and read the file.
 - Give a fake process a real integer `pid` and patch the kill call. A mock `pid` coerces to `1`, so `os.killpg`/`os.kill` would signal process group 1, which kills the container's own processes when it runs as root.
 - Read the running instance's own configuration (customers, names, ids) in tests, so the suite passes in every instance's container.
