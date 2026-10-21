@@ -4,6 +4,13 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [FIXED] 2026-10-21 - Image pushes leave the host's tags alone (plugin 0.5.9)
+
+- `docker-image` pushed by tagging on the runner's Docker, which is Hammond's, then removed every pushed tag, untagging the `:prep` images BDS and CURATOR run from. `ci/push-image.sh` now puts each tag back on the image it had (or removes one that was not there), and the cleanup removes only the job's local tag.
+- `ci/tests/test_push_image.py`: an integration test against a throwaway `registry:2`.
+
+---
+
 ### [DOCS] 2026-10-21 - SBOMs for nginx frontends (plugin 0.5.8)
 
 - `docker-compose-conventions` (SBOM) and `frontend.md`: every image carries `/sbom.json`; backends and dev frontends also write a dated SBOM into `./sboms` at boot; a prod nginx frontend (non-root) keeps it in the image, mounts no `./sboms`, and is read with `docker cp`. What CI sends to Dependency-Track stays in `gitea-workflows`.
