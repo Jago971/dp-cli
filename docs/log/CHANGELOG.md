@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [FIXED] 2026-10-21 - Status line also on resumed sessions (plugin 0.6.4)
+
+- The session-start hook runs on `resume` as well as `startup`, so a reloaded window still shows Triage counts and open PRs (#41).
+
+---
+
 ### [CHANGED] 2026-10-21 - board-sync puts new issues in Triage (plugin 0.6.3)
 
 - An issue opened by any route lands in Triage; one already on the Board keeps its column (#44). Each repo's `board.yml` adds `opened` to its `issues` types.
