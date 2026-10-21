@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - A milestone once work starts (plugin 0.6.12)
+
+- A Backlog ticket may have no milestone; `board` gives a picked one the earliest open milestone, and flags a missing milestone only from In Progress on (#62).
+
+---
+
 ### [CHANGED] 2026-10-21 - Branches are deleted on merge (plugin 0.6.11)
 
 - `gitea-workflows` sets Gitea's "delete branch after merge" default with the protection rule; onboarding and `align` apply it (#58).
