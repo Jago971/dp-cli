@@ -22,6 +22,7 @@ Gitea is the single source for tickets, milestones and the board. Read and write
 | Open issues | `tea issues ls --repo R --login L --state open --limit 100 --output json --fields index,title,labels,milestone,assignees,author,url` |
 | One issue, with body | `tea api --login L repos/R/issues/N` |
 | Its comments | `tea api --login L repos/R/issues/N/comments` |
+| Last comment | The last item of its comments, read only for an open issue whose `comments` count is above 0. It is an agent comment when its `user.login` is the agent's username. |
 | Open PRs | `tea pulls ls --repo R --login L --output json --fields index,title,head,base,labels,url` |
 | Milestones | `tea milestones ls --repo R --login L --output json` |
 | Create an issue | `tea issues create --repo R --login L --title T --description-file F --labels "A,B" --milestone M` |
@@ -45,7 +46,7 @@ Page through `issues ls` with `--page` until a page returns fewer than the limit
 - Create issues and milestones, comment, change labels, milestones and assignees, and place or move tickets on the board.
 - Create a repo's board when it has none (in `align`).
 - Edit an issue's title or body only when the agent login created it. Text a human wrote changes through a comment that proposes the edit.
-- Closing an issue, or closing or deleting a project, is a human's action.
+- Closing an issue, or closing or deleting a project, is a human's action. Every close follows a Pointer comment (`formats`) saying why: `Done` with the release when it shipped, otherwise the verdict that retired it.
 - Every write needs the user's OK inside the running flow, and prints one log line.
 - Everything written takes its shape from `formats`: tickets, milestones, comments (pointer, scope, progress or question) and PRs.
 - An improvement to the plugin or the shared CI found while working in any repo becomes a ticket in `Datumpin/DEVKIT`, in Triage, with a pointer to where it was found. A fix small enough to make in the same change is made there instead.

@@ -17,6 +17,7 @@ A flow that prints or writes something new adds its shape to this file before it
 | Parked work at session start | Status line |
 | Drift between code, tickets and plans | Drift report |
 | Tickets or milestones before pushing | Draft list |
+| Superseded tickets left for a human to close | To-close list |
 | A scoping question | Shaping question |
 | Gitea issue | Ticket |
 | Gitea milestone | Milestone |
@@ -79,7 +80,7 @@ DOD (0)
 UNSORTED (11)     #24 #23 #22 #21 #20 #19 #18 #17 #16 #15 #14
 Milestones        v0.4.0 – Sampling · 2 of 9 done · 1 in DoD
 PRs               #29 Pilot the datumpin plugin · chore/datumpin-plugin → prep
-Flags             #25 no milestone · #26 STATUS/BLOCKED
+Flags             #25 no milestone · #26 STATUS/BLOCKED · #14 to close
 Next              1. #25 Addressing Validation · HIGH, unblocked, in v0.4.0
 ```
 
@@ -115,6 +116,16 @@ Drafts · 3 tickets · milestone v0.4.0 – Sampling
 ```
 
 A draft milestone prints first as `M · <title> · <goal sentence>`.
+
+### To-close list
+
+The tickets a flow superseded but left open, since closing is a human's action. Each line carries its pointer verdict:
+
+```
+To close · 2 superseded
+- #96 · Carried forward → #120
+- #97 · Duplicate → #88
+```
 
 ### Shaping question
 

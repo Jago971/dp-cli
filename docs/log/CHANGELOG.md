@@ -4,6 +4,14 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - Superseded tickets: pointer plus a to-close list (plugin 0.6.9)
+
+- `shape` and `align` end with a To-close list (a new `formats` shape) of the tickets they superseded, each with its pointer verdict (#56).
+- `board` flags an open ticket whose last agent comment retires it.
+- Every close follows a Pointer comment saying why: `Done` with the release, or the verdict that retired it.
+
+---
+
 ### [CHANGED] 2026-10-21 - Partial delivery: one deliverable per ticket, Progress comments, stacked branches (plugin 0.6.8)
 
 - `shape` splits a ticket per deliverable (#55).
