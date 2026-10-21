@@ -71,3 +71,28 @@ def test_report_reads_the_new_step_from_an_edit_of_the_state_file_only():
 
     assert list(rows) == ["build"]
     assert rows["build"]["turns"] == 2
+
+
+def prompt(text):
+    """The user's typed prompt, as a JSON line."""
+    return json.dumps({"type": "user", "message": {"role": "user", "content": text}})
+
+
+def tool_result(text):
+    return json.dumps({"type": "user", "message": {"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": "t1", "content": text}]}})
+
+
+@pytest.mark.unit
+def test_report_books_turns_to_the_job_brief_the_last_prompt_names():
+    log = [turn(1), prompt("Step build of #4: read .factory/jobs/4/build.md and do it."),
+           turn(2, skill("datumpin:tdd")), turn(3, state_write("check")),
+           tool_result("see .factory/jobs/4/fix.md"), turn(4),
+           prompt([{"type": "text", "text": "Step check of #4: read .factory/jobs/4/check.md and do it."}]),
+           turn(5)]
+
+    rows = by_step(tokens.report(log))
+
+    assert list(rows) == ["start", "build", "check"]
+    assert (rows["build"]["turns"], rows["build"]["cache_read"]) == (3, 9)
+    assert rows["check"]["turns"] == 1

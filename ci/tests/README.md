@@ -1,6 +1,6 @@
 # ci/tests/
 
-**Scope:** tests for the CI scripts in `ci/` and the plugin's `dp` package in `plugins/datumpin/dp/` (installed by `requirements.txt`), run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 50 tests: 41 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
+**Scope:** tests for the CI scripts in `ci/` and the plugin's `dp` package in `plugins/datumpin/dp/` (installed by `requirements.txt`), run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 86 tests: 77 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
 **Status:** current
 **Last reviewed:** 2026-10-21
 **Governed by:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)
@@ -21,7 +21,9 @@
 
 `test_dp_commands.py` runs `dp`'s board, move, pr and pointer against the fake; `test_dp_cli.py` runs the command line through Typer's `CliRunner` (`--json`, `NO_COLOR`, the one-line error); `test_dp_gitea.py` fakes `tea` itself, to check the body goes on stdin and an HTTP error raises.
 
-`test_dp_tokens.py` feeds `dp tokens`' `report()` a few session-log lines and checks which step each turn is booked to: the next `.factory/guide.yaml` write, or the last Skill call when there is none. It also checks that the lines of one response count once, and that only a write to the state file moves the step.
+`test_dp_flows.py` checks the flow map itself (every board column places a ticket on a step its flow lists, every named step exists) and `dp.flows`: the position from the state and the column, and the choices. `test_dp_brief.py` checks the job briefs: a section runs to the next heading outside code, a step carries its `brief` sections or its whole skill, every `brief` section the map names exists, and the review and fix briefs carry the findings. `test_dp_guide.py` walks `dp guide` with the prompts scripted: the pick, an agent step's brief and Job prompt, the board correcting the state, a human step, the dispositions, a user-invoked skill and Gitea unreachable.
+
+`test_dp_tokens.py` feeds `dp tokens`' `report()` a few session-log lines and checks which step each turn is booked to: the last Job prompt, else the next `.factory/guide.yaml` write, else the last Skill call. It also checks that the lines of one response count once, and that only a write to the state file moves the step.
 
 The tests sit flat in `ci/tests/`, one file per script or `dp` module, rather than in `unit/` and `integration/` folders: there are few, and each file holds one tier (its markers say which).
 

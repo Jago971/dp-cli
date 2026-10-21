@@ -1,6 +1,6 @@
-"""dp's command line: one command per repeated Gitea task, plus the token report.
+"""dp's command line: one command per repeated Gitea task, the guide and the token report.
 
-Summary: `dp board`, `dp move`, `dp pr`, `dp pointer` and `dp tokens`.
+Summary: `dp board`, `dp move`, `dp pr`, `dp pointer`, `dp guide` and `dp tokens`.
 Input:   the repo in the working directory (its git remote and
          `.claude/flow.yaml`) and tea's logins; writes go as the agent login.
 Output:  compact text through Rich, which honours NO_COLOR, or JSON with
@@ -12,12 +12,14 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Callable
 
+import questionary
 import typer
 from rich.console import Console
 
-from dp import commands, tokens
+from dp import commands, guide, tokens
 from dp.gitea import GiteaError, agent_login, human_username, logins, repo_slug, run, tea
 
 FULL_COLUMN = 8  # a longer column lists numbers only, as the formats Board view
@@ -40,10 +42,13 @@ def git(*args):
     return result.stdout.strip()
 
 
+def repo_root():
+    return Path(git("rev-parse", "--show-toplevel"))
+
+
 def connect():
     """The agent's Gitea call and the repo slug for the repo in the working directory."""
-    root = git("rev-parse", "--show-toplevel")
-    agent = agent_login(root)
+    agent = agent_login(repo_root())
     return Connection(call=tea(agent), repo=repo_slug(git("remote", "get-url", "origin")),
                       human=lambda: human_username(logins(), agent))
 
@@ -143,6 +148,36 @@ def pointer(number: int, text: str, as_json: bool = JSON):
     gitea = connect()
     posted = commands.pointer(gitea.call, gitea.repo, number, text)
     emit(posted, as_json, lambda p: say(f"#{p['number']} pointer posted"))
+
+
+def terminal():
+    """The guide's prompts at a terminal: questionary menus; Ctrl-C raises KeyboardInterrupt."""
+    def choose(message, options):
+        index = questionary.select(message, [questionary.Choice(label, value=n)
+                                             for n, (label, _) in enumerate(options)]).unsafe_ask()
+        return options[index][1]
+    return SimpleNamespace(choose=choose, say=say,
+                           confirm=lambda message: questionary.confirm(message).unsafe_ask(),
+                           text=lambda message, default: questionary.text(message, default=default).unsafe_ask())
+
+
+@app.command(name="guide")
+@reports_errors
+def guide_command(as_json: bool = JSON):
+    """Walk the flows: the position, then the next steps as a menu; off a terminal, the Guide prompt."""
+    root = repo_root()
+    try:
+        gitea = connect()
+    except GiteaError as error:
+        gitea = guide.offline(error)
+    # Both ends: on Windows a null stdin (NUL) passes isatty().
+    if as_json or not (sys.stdin.isatty() and sys.stdout.isatty()):
+        emit(guide.show(root, gitea), as_json, lambda shown: say(guide.guide_prompt(shown)))
+        return
+    try:
+        guide.walk(root, terminal(), gitea, git)
+    except KeyboardInterrupt:
+        raise typer.Exit(130)
 
 
 @app.command(name="tokens")

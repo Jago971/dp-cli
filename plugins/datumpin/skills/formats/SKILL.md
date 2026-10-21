@@ -21,6 +21,7 @@ A flow that prints or writes something new adds its shape to this file before it
 | The end of a session, for the next one | Handover |
 | A scoping question | Shaping question |
 | The next choice in a flow | Guide prompt |
+| An agent step handed to a session | Job prompt |
 | Gitea issue | Ticket |
 | Gitea milestone | Milestone |
 | Gitea comment | Comment (pointer, scope, progress, question) |
@@ -155,6 +156,20 @@ Done          change-review · CHANGES · Standards 2 · Spec 1
 - The first line is the position: flow, ticket when there is one, step and its environment.
 - `Done` is the last step's outcome line, omitted before the first step.
 - Each choice is the step's name and its `does` line from the flow map; a fork into another flow ends `→ <flow> flow`. `stop` is always last.
+- With no position, the first line is `Guide · no position` and the choices are the flows.
+- `dp guide` at a terminal prints the first line and shows the choices as an arrow-key menu.
+
+### Job prompt
+
+`dp guide` prints it for an agent step; the person pastes it into a session.
+
+```
+Step build of #125: read .factory/jobs/125/build.md and do it.
+Step gate of the release flow: read .factory/jobs/release/gate.md and do it.
+```
+
+- The brief path is `.factory/jobs/<ticket, or flow>/<step>.md`. `dp tokens` books the turns after the prompt to that step, so keep the path in the prompt.
+- A review brief asks for `findings.json` beside it; `dp guide` asks the person for each disposition (Pull request, Review) and later briefs list them.
 
 ### Shaping question
 

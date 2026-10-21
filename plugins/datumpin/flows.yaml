@@ -1,5 +1,5 @@
-# The flows, as steps. The guide skill reads this file to show where you are
-# and offer what comes next, so the order of work lives in one place instead
+# The flows, as steps. `dp guide` (and the guide skill through it) reads this
+# file to show where you are and offer what comes next, so the order of work lives in one place instead
 # of in each skill. A step is defined once under `steps`; a flow lists the
 # steps it uses. The guide offers only the `next` and `optional` steps the
 # current flow lists, so a shared step (review) carries each flow's
@@ -15,6 +15,21 @@
 #   next      the steps that may follow; the first is the usual one
 #   optional  steps that may come before the next one
 #   fork      condition -> step, offered beside `next`; it may switch flow
+#   brief     the skill sections (`skill#Heading`) a job brief from `dp guide`
+#             carries; without it, a brief carries the step's whole skill
+#
+# `columns` places a ticket from its board column, over the state file: at
+# `step` (of `flow`, the ticket flow when omitted), unless the state's step is
+# one the column `keep`s.
+
+columns:
+  Triage: {step: shape}
+  Backlog: {step: pick}
+  In Progress: {step: build, keep: [build, diagnose, check, commit, review, fix]}
+  Review: {step: merge, keep: [fix, pr]}
+  Testing: {step: try}
+  DoD: {flow: release, step: review}
+  Done: {flow: session, step: board}
 
 flows:
   ticket:
@@ -71,6 +86,7 @@ steps:
     skill: agent
     env: dev
     does: Commit on the ticket branch
+    brief: [formats#Commit]
     next: [review]
   review:
     skill: change-review
@@ -87,6 +103,7 @@ steps:
     skill: gitea
     env: ci
     does: Push and open the PR, with its Review section
+    brief: [gitea#Calling dp, gitea#Labels, formats#Pull request]
     next: [merge]
   merge:
     skill: human

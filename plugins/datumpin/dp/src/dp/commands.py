@@ -1,6 +1,7 @@
 """dp's commands: each one Gitea task in one call, returning plain data.
 
-Summary: board, move, pr and pointer, as the gitea skill describes each task.
+Summary: board, move, pr and pointer, as the gitea skill describes each task,
+         and the reads `dp guide` needs: the columns and one ticket in full.
 Input:   call(method, path, body=None) from dp.gitea (a fake in tests) and the
          repo slug.
 Output:  dicts and lists the command line prints as text or JSON; GiteaError
@@ -68,6 +69,21 @@ def last_comment(call, repo, issue):
         return None
     comments = call("GET", f"repos/{repo}/issues/{issue['number']}/comments")
     return {"author": comments[-1]["user"]["login"], "text": comments[-1]["body"]} if comments else None
+
+
+def column_tickets(call, repo):
+    """Each Board column's title and its tickets, in board order."""
+    board_id, ids = find_board(call, repo)
+    return {title: [ticket(issue) for issue in issues]
+            for title, issues in column_issues(call, repo, board_id, ids).items()}
+
+
+def issue(call, repo, number):
+    """Ticket N with its body and its comments, oldest first."""
+    found, comments = each(lambda path: call("GET", path),
+                           [f"repos/{repo}/issues/{number}", f"repos/{repo}/issues/{number}/comments"])
+    return {**ticket(found), "body": found.get("body") or "",
+            "comments": [{"author": c["user"]["login"], "text": c["body"]} for c in comments or []]}
 
 
 def board(call, repo):
