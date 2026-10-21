@@ -84,7 +84,7 @@ An env-file change takes effect after the container is recreated (`docker compos
 
 `instances/<name>/instance.json` holds the dev and prod host port of every service (`dev_backend_port`, `prod_backend_port`, `dev_frontend_port`, ... for AHJ and curator; `dev_api_port`, `dev_processor_port`, ... for BDS where a service publishes one). The generator turns each into a default, such as `"${AHJ_DP_BACKEND_HOST_PORT:-8000}:8000"`, so a host with that port taken can override it. The override variable is `<APP>_<INSTANCE>_<SERVICE>_HOST_PORT`, lives in that instance's env file, and takes effect only when passed through `--env-file`, because compose interpolates `${VAR}` from that file alone.
 
-One block of host ports per app, and the instance picks the last digit (1 = dp, 2 = rur, then 3, ...). Dev and prod use the same number, and the container-internal port is the same in every instance.
+One block of host ports per app, and the instance picks the last digit (1 = dp, 2 = rur, then 3, ...). The `prod_*` ports serve every server, prep included. Dev and prod use the same number, and the container-internal port is the same in every instance.
 
 | Block | App | Ports |
 |---|---|---|
