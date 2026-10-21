@@ -58,7 +58,7 @@ A ticket that builds on another ticket's unmerged branch waits for that PR to me
 | `main` | Customer release | Standard rule; only the Owners team merges |
 | `<type>/<issue>-<slug>` | One ticket, short-lived | None |
 
-The standard rule, applied under the repo owner's own login (an admin action): `tea api --login <owner> repos/R/branch_protections -X POST -d @rule.json`, and `-X PATCH` on `repos/R/branch_protections/<rule_name>` to change it.
+The standard rule, applied under the repo owner's own login (an admin action): `tea api --login <owner> repos/R/branch_protections -X POST -d @rule.json`, and `-X PATCH` on `repos/R/branch_protections/<rule_name>` to change it. With it, the repo deletes a PR's branch when the PR merges: `tea api --login <owner> repos/R -X PATCH -d '{"default_delete_branch_after_merge":true}'`.
 
 ```json
 {

@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - Branches are deleted on merge (plugin 0.6.11)
+
+- `gitea-workflows` sets Gitea's "delete branch after merge" default with the protection rule; onboarding and `align` apply it (#58).
+
+---
+
 ### [DOCS] 2026-10-21 - Local-first direction
 
 - The roadmap leads with local-first, containers-only development (milestone v0.7.0) and lists the open milestones; the release gate moves to v0.8.0.
