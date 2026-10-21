@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - Secrets per environment (plugin 0.7.5)
+
+- `secrets-handling` gains Per environment: where app settings, registry tokens, source keys and CI secrets live on the laptop, prep and prod. Servers hold read-only tokens, publishing happens in CI, and prod uses host-only env files until a store is chosen (#96).
+
+---
+
 ### [CHANGED] 2026-10-21 - Three environments in the compose and config skills (plugin 0.7.4)
 
 - `docker-compose-conventions` Environments: dev builds `:dev` images with `-dev` containers; prep and prod pull `${IMAGE_REGISTRY}/<app>-<service>:${IMAGE_TAG}` with `-${CHANNEL}` containers and never build (#95).

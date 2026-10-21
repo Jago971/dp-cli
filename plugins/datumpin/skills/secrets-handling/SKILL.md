@@ -36,6 +36,21 @@ RUN --mount=type=secret,id=gitea_token \
 
 Compose resolves the `secrets:` entries (`environment: GITEA_TOKEN`) from the instance's own file passed with `docker compose --env-file .env.<app>-<instance>[.dev]`, and each instance's file carries its own copy of the registry credentials (see `config-led-deployment`).
 
+## Per environment
+
+Who holds which secret in each environment. The environments' hosts and env-file names are in `gitea-workflows`, Environments; host keys in `config-led-deployment`, rollout.md; CI's secrets in `gitea-workflows`.
+
+| Secret | dev | prep and prod |
+|---|---|---|
+| App settings and service keys | the developer, dev values only | the host; prod's stay host-only until a secret store is chosen |
+| Registry read | the developer's package-read token, where Docker reaches the registry; otherwise none (`local-packages.md`) | the host's package-read token |
+| Registry write | nobody: CI publishes | nobody: CI publishes |
+| Gitea source | the developer's SSH key | the host's read-only deploy key |
+
+- Each environment holds its own values; a value never moves between them.
+- Servers hold read-only tokens; publishing and every other write happen in CI, whose org secrets reach workflows (exposure from branch PRs: #102).
+- An env file stays on its host.
+
 ## CI secrets
 
 Workflows reference required secrets by name. See `gitea-workflows` for stating missing ones.
@@ -46,3 +61,4 @@ Workflows reference required secrets by name. See `gitea-workflows` for stating 
 - `docker history --no-trunc <image>` shows no token value.
 - Every variable in each `.example` has an inline comment.
 - `git grep` for the token's prefix finds nothing.
+- A server's env file holds no write-scoped token.
