@@ -15,7 +15,7 @@
 
 `smoke-example.sh` is the smoke-test contract's example (`gitea-workflows`, Images); `test_smoke_contract.py` runs it against a working and a broken image; in CI it runs from a job container beside the Docker daemon, as `docker-image`'s step does. `conftest.py` holds `docker_works()`, which the integration tests skip on.
 
-`test_push_image.py` pushes through `push-image.sh` to a throwaway `registry:2` and checks the host's tags afterwards.
+`test_push_image.py` pushes through `push-image.sh` to a throwaway `registry:2` in the daemon's own network namespace, and checks the host's tags afterwards.
 
 `test_clean_run.py` checks `clean-run.sh` removes only what carries a run label, and that the example labels what it starts.
 
@@ -23,16 +23,17 @@ The tests sit flat in `ci/tests/`, one file per script, rather than in `unit/` a
 
 ## Running locally
 
-`ci/local-check.sh`, from the DEVKIT root, runs every check DEVKIT's CI runs, this suite included, in containers on your own Docker; run it before pushing, and CI runs them again on the PR. The command below runs this suite alone. The integration tests need the Docker socket, which gives the test container control of your Docker: run only this repo's tests this way. On Docker Desktop the two `test_push_image.py` tests fail until #92: the daemon cannot reach a registry published on the laptop's loopback. From the DEVKIT root (Git Bash on Windows needs `MSYS_NO_PATHCONV=1`):
+`ci/local-check.sh`, from the DEVKIT root, runs every check DEVKIT's CI runs, this suite included, in containers on your own Docker; run it before pushing, and CI runs them again on the PR. The command below runs this suite alone. The integration tests need the Docker socket, which gives the test container control of your Docker: run only this repo's tests this way. From the DEVKIT root (Git Bash on Windows needs `MSYS_NO_PATHCONV=1`):
 
 ```
 docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v /var/run/docker.sock:/var/run/docker.sock \
-  -v "$PWD/ci:/w/ci" -w /w/ci/tests python:3.12-alpine sh -c \
+  -v "$PWD/ci:/w/ci" -w /w/ci/tests python:3.11-alpine sh -c \
   'apk add -q bash docker-cli && pip install -q -r requirements.txt && python -m pytest -q -p no:cacheprovider -m "unit or integration"'
 ```
 
 ## Bugs caught
 
+- `test_push_image.py` failed on Docker Desktop: its registry was published on the laptop's loopback, which Desktop's daemon, inside its VM, cannot reach (`dial tcp [::1]` timed out, `127.0.0.1` was refused). The registry now runs with `--network host` on the daemon's loopback, which works on Linux and Desktop alike.
 - `board_sync.py` read only the first 50 tickets of a column, so a ticket further down was added to the board again instead of moved. Fixed by reading every page.
 - The first fix stopped at a page shorter than 50, which assumed Gitea's default page cap; a server with a lower cap brought the bug back, and a server ignoring `page` would loop until the job timed out. Now it stops at an empty page and gives up after 40 pages.
 - An image whose `ENTRYPOINT` script was stored without the executable bit built, scanned and pushed cleanly, and failed only when a host started it (`permission denied`). `check-entrypoint.sh` now fails the image build instead; the non-executable test image reproduces it.
