@@ -4,6 +4,13 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [ADDED] 2026-10-21 - One local check for DEVKIT (plugin 0.7.2)
+
+- `ci/local-check.sh` runs every check DEVKIT's CI runs (pytest, conformance, versions, the hook, actionlint, gitleaks, osv-scanner, plugin validate) in containers on your own Docker, one PASS or FAIL line each; tool versions come from the workflows (#91).
+- CI's plugin validation runs on Node 22, which `claude-code` needs.
+
+---
+
 ### [CHANGED] 2026-10-21 - Test locally before the push (plugin 0.7.1)
 
 - `testing-conventions` gains The local loop: per repo kind, the dev-stack and in-container test commands; tests never run on prep or prod (#90).

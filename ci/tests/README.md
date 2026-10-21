@@ -23,7 +23,7 @@ The tests sit flat in `ci/tests/`, one file per script, rather than in `unit/` a
 
 ## Running locally
 
-Run the suite on your own Docker before pushing, the way CI runs it; CI runs it again on the PR. The integration tests need the Docker socket, which gives the test container control of your Docker: run only this repo's tests this way. On Docker Desktop the two `test_push_image.py` tests fail until #92: the daemon cannot reach a registry published on the laptop's loopback. From the DEVKIT root (Git Bash on Windows needs `MSYS_NO_PATHCONV=1`):
+`ci/local-check.sh`, from the DEVKIT root, runs every check DEVKIT's CI runs, this suite included, in containers on your own Docker; run it before pushing, and CI runs them again on the PR. The command below runs this suite alone. The integration tests need the Docker socket, which gives the test container control of your Docker: run only this repo's tests this way. On Docker Desktop the two `test_push_image.py` tests fail until #92: the daemon cannot reach a registry published on the laptop's loopback. From the DEVKIT root (Git Bash on Windows needs `MSYS_NO_PATHCONV=1`):
 
 ```
 docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v /var/run/docker.sock:/var/run/docker.sock \
