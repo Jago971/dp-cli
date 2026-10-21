@@ -52,7 +52,7 @@ flowchart LR
   T[Triage] --> B[Backlog] --> I["In Progress: branch, tested locally"] --> V["Review: PR to prep, CI"] --> S["Testing: prep on Hammond"] --> D[DoD] --> N["Done: released on main"]
 ```
 
-- **Pick up work:** `/datumpin:board`, then work a ticket on `<type>/<issue>-<slug>`.
+- **Pick up work:** `/datumpin:board`, then work a ticket on `<type>/<issue>-<slug>`; or `/datumpin:guide` to be led through the ticket flow one step at a time (the map is `plugins/datumpin/flows.yaml`).
 - **Scope an idea into tickets:** `/datumpin:shape` (switch to Opus first).
 - **Find drift between code, tickets and plans:** `/datumpin:align`.
 - **End a session:** `/datumpin:handoff`, then `/datumpin:retro`; accepted findings become tickets.

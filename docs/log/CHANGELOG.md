@@ -4,6 +4,13 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [ADDED] 2026-10-21 - The guide and the flow map (plugin 0.7.6)
+
+- `plugins/datumpin/flows.yaml` maps the flows as steps (ticket, release, align, deploy, session), each step naming its skill and environment, shared steps defined once (#52).
+- The `guide` skill finds your position (state in `.factory/guide.yaml`, checked against the board), runs the step you choose and offers the next choices in the new `formats` Guide prompt; it always stops between steps.
+
+---
+
 ### [CHANGED] 2026-10-21 - Secrets per environment (plugin 0.7.5)
 
 - `secrets-handling` gains Per environment: where app settings, registry tokens, source keys and CI secrets live on the laptop, prep and prod. Servers hold read-only tokens, publishing happens in CI, and prod uses host-only env files until a store is chosen (#96).

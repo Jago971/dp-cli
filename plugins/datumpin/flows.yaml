@@ -1,0 +1,145 @@
+# The flows, as steps. The guide skill reads this file to show where you are
+# and offer what comes next; each step runs the skill it names. A step is
+# defined once under `steps`; a flow lists the steps it uses. The guide
+# offers only the `next` and `optional` steps the current flow lists, so a
+# shared step (review) carries each flow's successor; a `fork` may lead into
+# another flow (the one that lists its step).
+#
+# Per step:
+#   skill     the skill that runs the step (or `human` for a person's action)
+#   env       where it runs: dev, ci, prep or prod (gitea-workflows, Environments)
+#   does      one line, shown with the choice
+#   next      the steps that may follow; the first is the usual one
+#   optional  steps that may be inserted before the next one
+#   fork      condition -> step, offered beside `next`; it may switch flow
+
+flows:
+  ticket:
+    does: One ticket from Backlog to merged and tried on prep
+    steps: [pick, shape, build, diagnose, check, commit, review, fix, pr, merge, try]
+  release:
+    does: A milestone through its DoD gate to a tagged release
+    steps: [gate, review, fix, release-pr, sign-off, tag, close]
+  align:
+    does: Find drift between code, tickets and plans, then fix it
+    steps: [align]
+  deploy:
+    does: Bring a server up to its channel's images
+    steps: [deploy-prep, try]
+  session:
+    does: Start or end a working session
+    steps: [board, handoff, retro]
+
+steps:
+  board:
+    skill: board
+    env: dev
+    does: Sync the board and suggest the next ticket
+    next: [handoff]
+    fork: {work a ticket: pick, the backlog or plans drifted: align, a milestone is ready: gate}
+  pick:
+    skill: board
+    env: dev
+    does: Move a ticket to In Progress, assigned to you, on its branch
+    next: [build]
+    fork: {ticket in Triage or unscoped: shape}
+  shape:
+    skill: shape
+    env: dev
+    does: Scope the idea or ticket into Backlog tickets
+    next: [pick]
+  build:
+    skill: tdd
+    env: dev
+    does: Agree the seams, then red, then green, in the dev containers
+    next: [check]
+    optional: [diagnose]
+  diagnose:
+    skill: diagnosing-bugs
+    env: dev
+    does: Build a red feedback loop for a hard bug first
+    next: [build]
+  check:
+    skill: definition-of-done
+    env: dev
+    does: Tick the change checklist; the tests pass locally (testing-conventions, The local loop)
+    next: [commit]
+  commit:
+    skill: formats
+    env: dev
+    does: Commit in the Commit shape on the ticket branch
+    next: [review]
+  review:
+    skill: change-review
+    env: dev
+    does: Review the diff on Standards and Spec (and Security at a promotion)
+    next: [fix, pr, release-pr]
+  fix:
+    skill: change-review
+    env: dev
+    does: Apply the human's dispositions, then commit
+    next: [pr, release-pr]
+  pr:
+    skill: gitea
+    env: ci
+    does: Push and open the PR as the agent, with its Review section; CI runs
+    next: [merge]
+  merge:
+    skill: human
+    env: ci
+    does: You merge the PR into prep; board-sync moves the ticket to Testing
+    next: [try, pick]
+    fork: {prep must pull first: deploy-prep}
+  try:
+    skill: human
+    env: prep
+    does: Try the change on prep (Hammond) once it pulls the new images
+    next: [pick]
+    fork: {every ticket in the milestone is tried: gate}
+  gate:
+    skill: definition-of-done
+    env: prep
+    does: Move the milestone's tickets to DoD and start the promotion
+    next: [review]
+  release-pr:
+    skill: gitea
+    env: ci
+    does: Open the prep -> main PR with the DoD worksheet
+    next: [sign-off]
+  sign-off:
+    skill: human
+    env: ci
+    does: You fill the worksheet's sign-off and merge; merging is the sign-off
+    next: [tag]
+  tag:
+    skill: gitea-workflows
+    env: prod
+    does: Tag vX.Y.Z on main; CI publishes the release images; repos update the plugin
+    next: [close]
+  close:
+    skill: gitea
+    env: prod
+    does: Post Done pointers; you close the tickets and the milestone
+    next: []
+    fork: {carry on: board}
+  align:
+    skill: align
+    env: dev
+    does: Report drift, draft the fixes, apply what you accept
+    next: []
+    fork: {carry on: board}
+  deploy-prep:
+    skill: config-led-deployment
+    env: prep
+    does: docker compose pull and up -d on Hammond for the :prep images
+    next: [try]
+  handoff:
+    skill: handoff
+    env: dev
+    does: Write the handoff document and print the Handover block
+    next: [retro]
+  retro:
+    skill: retro
+    env: dev
+    does: Review the session and suggest improvements
+    next: []

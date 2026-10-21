@@ -12,7 +12,7 @@ Names the skill to reach for and the order a change usually moves through. It po
 
 | Step | Situation | Skill |
 |---|---|---|
-| 0 | Starting a session, or choosing what to work on | `board` |
+| 0 | Starting a session, or choosing what to work on | `board`, or `guide` to be led step by step |
 | 0 | An idea or vague ticket needs turning into tickets | `shape` |
 | 0 | The backlog or roadmap is out of date, a repo joins the workflow, or a milestone closed | `align` |
 | 1 | The plan is vague, or you want it stress-tested | `grill-me` (user-invoked), which runs `grilling` |

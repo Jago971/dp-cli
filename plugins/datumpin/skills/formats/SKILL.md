@@ -20,6 +20,7 @@ A flow that prints or writes something new adds its shape to this file before it
 | Superseded tickets left for a human to close | To-close list |
 | The end of a session, for the next one | Handover |
 | A scoping question | Shaping question |
+| The next choice in a flow | Guide prompt |
 | Gitea issue | Ticket |
 | Gitea milestone | Milestone |
 | Gitea comment | Comment (pointer, scope, progress, question) |
@@ -139,6 +140,21 @@ Your steps    1. Merge DEVKIT#99
 
 - `Next prompt` is one line the user pastes as is; it names the document and the next flow step.
 - `Your steps` lists only what the human must do first, numbered; `none` when empty.
+
+### Guide prompt
+
+```
+Guide · ticket flow · #52 · review (dev)
+Done          change-review · CHANGES · Standards 2 · Spec 1
+1. fix        Apply the human's dispositions, then commit
+2. pr         Push and open the PR as the agent, with its Review section; CI runs
+3. stop
+? Next? (1 / 2 / 3)
+```
+
+- The first line is the position: flow, ticket when there is one, step and its environment.
+- `Done` is the last step's outcome line, omitted before the first step.
+- Each choice is the step's name and its `does` line from the flow map; a fork into another flow ends `→ <flow> flow`. `stop` is always last.
 
 ### Shaping question
 
