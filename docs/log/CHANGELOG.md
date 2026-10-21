@@ -4,6 +4,13 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - Test locally before the push (plugin 0.7.1)
+
+- `testing-conventions` gains The local loop: per repo kind, the dev-stack and in-container test commands; tests never run on prep or prod (#90).
+- `definition-of-done` and the `gitea-workflows` merge gate ask for the local run first; CI is the second check.
+
+---
+
 ### [CHANGED] 2026-10-21 - dev, prep and prod defined once (plugin 0.7.0)
 
 - `gitea-workflows` gains an Environments table: host, branch, image, compose and env file for dev (laptop), prep (Hammond) and prod (not built). Servers pull and never build or test; the agent tooling is the laptop's one host exemption (#89).

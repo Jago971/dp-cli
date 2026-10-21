@@ -107,7 +107,7 @@ A master copy changes only through a DEVKIT PR: the new version is reviewed in D
 
 A PR merges when:
 
-- CI passes (or the README states which checks do not block yet).
+- The tests passed in dev before the push (`testing-conventions`, The local loop), and CI passes (or the README states which checks do not block yet).
 - `change-review` has run on the PR's diff, and a named human has adjudicated each finding.
 - The `definition-of-done` change checklist is ticked, with the evidence in the PR description.
 
