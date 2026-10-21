@@ -1,6 +1,6 @@
 # ci/tests/
 
-**Scope:** tests for the CI scripts in `ci/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 23 tests: 14 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
+**Scope:** tests for the CI scripts in `ci/` and the plugin's scripts in `plugins/datumpin/bin/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 27 tests: 18 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
 **Status:** current
 **Last reviewed:** 2026-10-21
 **Governed by:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)
@@ -19,6 +19,8 @@
 
 `test_clean_run.py` checks `clean-run.sh` removes only what carries a run label, and that the example labels what it starts.
 
+`test_token_report.py` feeds `report()` a few session-log lines and checks which step each turn is booked to: the next `.factory/guide.yaml` write, or the last Skill call when there is none. It also checks that the lines of one response count once, and that only a write to the state file moves the step.
+
 The tests sit flat in `ci/tests/`, one file per script, rather than in `unit/` and `integration/` folders: there are few, and each file holds one tier (its markers say which).
 
 ## Running locally
@@ -27,7 +29,7 @@ The tests sit flat in `ci/tests/`, one file per script, rather than in `unit/` a
 
 ```
 docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v /var/run/docker.sock:/var/run/docker.sock \
-  -v "$PWD/ci:/w/ci" -w /w/ci/tests python:3.11-alpine sh -c \
+  -v "$PWD/ci:/w/ci" -v "$PWD/plugins:/w/plugins:ro" -w /w/ci/tests python:3.11-alpine sh -c \
   'apk add -q bash docker-cli && pip install -q -r requirements.txt && python -m pytest -q -p no:cacheprovider -m "unit or integration"'
 ```
 
@@ -38,4 +40,6 @@ docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v /var/run/docker.sock:/var/run/do
 - The first fix stopped at a page shorter than 50, which assumed Gitea's default page cap; a server with a lower cap brought the bug back, and a server ignoring `page` would loop until the job timed out. Now it stops at an empty page and gives up after 40 pages.
 - An image whose `ENTRYPOINT` script was stored without the executable bit built, scanned and pushed cleanly, and failed only when a host started it (`permission denied`). `check-entrypoint.sh` now fails the image build instead; the non-executable test image reproduces it.
 - The image job removed every tag it pushed from the runner's Docker, which is the host's, untagging the `:prep` images deployed stacks ran from. `push-image.sh` now puts each tag back on the image it had.
+- The first-cut token report counted each session-log line as a turn, but the log writes one line per content block and repeats the response's usage on each, so the BDS#107 baseline was about 30% high (86 turns for 60 responses). `token_report.py` now counts the lines sharing a message id once.
+- The same script took any tool call naming `guide.yaml` and `step:` as a state write, so an Edit of the guide skill's docs moved the step, and an Edit of the state file booked its old step. Only a Write or Edit of the state file, or a redirect into it, counts now.
 - A smoke script killed mid-run (by a step timeout, or a test stopping it) never ran its cleanup trap, leaving its container and network on the host; it happened twice while these tests were written. Everything a smoke script starts now carries a run label, and `clean-run.sh` removes it in a final step.

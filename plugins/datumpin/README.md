@@ -2,7 +2,7 @@
 
 **Scope:** What the `datumpin` Claude Code plugin holds, how a repo installs it, and how it is released. The workflow design itself lives in the proposal linked below.
 **Status:** current
-**Last reviewed:** 2026-10-20
+**Last reviewed:** 2026-10-21
 **Governed by:** Agentic Development Workflow, WIKI `business_processes/proposals/agentic_workflow.md`
 
 ---
@@ -14,6 +14,7 @@
 | [skills/](skills/README.md) | The Datumpin convention skills, the process skills, and the workflow flows (`board`, `shape`, `align`, `guide`) with their references (`gitea`, `formats`) |
 | [flows.yaml](flows.yaml) | The flow map the `guide` skill walks: each flow's steps, their skills and environments |
 | [hooks/](hooks/hooks.json) | A session-start status line: this repo's Triage count and open PRs, and DEVKIT's Triage count, so parked tickets and plugin findings are seen. It needs `python` and `tea` on the PATH and prints nothing when Gitea is unreachable. |
+| [bin/](bin/token_report.py) | `token_report.py`: tokens per flow step for one session (see Token usage) |
 | [defaults/flow.yaml](defaults/flow.yaml) | Workflow settings in flow order. A repo overrides any key in its own `.claude/flow.yaml`. |
 | `.claude-plugin/plugin.json` | Name and version |
 
@@ -66,6 +67,16 @@ Run in order. A check that cannot pass yet becomes a ticket on the repo's board;
 The board needs Gitea 28 or later (the project API).
 
 To pick up a new plugin version: `claude plugin marketplace update datumpin`, then `claude plugin update datumpin@datumpin`.
+
+## Token usage
+
+`bin/token_report.py` prints the turns, tool calls and tokens (input, cache read, cache write, output) each flow step of one session used, with a total. A turn belongs to the step named by the guide's next write to `.factory/guide.yaml` (a Write or Edit of it, or a shell redirect into it); in a session without the guide, a step starts at each Skill call. It needs Python 3 and nothing else.
+
+1. **Find the log:** sessions are logged at `~/.claude/projects/<project>/<session-id>.jsonl`, where `<project>` is the repo path with `:` and `\` as `-` (for example `c--Users-mattm-Documents-BDS`). The newest file is the latest session.
+2. **Run it:** `python plugins/datumpin/bin/token_report.py <log>` from the DEVKIT root, or from the installed copy under `~/.claude/plugins/cache/datumpin/datumpin/<version>/`.
+3. **Subagents:** each subagent logs separately, in `<session-id>/subagents/agent-*.jsonl`; run the script on each.
+
+Cache reads are most of the tokens, and every turn re-reads the context, so turns per step is the number to cut.
 
 ## Releasing a change
 

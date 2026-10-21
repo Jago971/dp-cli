@@ -4,6 +4,13 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [ADDED] 2026-10-21 - Token usage report per flow step (plugin 0.8.0)
+
+- `plugins/datumpin/bin/token_report.py` reads one session log and prints turns, tool calls and tokens per flow step, with a total. Steps follow the guide's `.factory/guide.yaml` writes, or Skill calls without the guide; lines of one API response count as one turn (#120).
+- The plugin README says how to run it on any session; `ci/local-check.sh` mounts `plugins/` for its tests.
+
+---
+
 ### [FIXED] 2026-10-21 - v0.7.0 release-review fixes (plugin 0.7.7)
 
 - `ci/local-check.sh`: run only on trusted branches (it hands a container your Docker); version pins must be plain versions; gitleaks reports SKIP with no commits to scan; no pytest cache in the tree (#115).
