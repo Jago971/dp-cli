@@ -57,7 +57,7 @@ Run in order. A check that cannot pass yet becomes a ticket on the repo's board;
 3. **Cache:** add `.factory/` to the repo's `.gitignore`.
 4. **Reset:** run `/datumpin:align` in a new session. Reset mode creates the `Board` project and the component labels, rebuilds the milestones and tickets from the docs, closes the old tickets and projects, and opens a PR with the roadmap rewrite and the repo's `components` in `.claude/flow.yaml`.
 5. **Skills copy:** delete the root `skills/` folder and replace the skill list in `CLAUDE.md` with the Skills and workflow section (see `claude-md-authoring`).
-6. **Branches:** `prep` is the Gitea default branch and `main` is release-only. Both carry the standard protection rule (`gitea-workflows`); required CI checks are added once CI is green.
+6. **Branches:** `prep` is the Gitea default branch and `main` is release-only. Both carry the standard protection rule (`gitea-workflows`), and merged PR branches are deleted by default; required CI checks are added once CI is green.
 7. **CI:** `.gitea/workflows/ci.yml` calls DEVKIT's shared workflows `@main` with `secrets: inherit`: the repo's tests, `security-scan` and `conformance`; `.gitea/workflows/board.yml` calls `board-sync`. CI runs on every PR, passes, and is required on `prep` and `main` (`CI / *`). A conformance check that does not apply is skipped in `.claude/flow.yaml` with the reason.
 8. **Hosts:** each host that deploys the repo has its read-only deploy key on it (WIKI `systems_networking/Hosts/README.md`).
 9. **Check:** in a new session, `/datumpin:board` prints the board.

@@ -47,7 +47,7 @@ Pick the mode from the labels and say which in the drift report.
    1. In Reset mode, the `Board` project with its seven columns (Triage the default) and the `COMPONENT/*` repo labels, as the agent login.
    2. Milestones, then tickets, each placed in its column, as the agent login. Later tickets link earlier ones as `#N`.
    3. Label, milestone and column moves, as the agent login.
-   4. As the user's own login (the default `tea` login), since these are human or admin actions: a pointer comment then close for each old ticket; close each old project; set `prep` as the default branch and apply the standard protection rule (`gitea-workflows`) to `prep` and `main`, when the repo's work already lands on `prep`.
+   4. As the user's own login (the default `tea` login), since these are human or admin actions: a pointer comment then close for each old ticket; close each old project; set `prep` as the default branch and apply the standard protection rule and branch deletion on merge (`gitea-workflows`) to `prep` and `main`, when the repo's work already lands on `prep`.
    5. Doc fixes, the roadmap rewrite and `.claude/flow.yaml` on a `docs/<slug>` branch, with a CHANGELOG entry, opened as a PR by the agent login.
 6. **Summary.** Print one `DONE` log line with the counts, then a numbered list of what is left for the user (merge the PR), then the To-close list (`formats`) of the superseded tickets the user chose not to close in step 5.4.
 
