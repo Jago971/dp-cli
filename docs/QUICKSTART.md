@@ -39,7 +39,7 @@ flowchart LR
 - `plugins/datumpin/`: the plugin ([README](../plugins/datumpin/README.md)); `skills/` holds every skill and flow.
 - `.gitea/workflows/`: what repos call from `ci.yml` (`python-tests`, `node-tests`, `compose-check`, `security-scan`, `conformance`), `board.yml` (`board-sync`) and `image.yml` (`docker-image`); PACKAGES' publish jobs call `publish-python` and `publish-npm`. DEVKIT's own `ci.yml` and `board.yml` call them from the checkout.
 - `ci/master/`: the approved dependency versions every repo's pins must match (the `versions` job); a version changes here first, through a reviewed PR.
-- `ci/`: the scripts the shared workflows fetch from `main`: `conformance.py`, `versions.py`, `board_sync.py`, `check-entrypoint.sh`, `push-image.sh`, `release-channel.sh`; their tests are in `ci/tests/`: run them locally first (`ci/tests/README.md`, Running locally); `ci.yml` re-runs them through `python-tests`.
+- `ci/`: the scripts the shared workflows fetch from `main`: `conformance.py`, `versions.py`, `board_sync.py`, `check-entrypoint.sh`, `push-image.sh`, `release-channel.sh`; their tests are in `ci/tests/`. Before pushing, `ci/local-check.sh` runs every check CI runs, in containers on your own Docker; `ci.yml` runs them again.
 
 ## How to deploy
 

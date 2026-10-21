@@ -71,7 +71,7 @@ Every change is built and tested in dev, the laptop's containers (`gitea-workflo
 | FastAPI app (BDS, AHJ and CURATOR backends) | `docker compose <dev> up -d --build` | `docker compose <dev> exec <service> python -m pytest -q -m "unit or integration"`, with `<service>` such as `dp-api`, `ahj-dp-backend`, `curator-dp-backend` |
 | React frontend (AHJ, CURATOR) | the same stack | `docker compose <dev> exec <frontend service> npm test`, with the service such as `ahj-dp-frontend`, `curator-dp-frontend` |
 | Package monorepo (PACKAGES) | `docker compose -f docker-compose.dev.yml up -d` | `docker compose -f docker-compose.dev.yml exec <package service> python -m pytest tests/`; for a JS package `npm test` or `node --test`, as its QUICKSTART lists |
-| DEVKIT | none | `ci/tests/README.md`, Running locally |
+| DEVKIT | none | `ci/local-check.sh`: every check DEVKIT's CI runs |
 
 The marker set matches CI's `python-tests` (`unit or integration`); `contract` tests stay manual.
 
