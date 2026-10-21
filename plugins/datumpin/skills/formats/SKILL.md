@@ -25,6 +25,11 @@ A flow that prints or writes something new adds its shape to this file before it
 | Git commit / branch | Commit, Branch |
 | Gitea project | Board (one per repo, see `gitea`) |
 
+## Quiet steps
+
+While a flow step runs, nothing is printed between tool calls: no "checking…", no plan, no running commentary. The step ends with its output in its shape (log lines, a board, a draft list) and, when a choice follows, one Prompt per question. Reasons and detail wait until the user asks for them. A finding that changes what the user decides goes in the output as a log line, never as prose between calls.
+The three-line cap above applies only outside a flow step.
+
 ## Terminal
 
 ### Log line

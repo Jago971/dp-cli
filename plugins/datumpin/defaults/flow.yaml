@@ -16,3 +16,8 @@ align:
   review:               # the three read-only review subagents
     model: sonnet
     effort: medium
+
+change_review:
+  single:               # the one reviewer for docs, skill text or config
+    model: sonnet
+    effort: medium

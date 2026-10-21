@@ -5,6 +5,8 @@ description: Done - the checklist a change passes before it is called finished o
 
 # Definition of done
 
+Output follows `formats`, including its Quiet steps rule.
+
 A change is done when every applicable item below is checked with evidence (a command's output, a file path). An item that does not apply is marked n/a with a reason.
 
 Three levels use the same idea:

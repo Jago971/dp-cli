@@ -23,7 +23,7 @@ The marketplace that lists this plugin is `.claude-plugin/marketplace.json` at t
 | Where it runs | Set in | Default |
 |---|---|---|
 | A flow in your session (`board`, `shape`, `align`) | The skill's `model` and `effort` header | `board`: sonnet, low (mechanical). `shape`, `align`: opus, high (judgement) |
-| A flow's subagents | `flow.yaml`, per stage | `align.review`: sonnet, medium |
+| A flow's subagents | `flow.yaml`, per stage | `align.review`, `change_review.single`: sonnet, medium |
 
 A skill header applies only to the turn the skill starts in; your next message runs on the session model. `shape` interviews over many turns, so switch the session to Opus (`/model opus`) before shaping. Header defaults are plugin-wide; a repo cannot override them.
 
