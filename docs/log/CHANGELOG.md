@@ -4,6 +4,14 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [ADDED] 2026-10-21 - dp, the flows' command line (plugin 0.8.1)
+
+- `plugins/datumpin/dp/`: a small Python package (Typer, Rich, pinned), installed on the host with pipx. `dp board`, `dp move`, `dp pr` and `dp pointer` each do one repeated Gitea task in one call, as the agent login, with `--json` for the agent; `NO_COLOR` is honoured (#121).
+- `dp tokens` replaces `bin/token_report.py`.
+- `board`, `gitea`, `shape` and `guide` call `dp` for those tasks; the `gitea` table's raw Board rows are gone. The agent-tooling exemption (`gitea-workflows`) names `dp` and pipx; the plugin README says how to install it.
+
+---
+
 ### [ADDED] 2026-10-21 - Token usage report per flow step (plugin 0.8.0)
 
 - `plugins/datumpin/bin/token_report.py` reads one session log and prints turns, tool calls and tokens per flow step, with a total. Steps follow the guide's `.factory/guide.yaml` writes, or Skill calls without the guide; lines of one API response count as one turn (#120).

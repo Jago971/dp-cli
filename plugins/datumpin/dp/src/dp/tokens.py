@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
-"""Token usage per flow step, read from one Claude Code session log.
+"""dp tokens: token usage per flow step, read from one Claude Code session log.
 
-Summary: books each turn's usage to a flow step and prints a table with a total.
-Input:   the path of a session log (~/.claude/projects/<project>/<session>.jsonl).
+Summary: books each turn's usage to a flow step.
+Input:   the lines of a session log (~/.claude/projects/<project>/<session>.jsonl).
 Process: a turn is one API response; the log writes one line per content block
          and repeats the response's usage on each, so lines sharing a message id
          are one turn. A state write is a Write or Edit of .factory/guide.yaml,
@@ -10,13 +9,10 @@ Process: a turn is one API response; the log writes one line per content block
          belongs to the step the next write names, otherwise a step starts at
          each Skill call.
 Output:  one row per step (turns, tools, input, cache_read, cache_write, output)
-         and a TOTAL row.
-
-Standard library only, so it runs from the plugin cache with any Python 3.
+         and, as text, a TOTAL row.
 """
 import json
 import re
-import sys
 
 STATE_FILE = ".factory/guide.yaml"
 STATE_REDIRECT = re.compile(r">\s*[\"']?[^\s\"'|;&]*" + re.escape(STATE_FILE))
@@ -71,7 +67,6 @@ def steps(log):
     """
     written = [state_write(tools) for _, tools in log]
     if any(written):
-        # Walk back from the last write, so a turn takes the next write's step.
         booked, step = [], next(name for name in reversed(written) if name)
         for name in reversed(written):
             step = name or step
@@ -105,14 +100,3 @@ def table(rows):
     lines += [f"{row['step']:<{width}}" + "".join(f"{row[count]:>12}" for count in COUNTS)
               for row in rows + [total]]
     return "\n".join(lines)
-
-
-def main(argv):
-    if len(argv) != 2:
-        sys.exit("usage: token_report.py <session.jsonl>")
-    with open(argv[1], encoding="utf-8") as log:
-        print(table(report(log)))
-
-
-if __name__ == "__main__":
-    main(sys.argv)

@@ -1,9 +1,11 @@
-"""An in-memory Gitea Board for testing ci/board_sync.py without a server.
+"""An in-memory Gitea for testing ci/board_sync.py and dp without a server.
 
-Answers the calls board_sync makes through its one HTTP function, call(),
-with Gitea's paging (at most `page_size` issues a page, 50 by default, as the
-live server) and records every write. `ignores_page` serves page 1 for every
+Answers the calls both make through their one HTTP function, call(), with
+Gitea's paging (at most `page_size` items a page, 50 by default, as the live
+server) and records every write. `ignores_page` serves page 1 for every
 page, and `max_calls` stops a runaway loop, so a test fails instead of hanging.
+Issues, pull requests, milestones and labels are plain dicts in Gitea's
+shape; an issue nobody added answers as its id and number alone.
 """
 import re
 
@@ -20,6 +22,11 @@ class FakeGitea:
         self.board_id = 1
         self.column_ids = {title: 100 + i for i, title in enumerate(COLUMNS)}
         self.cards = {title: [] for title in COLUMNS}  # column -> issue numbers, in order
+        self.issues = {}  # number -> issue
+        self.comments = {}  # number -> comments, oldest first
+        self.pulls = []
+        self.milestones = []
+        self.labels = {"repo": [], "org": []}
         self.writes = []
 
     def put(self, column, *numbers):
@@ -27,6 +34,25 @@ class FakeGitea:
 
     def column_of(self, number):
         return next((t for t, nums in self.cards.items() if number in nums), None)
+
+    def add_issue(self, number, title="", state="open", labels=(), milestone=None,
+                  assignees=(), comments=()):
+        """An issue, with its comments as (author, body) pairs."""
+        self.comments[number] = [{"user": {"login": a}, "body": b} for a, b in comments]
+        self.issues[number] = {
+            "id": 1000 + number, "number": number, "title": title, "state": state,
+            "labels": [{"name": name} for name in labels],
+            "milestone": {"title": milestone} if milestone else None,
+            "assignees": [{"login": login} for login in assignees] or None,
+            "comments": len(comments)}
+
+    def issue(self, number):
+        return self.issues.get(number, {"id": 1000 + number, "number": number})
+
+    def page(self, items, params):
+        limit = min(int(params.get("limit", self.page_size)), self.page_size)
+        page = 1 if self.ignores_page else int(params.get("page", 1))
+        return items[(page - 1) * limit:page * limit]
 
     def call(self, method, path, body=None):
         self.calls += 1
@@ -41,14 +67,33 @@ class FakeGitea:
         found = re.search(r"/columns/(\d+)/issues$", path)
         if method == "GET" and found:
             title = next(t for t, cid in self.column_ids.items() if cid == int(found.group(1)))
-            limit = min(int(params.get("limit", self.page_size)), self.page_size)
-            page = 1 if self.ignores_page else int(params.get("page", 1))
-            numbers = self.cards[title][(page - 1) * limit:page * limit]
-            return [{"id": 1000 + n, "number": n} for n in numbers]
+            return [self.issue(n) for n in self.page(self.cards[title], params)]
+        if method == "GET" and re.search(r"^repos/[^/]+/[^/]+/issues$", path):
+            wanted = [i for i in self.issues.values() if i["state"] == params.get("state", "open")]
+            return self.page(wanted, params)
         found = re.search(r"/issues/(\d+)$", path)
         if method == "GET" and found:
+            return self.issue(int(found.group(1)))
+        if method == "PATCH" and found:
             number = int(found.group(1))
-            return {"id": 1000 + number, "number": number}
+            self.writes.append(("assign", number, body["assignees"]))
+            self.issues[number]["assignees"] = [{"login": login} for login in body["assignees"]]
+            return self.issues[number]
+        found = re.search(r"/issues/(\d+)/comments$", path)
+        if method == "GET" and found:
+            return self.comments.get(int(found.group(1)), [])
+        if method == "POST" and found:
+            self.writes.append(("comment", int(found.group(1)), body["body"]))
+            return {"id": 1, "body": body["body"]}
+        if method == "GET" and path.endswith("/pulls"):
+            return self.page(self.pulls, params)
+        if method == "POST" and path.endswith("/pulls"):
+            self.writes.append(("pull", body))
+            return {"number": 900, "html_url": "http://gitea/Org/Repo/pulls/900"}
+        if method == "GET" and path.endswith("/milestones"):
+            return self.page(self.milestones, params)
+        if method == "GET" and path.endswith("/labels"):
+            return self.page(self.labels["org" if path.startswith("orgs/") else "repo"], params)
         found = re.search(r"/columns/(\d+)/issues/(\d+)$", path)
         if method == "POST" and found:
             self.writes.append(("add", int(found.group(2)) - 1000))

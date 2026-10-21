@@ -23,7 +23,7 @@ updated: 2026-10-21T16:40:00
 ## Steps
 
 1. **Read.** Read the map and the state file. With no state, a state the map does not know, or a finished flow, offer the flows from the map as choices, and take the user's pick.
-2. **Check the position.** In the ticket flow, read the ticket's board column (`gitea`) and trust it over the state file, printing a log line when it corrects the state:
+2. **Check the position.** In the ticket flow, read the ticket's board column from `dp board --json` (`gitea`) and trust it over the state file, printing a log line when it corrects the state:
 
    | Column | Position |
    |---|---|

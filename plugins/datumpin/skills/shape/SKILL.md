@@ -16,7 +16,7 @@ Turns loose intent into tickets an agent can build from, through a short intervi
 3. **Interview.** Map the decisions as a design tree, the way `grilling` does, but ask one shaping question per turn, each with your recommendation. The tree is settled when these are known: what changes and for whom, acceptance, out of scope, priority, stage (`PROT` or `PREP`), and milestone.
 4. **Draft.** Write each ticket in the ticket-body format. Split so each ticket is one deliverable and one PR: small and mergeable alone. Labels: one `TYPE`, one `PRIORITY`, one `STAGE`, `ORIGIN/AGENT`, and the `COMPONENT` of each folder the ticket touches (the repo's `components` config). Column: Backlog, or Triage while a question stays open. At release level, draft the milestone too, in the milestone shape; the version is the next minor after the highest existing one unless the user names it.
 5. **Review.** Show the draft list. Apply each edit or drop, and show it again, until the user says yes.
-6. **Push.** As the agent login: the milestone first, then each issue in order, each placed in its board column, one log line each. board-sync may have put a new issue in Triage first; then move it rather than add it. An open ticket the user agreed a pushed one supersedes (from step 2's overlaps) gets a Pointer comment (`formats`), and the step ends with the To-close list. If Gitea is unreachable, save each draft to `.factory/outbox/<slug>.md`, print a `FAILED` log line, and stop; `board` pushes the outbox later. An outbox file is:
+6. **Push.** As the agent login: the milestone first, then each issue in order, each placed in its board column with `dp move N "<column>"` (`gitea`), which also moves one board-sync already put in Triage, one log line each. An open ticket the user agreed a pushed one supersedes (from step 2's overlaps) gets a Pointer comment (`dp pointer`), and the step ends with the To-close list. If Gitea is unreachable, save each draft to `.factory/outbox/<slug>.md`, print a `FAILED` log line, and stop; `board` pushes the outbox later. An outbox file is:
 
    ```
    title: <title>
@@ -27,7 +27,7 @@ Turns loose intent into tickets an agent can build from, through a short intervi
    <ticket body>
    ```
 
-7. **Refine #N.** Read the issue and its comments, run steps 2 and 3 on it, then post one Scope comment (see `formats`). Move it to Backlog and add its `TYPE`, `PRIORITY`, `STAGE` and `COMPONENT` labels when settled; add `STATUS/NEEDS-INFO` when a question is still open. The body changes only if the agent login wrote it.
+7. **Refine #N.** Read the issue and its comments, run steps 2 and 3 on it, then post one Scope comment (see `formats`). Move it to Backlog (`dp move`) and add its `TYPE`, `PRIORITY`, `STAGE` and `COMPONENT` labels when settled; add `STATUS/NEEDS-INFO` when a question is still open. The body changes only if the agent login wrote it.
 
 ## Done when
 

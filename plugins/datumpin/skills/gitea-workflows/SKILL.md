@@ -59,7 +59,7 @@ Work moves dev → prep → prod, and only through PRs and images. This table is
 | prep | Hammond, internal staging | `prep` | `:prep`, pulled | `docker-compose.yml`, `CHANNEL=prep` | `.env.<app>-<instance>` on the host |
 | prod | External server, not built yet | `main`, tag `vX.Y.Z` | `:X.Y.Z`, pulled | `docker-compose.yml`, `CHANNEL=prod` | `.env.<app>-<instance>` on the host |
 
-- Everything runs in containers. A host holds Docker, git and its env files; the laptop also holds the agent tooling (Claude Code, `tea`, and the Python that the plugin's status hook, `hooks/hooks.json`, runs), the one exemption.
+- Everything runs in containers. A host holds Docker, git and its env files; the laptop also holds the agent tooling (Claude Code, `tea`, the plugin's `dp` through pipx, and the Python that the plugin's status hook, `hooks/hooks.json`, runs), the one exemption.
 - Builds and tests run in dev before the push, and CI runs them again. Servers pull images; they never build or run tests.
 
 ## Branch model and protection
