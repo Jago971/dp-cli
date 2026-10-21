@@ -6,7 +6,7 @@ Run from CI through DEVKIT's conformance workflow, or by hand:
 
 Each check prints PASS, FAIL or SKIP with the rule it enforces; the exit code
 is 1 when any check fails. The rules come from the plugin's skills
-(claude-md-authoring, documentation-cross-cutting, gitea-workflows) and the
+(claude-md-authoring, documentation-cross-cutting, formats, gitea-workflows) and the
 plugin README's onboarding list; this script only makes the mechanical ones
 automatic. A repo skips a check that does not apply by naming it in its
 .claude/flow.yaml:
@@ -17,9 +17,12 @@ automatic. A repo skips a check that does not apply by naming it in its
 Standard library only, so it runs anywhere Python does.
 """
 import json
+import os
 import re
 import sys
 from pathlib import Path
+
+from board_sync import tickets_named
 
 MARKETPLACE = {"source": "git", "url": "git@gitea:Datumpin/DEVKIT.git", "ref": "main"}
 SECTIONS = ["Response style", "Engineering principles", "Git commits and PRs", "Skills and workflow"]
@@ -31,6 +34,7 @@ DOCS = {
     "roadmap": "docs/plan/ROADMAP.md",
     "changelog": "docs/log/CHANGELOG.md",
 }
+NO_TICKET = re.compile(r"(?im)^\s*No ticket:\s*\S")
 DEVKIT_CALL = re.compile(r"uses:\s*Datumpin/DEVKIT/\.gitea/workflows/([\w.-]+)@(\S+)")
 
 
@@ -128,6 +132,19 @@ def check_board(root):
     return ok, "board.yml calls DEVKIT's board-sync" if ok else "board.yml must call DEVKIT's board-sync (@main)"
 
 
+def check_pr_ticket(root):
+    """A pull request names a ticket board-sync moves, so its work shows on this repo's Board."""
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
+    if not event_path:
+        return True, "not a pull request"
+    pull = json.loads(Path(event_path).read_text(encoding="utf-8")).get("pull_request")
+    if pull is None:
+        return True, "not a pull request"
+    if tickets_named(pull) or NO_TICKET.search(pull.get("body") or ""):
+        return True, "the PR names a local ticket or says No ticket"
+    return False, "name a local ticket on a Refs line or in the branch, or give a 'No ticket: <reason>' line (formats)"
+
+
 def doc_check(rel):
     def check(root):
         if not (root / rel).exists():
@@ -145,6 +162,7 @@ CHECKS = {
     "no-skills-copy": check_no_skills_copy,
     "ci": check_ci,
     "board": check_board,
+    "pr-ticket": check_pr_ticket,
     **{name: doc_check(rel) for name, rel in DOCS.items()},
 }
 

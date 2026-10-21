@@ -241,6 +241,7 @@ See #N
 ```
 
 - `Refs` names only the tickets the PR works on; board-sync moves them with the PR. `See` names related tickets, which keep their column. Omit `See` when there are none.
+- A PR with no local ticket replaces the `Refs` line with `No ticket: <reason>`. `conformance` fails a PR with neither that line nor a local ticket board-sync moves (on a `Refs` line or in the branch).
 - A PR stacked on another ticket's branch (`gitea-workflows`) opens its Summary with `Stacked on #N`.
 - `Review` holds the `change-review` run before the PR opened. Finding ids are `S` (Standards), `P` (Spec), `X` (Security). A disposition is `Fixed (<sha>)`, `Dismissed: <reason>`, `Escalated: <to whom>` or `Deferred: #N`, where `#N` is a Triage ticket opened for it. With no findings, one row says so per axis. A promotion PR records its findings in the worksheet's Rev and Sec columns instead (`definition-of-done`).
 

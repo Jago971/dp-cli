@@ -21,6 +21,8 @@ A repo keeps a workflow of its own only for what no shared one does (PACKAGES' `
 
 A change to a shared workflow is tested on its DEVKIT PR, or from a consumer branch that points at the DEVKIT branch, then released (`prep` → `main`); a consumer never pins a branch, and `conformance` fails one that does. Merge the feature PRs into DEVKIT `prep` before opening the release PR.
 
+`conformance` fails a PR that names no local ticket and has no `No ticket:` line (`formats`). A re-run reads the PR as it was opened, so after fixing the description, close and reopen the PR.
+
 ## Images
 
 `docker-image` builds one image per app, never per instance (`config-led-deployment`), passes the build secrets `gitea_user`, `gitea_token`, `gitea_host` and `gitea_package_owner` to BuildKit, checks the image's `ENTRYPOINT` file is executable (`ci/check-entrypoint.sh`, no app config needed), and scans with trivy: a fixable CRITICAL fails the job, HIGH ones are listed. Both run before the push. The runner shares the host's Docker, where deployed stacks run from the same tags, so the push (`ci/push-image.sh`) leaves every host tag on the image it had. Images follow the package channels: a push to `prep` publishes `:prep` and `:prep-<sha>`, a `vX.Y.Z` tag on `main` publishes `:X.Y.Z`. The account behind `PKG_WRITE_TOKEN` needs write on the org's packages.
