@@ -10,7 +10,8 @@ anyone dragging cards:
     issue reopened                  -> Backlog
 
 A pull request names a ticket with "Refs #N" (the formats skill) or through
-its branch, <type>/<N>-<slug>. A ticket already further along (DoD, Done) is
+its branch, <type>/<N>-<slug>. A ticket it only relates to goes on a "See #N"
+line and is not moved. A ticket already further along (DoD, Done) is
 never moved back by a pull request event. Another repo's tickets
 (Owner/Repo#N) are left alone. A ticket not on the Board is placed on it.
 

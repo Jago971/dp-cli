@@ -1,4 +1,4 @@
-"""Tests for ci/board_sync.py at its move() seam, against an in-memory Gitea."""
+"""Tests for ci/board_sync.py at its tickets_named() and move() seams; move() runs against an in-memory Gitea."""
 import os
 import sys
 
@@ -68,3 +68,11 @@ def test_move_when_server_ignores_page_fails_instead_of_looping(monkeypatch):
     with pytest.raises(RuntimeError, match="pages"):
         board_sync.move("Org/Repo", 55, "In Progress", forward_only=False)
     assert gitea.writes == []
+
+
+@pytest.mark.unit
+def test_tickets_named_takes_refs_and_branch_not_see():
+    pull = {"number": 9, "head": {"ref": "fix/3-slug"},
+            "body": "## Refs\nRefs #1 · Other/Repo#4\nSee #2\n"}
+
+    assert board_sync.tickets_named(pull) == [1, 3]

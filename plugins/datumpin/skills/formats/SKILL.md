@@ -207,10 +207,13 @@ Title: as a ticket title. Labels: one `TYPE`, `ORIGIN/AGENT`, one `STAGE`.
 
 ## Refs
 Refs #N · Owner/Repo#N
+See #N
 
 ## Check before merging
 - <what a human checks; omit the section when empty>
 ```
+
+- `Refs` names only the tickets the PR works on; board-sync moves them with the PR. `See` names related tickets, which keep their column. Omit `See` when there are none.
 
 ## Git
 
@@ -219,7 +222,7 @@ Refs #N · Owner/Repo#N
 `<area>: <what changed>`
 
 - `<area>` is the folder, service or topic in lower case (`docs`, `api`, `processor`, `ci`, `gitignore`); the subject is 72 characters or fewer.
-- An optional body gives the why in short lines, and `Refs #N` when there is a ticket.
+- An optional body gives the why in short lines, and `Refs #N` when there is a ticket (`See #N` for one it only relates to).
 - No AI attribution trailer.
 
 ### Branch
