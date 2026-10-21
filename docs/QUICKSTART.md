@@ -29,7 +29,7 @@ flowchart LR
     P["datumpin plugin: skills, flows, status hook"]
     W["shared CI: .gitea/workflows"]
   end
-  R["BDS, AHJ, CURATOR, PACKAGES"] -- ".claude/settings.json, ref main" --> P
+  R["BDS, AHJ, CURATOR, PACKAGES"] -- "settings.json, ref main" --> P
   R -- "ci.yml, uses ...@main" --> W
   W -- "runs on" --> H["gitea-runner on Hammond"]
   R -- "tickets" --> G["one Board per repo"]
