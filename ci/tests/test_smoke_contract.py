@@ -1,23 +1,19 @@
 """Tests for the smoke-test contract docker-image runs, as CI runs it.
 
-smoke-example.sh is the shape a repo's smoke script follows; it is run here
-from a container on the Docker socket, as a CI job is, so a script that
-relied on host ports would fail here as it would in CI.
+smoke-example.sh is the shape a repo's smoke script follows. In CI, pytest
+runs in a job container beside the Docker daemon, as docker-image's step
+does, so a script relying on host ports fails here too; run on a host
+directly, this test cannot catch that.
 Integration tier: needs a Docker daemon, and skips without one.
 """
 import os
-import shutil
 import subprocess
 import uuid
 
 import pytest
+from conftest import docker_works
 
 EXAMPLE = os.path.join(os.path.dirname(__file__), "smoke-example.sh")
-
-
-def docker_works():
-    return shutil.which("docker") and subprocess.run(
-        ["docker", "info"], capture_output=True).returncode == 0
 
 
 pytestmark = [pytest.mark.integration,

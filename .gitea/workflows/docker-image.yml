@@ -19,6 +19,7 @@ name: Docker image
 #       with:
 #         image: bds-api
 #         context: services/api
+#         smoke-test: services/api/tests/smoke-image.sh   # optional
 #       secrets: inherit
 #
 # Private packages install through BuildKit secrets (gitea_user, gitea_token,
@@ -138,9 +139,8 @@ jobs:
           bash "$SCRIPT" "$LOCAL"
 
       - name: Smoke test
-        # The repo's own script starts the image and checks it answers; a
-        # failure stops the job before the push.
         if: inputs.smoke-test != ''
+        timeout-minutes: 5
         env:
           LOCAL: ${{ steps.tags.outputs.local }}
           SMOKE_TEST: ${{ inputs.smoke-test }}

@@ -9,7 +9,9 @@
 set -euo pipefail
 
 IMAGE=$1
-RUN=smoke-$$
+# A random suffix: concurrent CI jobs share the runner's Docker, and each
+# job's $$ can repeat.
+RUN=smoke-$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')
 
 cleanup() {
   docker rm -f "$RUN" >/dev/null 2>&1 || true
@@ -21,7 +23,7 @@ docker network create "$RUN" >/dev/null
 docker run -d --name "$RUN" --network "$RUN" "$IMAGE" >/dev/null
 
 for _ in $(seq 20); do
-  if docker run --rm --network "$RUN" alpine:3.20 wget -q -O- "http://$RUN:8080/" 2>/dev/null | grep -q ok; then
+  if docker run --rm --network "$RUN" alpine:3.20 wget -q -T 2 -O- "http://$RUN:8080/" 2>/dev/null | grep -q ok; then
     echo "PASS  / answers"
     exit 0
   fi
