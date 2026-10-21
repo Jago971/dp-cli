@@ -20,7 +20,7 @@ A flow that prints or writes something new adds its shape to this file before it
 | A scoping question | Shaping question |
 | Gitea issue | Ticket |
 | Gitea milestone | Milestone |
-| Gitea comment | Comment (pointer, scope, question) |
+| Gitea comment | Comment (pointer, scope, progress, question) |
 | Gitea pull request | Pull request |
 | Git commit / branch | Commit, Branch |
 | Gitea project | Board (one per repo, see `gitea`) |
@@ -164,7 +164,7 @@ Curated, approved addressings in dp and rur, with live data corrected to match t
 
 ### Comment
 
-Every agent comment is one of three kinds.
+Every agent comment is one of four kinds.
 
 **Pointer**: closing, redirecting or recording an outcome. One line:
 
@@ -184,6 +184,14 @@ Backlog reset, 2026-10-20. Carried forward: datetime and timezone convention. �
 
 ## Open questions
 1. <question> → <recommended answer>
+```
+
+**Progress**: a ticket moved to an earlier column. One line:
+
+`<Event>, <YYYY-MM-DD>. Landed: <what> (PR #N). Left: <what>. → <column>`
+
+```
+AHJ board review, 2026-10-21. Landed: frontend image (PR #164). Left: smoke-test wiring. → In Progress
 ```
 
 **Question**: one decision needed from a human:
@@ -222,6 +230,7 @@ See #N
 ```
 
 - `Refs` names only the tickets the PR works on; board-sync moves them with the PR. `See` names related tickets, which keep their column. Omit `See` when there are none.
+- A PR stacked on another ticket's branch (`gitea-workflows`) opens its Summary with `Stacked on #N`.
 - `Review` holds the `change-review` run before the PR opened. Finding ids are `S` (Standards), `P` (Spec), `X` (Security). A disposition is `Fixed (<sha>)`, `Dismissed: <reason>`, `Escalated: <to whom>` or `Deferred: #N`, where `#N` is a Triage ticket opened for it. With no findings, one row says so per axis. A promotion PR records its findings in the worksheet's Rev and Sec columns instead (`definition-of-done`).
 
 ## Git

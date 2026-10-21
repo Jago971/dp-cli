@@ -47,7 +47,7 @@ Page through `issues ls` with `--page` until a page returns fewer than the limit
 - Edit an issue's title or body only when the agent login created it. Text a human wrote changes through a comment that proposes the edit.
 - Closing an issue, or closing or deleting a project, is a human's action.
 - Every write needs the user's OK inside the running flow, and prints one log line.
-- Everything written takes its shape from `formats`: tickets, milestones, comments (pointer, scope or question) and PRs.
+- Everything written takes its shape from `formats`: tickets, milestones, comments (pointer, scope, progress or question) and PRs.
 - An improvement to the plugin or the shared CI found while working in any repo becomes a ticket in `Datumpin/DEVKIT`, in Triage, with a pointer to where it was found. A fix small enough to make in the same change is made there instead.
 
 ## Labels
@@ -80,7 +80,7 @@ Each repo has one Gitea project titled `Board`. Its column is the single record 
 | DoD | Feature DoD signed, ready for release |
 | Done | Closed: shipped on `main` in a tagged release, or no longer needed |
 
-An open ticket not on the board is unsorted. A ticket moves to Done when it is closed.
+An open ticket not on the board is unsorted. A ticket moves to Done when it is closed. Any move by hand or by the agent to an earlier column posts a Progress comment (`formats`) saying what landed and what is left; board-sync's reopen → Backlog needs none, as the reopen is its own record.
 
 ## Milestones
 

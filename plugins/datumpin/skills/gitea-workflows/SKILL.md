@@ -45,6 +45,8 @@ A repo with more than one contributor gets a short `CONTRIBUTING.md` or a root R
 - Whether CI must pass before merge.
 - Commit message policy. Datumpin repos add no AI-attribution trailers, set in each `CLAUDE.md`.
 
+A ticket that builds on another ticket's unmerged branch waits for that PR to merge, then branches from `prep`. When waiting blocks the work, stack instead: branch from the other branch, rebase onto `prep` once it merges, and open the PR after the rebase, its Summary starting `Stacked on #N` (`formats`).
+
 ## Branch model and protection
 
 | Branch | Role | Protection |

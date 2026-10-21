@@ -4,6 +4,14 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - Partial delivery: one deliverable per ticket, Progress comments, stacked branches (plugin 0.6.8)
+
+- `shape` splits a ticket per deliverable (#55).
+- A move to an earlier column posts a `Progress` comment, a new `formats` comment kind: what landed and what is left.
+- A ticket built on another's unmerged branch waits for its merge, or stacks and opens its PR with `Stacked on #N` (`gitea-workflows`).
+
+---
+
 ### [CHANGED] 2026-10-21 - Image smoke tests and guard checks in the testing skills (plugin 0.6.7)
 
 - `testing-conventions` places image smoke tests (`<service>/tests/smoke-image.sh`): what they check, how to run them, and the CI wiring through `docker-image`. `tdd` keeps a test that passes first as a named guard, once it has been seen to fail (#45).
