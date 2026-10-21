@@ -39,11 +39,11 @@ def test_a_log_line_mutes_its_ref_and_colours_only_a_failure():
 @pytest.mark.unit
 def test_the_header_shows_the_position_and_only_the_current_step_in_colour(screen):
     screen.header({"flow": "ticket", "step": "build", "ticket": 4}, "dev",
-                  [("pick", "done"), ("build", "current"), ("check", "next")])
+                  [("pick", "done"), ("build", "current"), ("check", "next")], "Agree the seams, then build")
 
     shown = re.sub(r"\x1b\[[0-9;]*m", "", output(screen))
     assert " dp  guide  ticket flow · #4 · build (dev)" in shown
-    assert "✓ pick ─ ● build ─ ○ check" in shown
+    assert "✓ pick ─ ● build ─ ○ check\n Agree the seams, then build\n" in shown
     assert output(screen).count("38;2;224;25;125") == 1  # pink, on the current step only
     assert "38;2;0;181;204" not in output(screen)  # no cyan outside the menu
 

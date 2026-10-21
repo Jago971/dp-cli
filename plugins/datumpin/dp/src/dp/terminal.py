@@ -77,7 +77,7 @@ class Terminal(guide.Plain):
     def outro(self, line):
         self.console.print(Text("└ ", style=MUTED) + log_line(line))
 
-    def header(self, position, env, rail):
+    def header(self, position, env, rail, does):
         line = Text.assemble((" dp ", f"bold #ffffff on {PINK}"), (" guide  ", MUTED))
         if not position:
             line.append("no position")
@@ -92,6 +92,8 @@ class Terminal(guide.Plain):
             steps = [Text(f"{MARKS[state]} {step}", style=f"bold {PINK}" if state == "current" else MUTED)
                      for step, state in rail]
             self.console.print(Text(" ").append(Text(" ─ ", style=MUTED).join(steps)))
+        if does:
+            self.console.print(f" {does}", markup=False)
         self.console.print()
 
     def job(self, prompt):

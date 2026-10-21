@@ -27,14 +27,14 @@ columns:
   Backlog: {step: pick}
   In Progress: {step: build, keep: [build, diagnose, check, commit, review, fix]}
   Review: {step: merge, keep: [fix, pr]}
-  Testing: {step: try}
+  Testing: {step: test}
   DoD: {flow: release, step: review}
   Done: {flow: session, step: board}
 
 flows:
   ticket:
-    does: One ticket from Backlog to merged and tried on prep
-    steps: [pick, shape, build, diagnose, check, commit, review, fix, pr, merge, try]
+    does: One ticket from Backlog to merged and tested on prep
+    steps: [pick, shape, build, diagnose, check, commit, review, fix, pr, merge, test]
   release:
     does: A milestone through its DoD gate to a tagged release
     steps: [gate, review, fix, release-pr, sign-off, tag, close]
@@ -43,7 +43,7 @@ flows:
     steps: [align]
   deploy:
     does: Bring a server up to its channel's images
-    steps: [deploy-prep, try]
+    steps: [deploy-prep, test]
   session:
     does: Start or end a working session
     steps: [board, handoff, retro]
@@ -109,14 +109,14 @@ steps:
     skill: human
     env: ci
     does: Merge the PR into prep once CI is green
-    next: [try, pick]
+    next: [test, pick]
     fork: {prep must pull first: deploy-prep}
-  try:
+  test:
     skill: human
     env: prep
-    does: Try the change on prep
+    does: Test the change by hand on prep
     next: [pick]
-    fork: {every ticket in the milestone is tried: gate, carry on: board}
+    fork: {every ticket in the milestone is tested: gate, carry on: board}
   gate:
     skill: definition-of-done
     env: prep
@@ -153,7 +153,7 @@ steps:
     skill: config-led-deployment
     env: prep
     does: Pull and restart the :prep images on prep (Hammond)
-    next: [try]
+    next: [test]
   handoff:
     skill: handoff
     env: dev

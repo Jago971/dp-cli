@@ -83,7 +83,7 @@ Each repo has one Gitea project titled `Board`. Its column is the single record 
 | Backlog | Scoped, ready to start |
 | In Progress | Being built; a branch exists |
 | Review | PR open |
-| Testing | Merged to `prep`, being tried on prep (Hammond) |
+| Testing | Merged to `prep`, being tested by hand on prep (Hammond) |
 | DoD | Feature DoD signed, ready for release |
 | Done | Closed: shipped on `main` in a tagged release, or no longer needed |
 
