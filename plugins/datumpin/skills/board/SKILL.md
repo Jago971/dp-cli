@@ -20,7 +20,9 @@ Gitea holds the board, the repo's project titled `Board`; this flow reads it, sh
 7. **Suggest.** Pick `board.suggest` tickets from Backlog, skipping any with a `STATUS` label. Order them, since a release ships one milestone at a time:
    1. a `CRITICAL` ticket, wherever it sits;
    2. the earliest open milestone's tickets, then the next milestone's, then tickets with none;
-   3. within each, by priority (none last), then the oldest. Give one reason each. With Backlog empty, suggest from Triage and say each needs shaping.
+   3. within each, by priority (none last), then the oldest.
+
+   Give one reason each. With Backlog empty, suggest from Triage and say each needs shaping.
 8. **Show.** Print the board view, including its `Milestones` line: per open milestone, closed tickets of its total (Gitea's counts) and how many sit in the DoD column (from the board), then write it to `.factory/board.md` with the sync time. If `.factory/` is not gitignored, add it to `Flags`.
 9. **Triage offer.** When `UNSORTED` or `Flags` is non-empty, offer to triage: propose a column, `TYPE`, `PRIORITY` and `COMPONENT` labels per ticket in one compact list, and apply the lines the user accepts.
 10. **Pick.** When the user picks a ticket: a Triage ticket goes to `shape #N`; a Backlog ticket moves to In Progress and is assigned to the user's Gitea account, after their OK.
