@@ -4,6 +4,14 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - v0.5.0 release review fixes (plugin 0.5.10)
+
+- `docker-image`: the entrypoint check always uses main's script (the DEVKIT branch never ran), with `--network none` and a 2-minute timeout; the smoke test gets a run label (`CI_RUN_LABEL`) and a final step removes what carries it (`ci/clean-run.sh`).
+- `gitea-workflows` and `smoke-example.sh`: the run label in the smoke-test contract.
+- `frontend.md`: Parent line; states the backend-name rule itself. `ci.yml` comment; `ci/tests/pytest.ini` in the testing-conventions shape; test README explains the flat layout.
+
+---
+
 ### [FIXED] 2026-10-21 - Image pushes leave the host's tags alone (plugin 0.5.9)
 
 - `docker-image` pushed by tagging on the runner's Docker, which is Hammond's, then removed every pushed tag, untagging the `:prep` images BDS and CURATOR run from. `ci/push-image.sh` now puts each tag back on the image it had (or removes one that was not there), and the cleanup removes only the job's local tag.

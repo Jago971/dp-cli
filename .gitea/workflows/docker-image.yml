@@ -130,13 +130,13 @@ jobs:
 
       - name: Check the entrypoint
         # A missing or non-executable ENTRYPOINT fails here, before the push,
-        # not when a host starts the image. DEVKIT checks itself with the PR's
-        # own script, so a change to it is tested on the PR that makes it.
-        # Like versions.py, the script comes from main: a DEVKIT branch tried
-        # from a consumer branch before release finds none and skips, saying so.
+        # not when a host starts the image. The script comes from main, as
+        # versions.py does: a DEVKIT branch tried from a consumer branch before
+        # release finds none and skips, saying so.
+        timeout-minutes: 2
         env:
           LOCAL: ${{ steps.tags.outputs.local }}
-          SCRIPT: ${{ github.repository == 'Datumpin/DEVKIT' && 'ci/check-entrypoint.sh' || '.devkit/ci/check-entrypoint.sh' }}
+          SCRIPT: .devkit/ci/check-entrypoint.sh
         run: |
           if [ ! -f "$SCRIPT" ]; then
             echo "SKIP  $SCRIPT is not on DEVKIT main yet; entrypoint not checked"
@@ -150,7 +150,21 @@ jobs:
         env:
           LOCAL: ${{ steps.tags.outputs.local }}
           SMOKE_TEST: ${{ inputs.smoke-test }}
+          CI_RUN_LABEL: ${{ github.run_id }}-${{ inputs.image }}
         run: bash "$SMOKE_TEST" "$LOCAL"
+
+      - name: Remove what the smoke test left
+        # A step killed by its timeout never runs its own cleanup.
+        if: ${{ always() && inputs.smoke-test != '' }}
+        env:
+          CI_RUN_LABEL: ${{ github.run_id }}-${{ inputs.image }}
+        run: |
+          SCRIPT=.devkit/ci/clean-run.sh
+          if [ ! -f "$SCRIPT" ]; then
+            echo "SKIP  $SCRIPT is not on DEVKIT main yet; nothing removed"
+            exit 0
+          fi
+          bash "$SCRIPT" "$CI_RUN_LABEL" || echo "WARN  cleanup failed; check the runner for containers labelled datumpin.ci-run=$CI_RUN_LABEL"
 
       - name: Install trivy
         run: |
