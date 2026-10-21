@@ -17,7 +17,7 @@ A server deployment that runs next to an older live one adds +1000 to each host 
 
 ## Host access
 
-A host reaches Gitea with its own SSH key, added as a **read-only deploy key** on each repo it deploys. Never put a host's key on a person's or the bot account: it breaks when that account's access changes, and it grants more than the host needs. Production hosts pull release images with a package-read token instead of source. The hosts, what each deploys, and the commands to add one are in WIKI `systems_networking/Hosts/README.md`.
+A host reaches Gitea with its own SSH key, added as a **read-only deploy key** on each repo it deploys. Never put a host's key on a person's or the bot account: it breaks when that account's access changes, and it grants more than the host needs. Production hosts pull release images with a package-read token instead of source. Images publish by channel (`:prep` from `prep`, `:X.Y.Z` from a release tag; `gitea-workflows`, Images), so a host deploys with `docker compose pull && docker compose up -d`: compose files and `instances/` come from its read-only clone, env files stay on the host, and nothing is built on the server. The hosts, what each deploys, and the commands to add one are in WIKI `systems_networking/Hosts/README.md`.
 
 ## Done when
 

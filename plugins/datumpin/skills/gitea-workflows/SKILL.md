@@ -9,7 +9,21 @@ Package monorepo publishing (PACKAGES): [package-publishing.md](package-publishi
 
 ## Workflows
 
-`.gitea/workflows/` uses the GitHub-Actions-compatible dialect through a Gitea Actions runner. One folder per concern, each with a `README.md` (`test_suite/`, `dependency_tracking/`, `keyword_scanning/`). Pin action versions (`actions/checkout@v4`).
+`.gitea/workflows/` uses the GitHub-Actions-compatible dialect through a Gitea Actions runner (DEVKIT `docs/runner.md`). Every repo runs DEVKIT's shared workflows, called `@main` with `secrets: inherit`, from three short files:
+
+| File | Trigger | Calls |
+|---|---|---|
+| `ci.yml` | `pull_request` | `python-tests` or `node-tests` per service, `compose-check`, `security-scan` (gitleaks, osv-scanner, `versions`), `conformance` |
+| `board.yml` | PR opened, reopened, closed; issue closed, reopened | `board-sync` |
+| `image.yml` | push to `prep`, `v*` tags | `docker-image`, once per app |
+
+A repo keeps a workflow of its own only for what no shared one does (PACKAGES' `test_suite/test.yml` tests only the packages a PR touches). Credentials are org secrets (`PKG_USER`, `PKG_READ_TOKEN`, `PKG_WRITE_TOKEN`, `BOARD_TOKEN`) and variables (`PKG_REGISTRY_HOST`, `PKG_REGISTRY_OWNER`); the read token installs, only image and package publishing use the write token. Pin action versions (`actions/checkout@v4`) and tool binaries (version plus SHA-256).
+
+A change to a shared workflow is tested on its DEVKIT PR, or from a consumer branch that points at the DEVKIT branch, then released (`prep` → `main`); a consumer never pins a branch, and `conformance` fails one that does. Merge the feature PRs into DEVKIT `prep` before opening the release PR.
+
+## Images
+
+`docker-image` builds one image per app, never per instance (`config-led-deployment`), passes the build secrets `gitea_user`, `gitea_token`, `gitea_host` and `gitea_package_owner` to BuildKit, and scans with trivy: a fixable CRITICAL fails the job, HIGH ones are listed. Images follow the package channels: a push to `prep` publishes `:prep` and `:prep-<sha>`, a `vX.Y.Z` tag on `main` publishes `:X.Y.Z`. The account behind `PKG_WRITE_TOKEN` needs write on the org's packages.
 
 ## Test suite job
 
@@ -17,8 +31,8 @@ Package monorepo publishing (PACKAGES): [package-publishing.md](package-publishi
 - One parallel job per service or component.
 - Run `python -m pytest -m "unit or integration"`. Contract tests need a live dependent service and stay out of CI.
 - Where compose files are generated, a separate job runs `python scripts/compose.py --check`, so a stale generated file fails the PR (see `config-led-deployment`).
-- State interim CI limits in the workflow README, such as "reports pass/fail but does not block merging yet" or "secret X must exist before this step passes".
-- Homegrown checks (outdated-dependency checker, keyword scanner) carry a README with scope and comments following `code-comments-and-docstrings`.
+- `node-tests` installs npm 11.20.0 (Node 20's npm 10 crashes on the `@datumpin` peer dependencies) and runs the production build when there is one.
+- Each shared workflow opens with a header comment: what it does, why, and how a repo calls it (`code-comments-and-docstrings`).
 
 ## Branches and PRs
 

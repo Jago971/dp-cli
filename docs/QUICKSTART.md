@@ -36,8 +36,9 @@ flowchart LR
 ```
 
 - `plugins/datumpin/`: the plugin ([README](../plugins/datumpin/README.md)); `skills/` holds every skill and flow.
-- `.gitea/workflows/`: `python-tests`, `node-tests`, `compose-check`, `security-scan`, `conformance`, and DEVKIT's own `ci.yml`.
-- `ci/conformance.py`: the mechanical rules `conformance` checks.
+- `.gitea/workflows/`: what repos call from `ci.yml` (`python-tests`, `node-tests`, `compose-check`, `security-scan`, `conformance`), `board.yml` (`board-sync`) and `image.yml` (`docker-image`); PACKAGES' publish jobs call `publish-python` and `publish-npm`. DEVKIT's own `ci.yml` and `board.yml` call them from the checkout.
+- `ci/master/`: the approved dependency versions every repo's pins must match (the `versions` job); a version changes here first, through a reviewed PR.
+- `ci/`: the scripts the shared workflows fetch from `main`: `conformance.py`, `versions.py`, `board_sync.py`, `release-channel.sh`.
 
 ## How to deploy
 
@@ -57,6 +58,7 @@ flowchart LR
 - **Found a plugin or CI improvement elsewhere:** a DEVKIT ticket in Triage.
 - **Bring a repo into the workflow:** the plugin README's onboarding list.
 - **Upgrade the runner:** [runner.md](runner.md).
+- **Change an approved version:** edit `ci/master/`, open a DEVKIT PR, then bring the repos to it.
 
 ## Where to go deeper
 
@@ -74,6 +76,8 @@ flowchart LR
 
 - **`/datumpin:...` is missing:** run the two update commands in How to deploy, then start a new session.
 - **No status line:** `python` and `tea` must be on the PATH, and Gitea reachable.
-- **A CI call to `@main` fails with "object does not exist":** the workflow is not released to DEVKIT `main` yet.
+- **A CI call to `@main` fails with "object does not exist", or a script "No such file":** the workflow or script is not released to DEVKIT `main` yet.
+- **`versions` fails:** a listed package is pinned off its master version; the log names it.
+- **An image push answers 401:** the account behind `PKG_WRITE_TOKEN` lacks packages write on the org.
 - **`conformance` fails:** its log names the rule; the skill it cites says how to fix it.
 - Then: [CLAUDE.md](../CLAUDE.md), the skills, and the DEVKIT Board.

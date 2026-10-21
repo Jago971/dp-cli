@@ -10,7 +10,7 @@ Datumpin's fleet engineering tooling, shared by BDS, AHJ, CURATOR and PACKAGES.
 | [ci/](ci/conformance.py) | The conformance check the shared `conformance` workflow runs |
 | [docs/runner.md](docs/runner.md) | The Actions runner on Hammond: start, upgrade, roll back, and the Docker settings CI needs |
 
-The shared CI workflows the repos call are in `.gitea/workflows/`. New here: [docs/QUICKSTART.md](docs/QUICKSTART.md).
+The shared CI workflows the repos call are in `.gitea/workflows/`: tests, the security scan (with the version lock against `ci/master/`), conformance, board sync, image builds and package publishing. New here: [docs/QUICKSTART.md](docs/QUICKSTART.md).
 
 ## Branches and releases
 
