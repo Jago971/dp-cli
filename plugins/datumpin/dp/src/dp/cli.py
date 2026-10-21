@@ -41,6 +41,11 @@ def git(*args):
     return result.stdout.strip()
 
 
+def at_terminal():
+    # Both ends: on Windows a null stdin (NUL) passes isatty().
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
 def repo_root():
     """The top of the git repo in the working directory."""
     return Path(git("rev-parse", "--show-toplevel"))
@@ -128,11 +133,16 @@ def move(number: int, column: str,
 
 @app.command()
 @reports_errors
-def pick(number: int,
+def pick(number: int = typer.Argument(None, help="The ticket; at a terminal, without it, a Backlog menu."),
          branch: str = typer.Option(None, help="The branch; by default <type>/<N>-<slug> from the ticket."),
          as_json: bool = JSON):
     """Take ticket NUMBER in: In Progress and assigned to you, in a milestone, on its branch from prep."""
     gitea = connect()
+    if number is None:
+        if as_json or not at_terminal():
+            raise GiteaError("give a ticket number off a terminal: dp pick N")
+        guide.pick(Terminal(), gitea, git)
+        return
     ticket = commands.issue(gitea.call, gitea.repo, number)
     taken = guide.take(gitea, git, ticket, branch or guide.branch_name(ticket))
     emit(taken, as_json, lambda t: say(*guide.taken_lines(t)))
@@ -171,8 +181,7 @@ def guide_command(as_json: bool = JSON):
         gitea = connect()
     except GiteaError as error:
         gitea = guide.offline(error)
-    # Both ends: on Windows a null stdin (NUL) passes isatty().
-    if as_json or not (sys.stdin.isatty() and sys.stdout.isatty()):
+    if as_json or not at_terminal():
         emit(guide.show(root, gitea), as_json, lambda shown: say(guide.guide_prompt(shown)))
         return
     try:

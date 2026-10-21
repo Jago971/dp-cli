@@ -25,7 +25,7 @@ Gitea holds the board, the repo's project titled `Board`; this flow reads it, sh
    Give one reason each. With Backlog empty, suggest from Triage and say each needs shaping.
 8. **Show.** Print the board view, including its `Milestones` line: per open milestone, closed tickets of its total (Gitea's counts) and how many sit in the DoD column (from the board), then write it to `.factory/board.md` with the sync time. If `.factory/` is not gitignored, add it to `Flags`.
 9. **Triage offer.** When `UNSORTED` or `Flags` is non-empty, offer to triage: propose a column, `TYPE`, `PRIORITY` and `COMPONENT` labels per ticket in one compact list, and apply the lines the user accepts.
-10. **Pick.** When the user picks a ticket: a Triage ticket goes to `shape #N`; after their OK, a Backlog ticket is taken in with `dp pick N` (`gitea`): In Progress and assigned to the user, into the open milestone due first when it has none, on its branch from `prep`.
+10. **Pick.** When the user picks a ticket: a Triage ticket goes to `shape #N`; after their OK, a Backlog ticket is taken in with `dp pick N` (`gitea`).
 
 ## Done when
 

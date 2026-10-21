@@ -35,7 +35,7 @@ updated: 2026-10-21T16:40:00
    - `agent`: do the step directly, in its `formats` shape.
    - `human`: print what the person does, and wait for them to say it is done.
 
-   After `shape`, ask which of its tickets to pick. Offer `tag` only once the release PR is merged on `main` (`gitea`); a state file alone never reaches it. Leaving `test`, ask `Tested OK?`: on yes, post `Tested by hand, <YYYY-MM-DD>. Done: <where and what>. → #N` with `dp pointer`; on no, stay at `test`.
+   After `shape`, ask which of its tickets to pick. Offer `tag` only once the release PR is merged on `main` (`gitea`); a state file alone never reaches it. Leaving `test`, ask `Tested OK?`: on yes, post a Tested Pointer (`formats`, Comment) with `dp pointer`; on no, stay at `test`.
 4. **Record.** Write the new position to the state file, with `paused_ticket` and `paused_step` when the choice left the ticket flow (cleared on coming back to it), then go back to step 1. On `stop`, write the state and end with one log line naming where to resume.
 
 ## Done when

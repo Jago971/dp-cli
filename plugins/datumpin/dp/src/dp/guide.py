@@ -35,7 +35,8 @@ DISPOSITIONS = {"Fix": "fixed in the fix step", "Dismiss": "with a reason",
                 "Escalate": "to someone", "Defer": "to a new Triage ticket"}
 TESTED = "Tested by hand"  # the Event of the Pointer leaving `test` posts; milestone_tested looks for it
 BEFORE_TESTING = ("Triage", "Backlog", "In Progress", "Review")
-SEPARATOR = ("─" * 11, "separator")
+SEPARATOR_VALUE = "separator"
+SEPARATOR = ("─" * 11, SEPARATOR_VALUE)
 FLOWS = (f"{'flows…':<11} Start or switch to any flow", "flows")
 
 
@@ -89,7 +90,7 @@ def offline(error):
     return SimpleNamespace(call=fail, repo=None, human=fail)
 
 
-def number(value):
+def as_int(value):
     return value if type(value) is int else None
 
 
@@ -102,8 +103,8 @@ def read_state(root):
     state = yaml.safe_load(path.read_text(encoding="utf-8")) if path.is_file() else None
     if not isinstance(state, dict):
         return None
-    paused = number(state.get("paused_ticket"))
-    return {"flow": state.get("flow"), "step": state.get("step"), "ticket": number(state.get("ticket")),
+    paused = as_int(state.get("paused_ticket"))
+    return {"flow": state.get("flow"), "step": state.get("step"), "ticket": as_int(state.get("ticket")),
             "paused": paused and {"flow": "ticket", "step": state.get("paused_step"), "ticket": paused}}
 
 
@@ -123,10 +124,10 @@ def ref(flow, ticket):
     return f"[{flow} #{ticket}]" if ticket else f"[{flow}]"
 
 
-def column_of(gitea, number_):
+def column_of(gitea, ticket):
     """The Board column ticket N sits in, or None when it is off the Board."""
     tickets = commands.column_tickets(gitea.call, gitea.repo)
-    return next((title for title, listed in tickets.items() if any(t["number"] == number_ for t in listed)), None)
+    return next((title for title, listed in tickets.items() if any(t["number"] == ticket for t in listed)), None)
 
 
 def locate(flow_map, state, gitea, prompts):
@@ -209,9 +210,12 @@ def label(choice, position):
 
 
 def menu(offered, position):
-    """The options: this flow's steps; inside a flow, a separator, the forks and `flows…`; then stop."""
+    """The options: this flow's steps; inside a flow, a separator, the forks and `flows…`; then stop.
+
+    At the end of a flow the choices are the flows already, so there is no `flows…`.
+    """
     options = [(label(c, position), c) for c in offered if c["kind"] != "fork"]
-    if position:
+    if position and offered[0]["kind"] != "flow":
         options += [SEPARATOR, *((label(c, position), c) for c in offered if c["kind"] == "fork"), FLOWS]
     return options + [("stop", None)]
 
@@ -220,7 +224,7 @@ def guide_prompt(shown):
     """The Guide prompt as text, for a session or a pipe."""
     lines, count = [*shown["notes"], header(shown["position"], shown["env"])], 0
     for text, value in menu(shown["choices"], shown["position"]):
-        if value == "separator":
+        if value == SEPARATOR_VALUE:
             lines.append(f"   {text}")
         else:
             count += 1
@@ -245,7 +249,6 @@ def take(gitea, git, ticket, branch):
 
 
 def taken_lines(taken):
-    """Log lines for a pick."""
     at = f"[ticket #{taken['number']}]"
     return [f"{at} {taken['from'] or 'off the Board'} → In Progress · assigned {taken['assigned']}",
             *([f"{at} joined {taken['milestone']}"] if taken["joined"] else []),
@@ -355,7 +358,7 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
         if step == "tag" and not prompts.confirm("Is the release PR merged on main?"):
             return None
         if step != "review":
-            adjudicate(root, flow, ticket, prompts)
+            adjudicate(root, flow, ticket, prompts)  # findings a resumed walk passed by undecided
         work = job(flow_map, flow, step, ticket, gitea, git, prompts)
         path = brief.write(root, work)
         model = brief.skill_header(skill)
@@ -364,10 +367,25 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
 
 
 def choose_flow(flow_map, paused, prompts):
-    """The flows menu: resume a paused ticket, or start a flow; `resume`, a flow's first step, or None for back."""
     resume = [(f"{'resume':<11} #{paused['ticket']} at {paused['step']}", "resume")] if paused else []
     return prompts.choose("Flow?", resume + [(label(c, None), c) for c in flows.flow_starts(flow_map)]
                           + [("back", None)])
+
+
+def may_leave(position, here, prompts, gitea):
+    """Leaving a step: `test` needs its Tested Pointer first; False to stay."""
+    if position and position["step"] == "test" and position["ticket"]:
+        return leave_test(position, prompts, gitea, here["env"])
+    return True
+
+
+def still_paused(position, reached, paused):
+    """The paused ticket flow after a step: set on leaving the ticket flow, cleared on coming back to it."""
+    if reached["flow"] == "ticket":
+        return None
+    if position and position["flow"] == "ticket" and position["ticket"]:
+        return position
+    return paused
 
 
 def walk(root, prompts, gitea, git):
@@ -392,19 +410,13 @@ def walk(root, prompts, gitea, git):
             choice = choose_flow(flow_map, paused, prompts)
             if choice == "resume":
                 position, paused = locate(flow_map, paused, gitea, prompts), None
+            if not isinstance(choice, dict):
                 continue
-            if choice is None:
-                continue
-        if position and position["step"] == "test" and position["ticket"] \
-                and not leave_test(position, prompts, gitea, here["env"]):
+        if not may_leave(position, here, prompts, gitea):
             continue
         reached = run(root, flow_map, position, choice, prompts, gitea, git)
         if reached:
-            if reached["flow"] == "ticket":
-                paused = None
-            elif position and position["flow"] == "ticket" and position["ticket"]:
-                paused = position
-            position = reached
+            position, paused = reached, still_paused(position, reached, paused)
             write_state(root, position, paused)
     if position:
         write_state(root, position, paused)

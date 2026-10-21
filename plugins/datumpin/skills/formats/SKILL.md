@@ -231,7 +231,10 @@ Verdicts: `Covered`, `Carried forward`, `Obsolete`, `Duplicate`, `Done`.
 
 ```
 Backlog reset, 2026-10-20. Carried forward: datetime and timezone convention. → #78
+Tested by hand, 2026-10-22. Done: laptop, containers end -dev. → #107
 ```
+
+A Tested Pointer (Event `Tested by hand`) records a hand test when the ticket leaves `test`; `gate` waits for one on every other ticket in the milestone.
 
 **Scope**: the result of refining a ticket. The ticket sections, then the open questions:
 

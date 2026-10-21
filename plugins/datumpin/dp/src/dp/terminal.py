@@ -107,15 +107,17 @@ class Terminal(guide.Plain):
         self.console.print()
 
     def job(self, prompt, model, effort):
-        on = " · ".join(filter(None, [model, effort])) or "the session's model"
+        model_label = " · ".join(filter(None, [model, effort]))
         command = claude_command(prompt, model, effort)
         if command:
-            self.console.print(Text.assemble(("◆ ", f"bold {PINK}"), ("Claude", "bold"), (f" · {on}", MUTED),
+            self.console.print(Text.assemble(("◆ ", f"bold {PINK}"), ("Claude", "bold"),
+                                             (f" · {model_label or 'the session model'}", MUTED),
                                              (" · exit to come back", MUTED)))
             subprocess.run(command)
             return
         copied = copy(prompt)
-        hint = f"use {on} first" + (" · copied to the clipboard" if copied else "")
+        hint = (f"use {model_label} first" if model_label else "runs on the session's model") \
+            + (" · copied to the clipboard" if copied else "")
         self.console.print(Panel(Text(prompt, style="bold"), box=box.ROUNDED, border_style=PINK, expand=False,
                                  title="paste into a session", title_align="left",
                                  subtitle=Text(hint, style=MUTED), subtitle_align="right"))
@@ -130,7 +132,7 @@ class Terminal(guide.Plain):
 
     def choose(self, message, options, default=None):
         # Plain titles, so questionary marks the cursor's row in cyan.
-        rows = [questionary.Separator(f"  {label}") if value == guide.SEPARATOR[1]
+        rows = [questionary.Separator(f"  {label}") if value == guide.SEPARATOR_VALUE
                 else questionary.Choice(label, value=n) for n, (label, value) in enumerate(options)]
         preselected = next((row for row, (_, value) in zip(rows, options)
                             if default is not None and value is default), None)

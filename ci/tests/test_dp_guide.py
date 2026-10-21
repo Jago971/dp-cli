@@ -309,3 +309,14 @@ def test_an_agent_step_hands_claude_the_skills_model_and_effort(tmp_path, gitea)
     walk(tmp_path, script, gitea)
 
     assert handed == [("Step shape of #4: read .factory/jobs/4/shape.md and do it.", "opus", "high")]
+
+
+@pytest.mark.unit
+def test_the_end_of_a_flow_lists_the_flows_once(tmp_path):
+    guide.write_state(tmp_path, {"flow": "session", "step": "retro", "ticket": None})
+    script = Script("stop")
+
+    walk(tmp_path, script, None)
+
+    labels = [label.split()[0] for label in script.menus[0][0]]
+    assert labels == ["ticket", "release", "align", "deploy", "session", "stop"]

@@ -1,6 +1,6 @@
 # ci/tests/
 
-**Scope:** tests for the CI scripts in `ci/` and the plugin's `dp` package in `plugins/datumpin/dp/` (installed by `requirements.txt`), run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 107 tests: 98 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
+**Scope:** tests for the CI scripts in `ci/` and the plugin's `dp` package in `plugins/datumpin/dp/` (installed by `requirements.txt`), run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 109 tests: 100 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
 **Status:** current
 **Last reviewed:** 2026-10-21
 **Governed by:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)
