@@ -16,7 +16,7 @@ Turns loose intent into tickets an agent can build from, through a short intervi
 3. **Interview.** Map the decisions as a design tree, the way `grilling` does, but ask one shaping question per turn, each with your recommendation. The tree is settled when these are known: what changes and for whom, acceptance, out of scope, priority, stage (`PROT` or `PREP`), and milestone.
 4. **Draft.** Write each ticket in the ticket-body format. Split so each ticket is one PR: small and mergeable alone. Labels: one `TYPE`, one `PRIORITY`, one `STAGE`, `ORIGIN/AGENT`, and the `COMPONENT` of each folder the ticket touches (the repo's `components` config). Column: Backlog, or Triage while a question stays open. At release level, draft the milestone too, in the milestone shape; the version is the next minor after the highest existing one unless the user names it.
 5. **Review.** Show the draft list. Apply each edit or drop, and show it again, until the user says yes.
-6. **Push.** As the agent login: the milestone first, then each issue in order, each placed in its board column, one log line each. If Gitea is unreachable, save each draft to `.factory/outbox/<slug>.md`, print a `FAILED` log line, and stop; `board` pushes the outbox later. An outbox file is:
+6. **Push.** As the agent login: the milestone first, then each issue in order, each placed in its board column, one log line each. board-sync may have put a new issue in Triage first; then move it rather than add it. If Gitea is unreachable, save each draft to `.factory/outbox/<slug>.md`, print a `FAILED` log line, and stop; `board` pushes the outbox later. An outbox file is:
 
    ```
    title: <title>
