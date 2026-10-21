@@ -51,6 +51,7 @@ repo once it installs the plugin and drops its copy.
 | [definition-of-done](definition-of-done/SKILL.md) | Finishing a change: the checklist a change passes before it is called done or opened as a PR, and how it relates to the promotion worksheet |
 | [change-review](change-review/SKILL.md) | Reviewing a diff on two separate axes (Standards, Spec) with parallel subagents and human adjudication |
 | [skills-router](skills-router/SKILL.md) | User-invoked: which skill fits my situation, and the usual order of work |
+| [guide](guide/SKILL.md) | `/datumpin:guide`: walk a flow from the flow map (`flows.yaml`) one step at a time: ticket, release, align, deploy, session |
 | [board](board/SKILL.md) | `/datumpin:board`: sync the repo's Gitea tickets, show the kanban, suggest the next ticket |
 | [shape](shape/SKILL.md) | `/datumpin:shape`: turn an idea or vague ticket into scoped Gitea tickets, or a milestone |
 | [align](align/SKILL.md) | `/datumpin:align`: find drift between code, tickets and plans, then fix it (Reset when a repo joins, Review later) |
