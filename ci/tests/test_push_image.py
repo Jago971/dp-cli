@@ -70,7 +70,9 @@ def served_manifest(registry_name, repo, tag):
 
 
 def push(local, *tags):
-    subprocess.run(["bash", SCRIPT, local, *tags], check=True, capture_output=True, text=True)
+    result = subprocess.run(["bash", SCRIPT, local, *tags], capture_output=True, text=True)
+    print(result.stdout, result.stderr)  # shown when a test fails
+    assert result.returncode == 0
 
 
 def test_push_tag_the_host_runs_from_keeps_it_on_its_image(registry, build):
