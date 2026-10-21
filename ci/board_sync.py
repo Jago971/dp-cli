@@ -6,6 +6,7 @@ anyone dragging cards:
 
     pull request opened or reopened -> each ticket it names: Review
     pull request merged into prep   -> each ticket it names: Testing
+    issue opened                    -> Triage, when not on the Board yet
     issue closed                    -> Done
     issue reopened                  -> Backlog
 
@@ -108,9 +109,11 @@ def main():
         for number in tickets_named(pull):
             move(repo, number, target, forward_only=True)
     elif "issue" in event and not event["issue"].get("pull_request"):
-        target = {"closed": "Done", "reopened": "Backlog"}.get(action)
+        # forward_only on opened: shape may already have placed the ticket further on
+        target, forward_only = {"opened": ("Triage", True), "closed": ("Done", False),
+                                "reopened": ("Backlog", False)}.get(action, (None, False))
         if target:
-            move(repo, event["issue"]["number"], target, forward_only=False)
+            move(repo, event["issue"]["number"], target, forward_only)
     else:
         print("SKIP  not a pull request or issue event")
 

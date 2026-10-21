@@ -1,14 +1,15 @@
 name: Board sync
 # Moves tickets across the repo's Board as their pull requests progress
-# (ci/board_sync.py has the rules): opened -> Review, merged to prep ->
-# Testing, issue closed -> Done, reopened -> Backlog. A repo calls it from
-# .gitea/workflows/board.yml, on the events ci.yml does not receive:
+# (ci/board_sync.py has the rules): PR opened -> Review, merged to prep ->
+# Testing; issue opened -> Triage (when off the Board), closed -> Done,
+# reopened -> Backlog. A repo calls it from .gitea/workflows/board.yml, on
+# the events ci.yml does not receive:
 #
 #   on:
 #     pull_request:
 #       types: [opened, reopened, ready_for_review, closed]
 #     issues:
-#       types: [closed, reopened]
+#       types: [opened, closed, reopened]
 #   jobs:
 #     board:
 #       uses: Datumpin/DEVKIT/.gitea/workflows/board-sync.yml@main

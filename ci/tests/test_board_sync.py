@@ -1,4 +1,5 @@
-"""Tests for ci/board_sync.py at its tickets_named() and move() seams; move() runs against an in-memory Gitea."""
+"""Tests for ci/board_sync.py at its main(), tickets_named() and move() seams; main() and move() run against an in-memory Gitea."""
+import json
 import os
 import sys
 
@@ -17,6 +18,14 @@ def use(monkeypatch, fake):
 @pytest.fixture
 def gitea(monkeypatch):
     return use(monkeypatch, FakeGitea())
+
+
+def run_event(monkeypatch, tmp_path, event):
+    path = tmp_path / "event.json"
+    path.write_text(json.dumps(event), encoding="utf-8")
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(path))
+    monkeypatch.setenv("REPOSITORY", "Org/Repo")
+    board_sync.main()
 
 
 @pytest.mark.unit
@@ -76,3 +85,21 @@ def test_tickets_named_takes_refs_and_branch_not_see():
             "body": "## Refs\nRefs #1 · Other/Repo#4\nSee #2\n"}
 
     assert board_sync.tickets_named(pull) == [1, 3]
+
+
+@pytest.mark.unit
+def test_issue_opened_off_the_board_lands_in_triage(gitea, monkeypatch, tmp_path):
+    run_event(monkeypatch, tmp_path, {"action": "opened", "issue": {"number": 7}})
+
+    assert gitea.column_of(7) == "Triage"
+    assert gitea.writes == [("add", 7)]
+
+
+@pytest.mark.unit
+def test_issue_opened_already_on_the_board_keeps_its_column(gitea, monkeypatch, tmp_path):
+    gitea.put("Backlog", 7)
+
+    run_event(monkeypatch, tmp_path, {"action": "opened", "issue": {"number": 7}})
+
+    assert gitea.column_of(7) == "Backlog"
+    assert gitea.writes == []
