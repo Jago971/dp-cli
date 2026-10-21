@@ -1,6 +1,6 @@
 # ci/tests/
 
-**Scope:** tests for the CI scripts in `ci/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 23 tests: 14 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
+**Scope:** tests for the CI scripts in `ci/` and the plugin's scripts in `plugins/datumpin/bin/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 25 tests: 16 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
 **Status:** current
 **Last reviewed:** 2026-10-21
 **Governed by:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)
@@ -19,6 +19,8 @@
 
 `test_clean_run.py` checks `clean-run.sh` removes only what carries a run label, and that the example labels what it starts.
 
+`test_token_report.py` feeds `report()` a few session-log lines and checks which step each turn is booked to: the next `.factory/guide.yaml` write, or the last Skill call when there is none.
+
 The tests sit flat in `ci/tests/`, one file per script, rather than in `unit/` and `integration/` folders: there are few, and each file holds one tier (its markers say which).
 
 ## Running locally
@@ -27,7 +29,7 @@ The tests sit flat in `ci/tests/`, one file per script, rather than in `unit/` a
 
 ```
 docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v /var/run/docker.sock:/var/run/docker.sock \
-  -v "$PWD/ci:/w/ci" -w /w/ci/tests python:3.11-alpine sh -c \
+  -v "$PWD/ci:/w/ci" -v "$PWD/plugins:/w/plugins:ro" -w /w/ci/tests python:3.11-alpine sh -c \
   'apk add -q bash docker-cli && pip install -q -r requirements.txt && python -m pytest -q -p no:cacheprovider -m "unit or integration"'
 ```
 
