@@ -16,7 +16,8 @@ jobs:
     uses: ./.gitea/workflows/security-scan.yml
 
   scripts:
-    # Tests for the CI scripts in ci/ (board_sync.py), as every repo's tests run.
+    # Tests for the CI scripts in ci/ and the smoke-test example, as every
+    # repo's tests run.
     uses: ./.gitea/workflows/python-tests.yml
     with:
       working-directory: ci/tests

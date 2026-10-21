@@ -1,6 +1,6 @@
 # ci/tests/
 
-**Scope:** tests for the CI scripts in `ci/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 12 tests: 5 `unit`, 7 `integration` (need a Docker daemon; skipped without one).
+**Scope:** tests for the CI scripts in `ci/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 14 tests: 5 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
 **Status:** current
 **Last reviewed:** 2026-10-21
 **Governed by:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)
@@ -14,6 +14,10 @@
 `smoke-example.sh` is the smoke-test contract's example (`gitea-workflows`, Images); `test_smoke_contract.py` runs it against a working and a broken image; in CI it runs from a job container beside the Docker daemon, as `docker-image`'s step does. `conftest.py` holds `docker_works()`, which the integration tests skip on.
 
 `test_push_image.py` pushes through `push-image.sh` to a throwaway `registry:2` and checks the host's tags afterwards.
+
+`test_clean_run.py` checks `clean-run.sh` removes only what carries a run label, and that the example labels what it starts.
+
+The tests sit flat in `ci/tests/`, one file per script, rather than in `unit/` and `integration/` folders: there are few, and each file holds one tier (its markers say which).
 
 ## Bugs caught
 

@@ -19,7 +19,7 @@ if [[ "$ENTRY" != /* ]]; then
 fi
 
 set +e
-ERROR=$(docker run --rm --entrypoint test "$IMAGE" -x "$ENTRY" 2>&1 >/dev/null)
+ERROR=$(docker run --rm --network none --entrypoint test "$IMAGE" -x "$ENTRY" 2>&1 >/dev/null)
 CODE=$?
 set -e
 
