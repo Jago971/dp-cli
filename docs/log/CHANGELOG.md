@@ -4,6 +4,13 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - Three environments in the compose and config skills (plugin 0.7.4)
+
+- `docker-compose-conventions` Environments: dev builds `:dev` images with `-dev` containers; prep and prod pull `${IMAGE_REGISTRY}/<app>-<service>:${IMAGE_TAG}` with `-${CHANNEL}` containers and never build (#95).
+- `config-led-deployment` rollout names the env file's `IMAGE_REGISTRY`, `IMAGE_TAG` and `CHANNEL`. BDS, AHJ and CURATOR rename their dev containers and images from `-prep` to `-dev` (BDS#107, AHJ#171, CURATOR#37).
+
+---
+
 ### [CHANGED] 2026-10-21 - Windows dev machines: plain Docker Desktop, LF everywhere (plugin 0.7.3)
 
 - Decision: plain Docker Desktop with checkouts on the Windows drive for now; the move into WSL2 is #110 (#94).

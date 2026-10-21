@@ -14,9 +14,14 @@ Branches that load a sibling file:
 - A dev machine whose Docker cannot reach the private registry: [local-packages.md](local-packages.md).
 - A Windows dev machine (line endings, Git Bash paths, bind mounts): [windows.md](windows.md).
 
-## Two environments
+## Environments
 
-Which host runs which environment: `gitea-workflows`, Environments. Each environment has its own Dockerfile and compose file: `Dockerfile` + `docker-compose.yml` (prep and prod), `Dockerfile.dev` + `docker-compose.dev.yml` (dev). Distinct `container_name` and image tags (`-prod` against `-prep`/`-dev`) keep them apart. Run one environment per host, because their ports collide.
+Which files, tags and env file each environment uses is in `gitea-workflows`, Environments. What the compose files add:
+
+- **dev** builds on the laptop: its images are tagged `:dev` and its container names end `-dev`, so a local image is never mistaken for the registry's `:prep`.
+- **prep and prod** share `docker-compose.yml`. It pulls `${IMAGE_REGISTRY}/<app>-<service>:${IMAGE_TAG}`, ends container names with `-${CHANNEL}`, and the host's env file sets all three. A server runs `docker compose pull` and `up -d`; only CI builds `Dockerfile`. A `.env.<app>-<instance>.prod` appears only when prod shares a host with prep.
+
+Run one environment per host, because their ports collide; `config-led-deployment` shifts the ports where two must share one.
 
 Where a repo has several instances, `scripts/compose.py` generates the compose files from the instance folders, and each instance starts with its own env file through `--env-file` (see `config-led-deployment`).
 
