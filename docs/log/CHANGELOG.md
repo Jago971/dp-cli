@@ -6,7 +6,7 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ### [DOCS] 2026-10-21 - SBOMs for nginx frontends (plugin 0.5.8)
 
-- `docker-compose-conventions`: every image carries `/sbom.json`; backends and dev frontends also write a dated copy into `./sboms` at boot; a prod nginx frontend (non-root) keeps it in the image, mounts no `./sboms`, and is read with `docker cp`; Dependency-Track receives every image's SBOM once configured.
+- `docker-compose-conventions` (SBOM) and `frontend.md`: every image carries `/sbom.json`; backends and dev frontends also write a dated SBOM into `./sboms` at boot; a prod nginx frontend (non-root) keeps it in the image, mounts no `./sboms`, and is read with `docker cp`. What CI sends to Dependency-Track stays in `gitea-workflows`.
 
 ---
 

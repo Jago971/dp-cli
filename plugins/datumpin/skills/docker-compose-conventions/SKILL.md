@@ -75,11 +75,11 @@ Start Dockerfiles with `# syntax=docker/dockerfile:1`. Build-time credentials us
 
 ## SBOM
 
-Every image carries its software bill of materials at `/sbom.json`, built in the image: `cyclonedx-py` for Python, `@cyclonedx/cyclonedx-npm` in a frontend's builder stage. Every repo gitignores `sboms/`.
+Every image carries its software bill of materials at `/sbom.json`, built in the image (`cyclonedx-py` for Python). Every repo gitignores `sboms/`.
 
-- A backend container, and a dev frontend, also writes a dated copy at boot into `./sboms:/sboms`.
-- A prod frontend runs as nginx-unprivileged's user, which cannot write the host's `./sboms`, so it carries the SBOM without exporting it and mounts no `./sboms`. Fetch it with `docker cp <container>:/sbom.json <file>`.
-- `docker-image` sends every image's SBOM to Dependency-Track when the org variable `DEPENDENCY_TRACK_URL` is set (`gitea-workflows`, Images).
+- A backend container, and a dev frontend, also writes a dated SBOM at boot into `./sboms:/sboms`.
+- A prod nginx frontend keeps it in the image: [frontend.md](frontend.md).
+- What CI sends to Dependency-Track: `gitea-workflows`, Dependency versions.
 
 ## Done when
 
