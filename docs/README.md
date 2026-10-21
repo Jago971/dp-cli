@@ -11,5 +11,6 @@
 - [log/CHANGELOG.md](log/CHANGELOG.md): what changed, newest first.
 - [runner.md](runner.md): the Gitea Actions runner on Hammond.
 - [../ci/master/README.md](../ci/master/README.md): the approved dependency versions.
+- [../ci/tests/README.md](../ci/tests/README.md): tests for the CI scripts, and the bugs they caught.
 - [../plugins/datumpin/README.md](../plugins/datumpin/README.md): the plugin, onboarding a repo, releasing.
 - [../plugins/datumpin/skills/README.md](../plugins/datumpin/skills/README.md): every skill.

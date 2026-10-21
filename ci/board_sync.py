@@ -24,6 +24,7 @@ import sys
 import urllib.request
 
 ORDER = ["Triage", "Backlog", "In Progress", "Review", "Testing", "DoD", "Done"]
+MAX_PAGES = 40  # 2,000 tickets a column at 50 a page
 
 
 def call(method, path, body=None):
@@ -51,17 +52,19 @@ def tickets_named(pull):
 def column_holding(repo, board_id, columns, issue_id):
     """The title of the column holding the issue, or None when it is not on the Board.
 
-    Gitea returns at most 50 issues a page, so each column is read page by page.
+    Gitea caps a page at its MAX_RESPONSE_ITEMS (50 by default), so each column
+    is read until an empty page. A server that ignored `page` would never send
+    one; MAX_PAGES stops that instead of looping until the job times out.
     """
     for title, cid in columns.items():
-        page = 1
-        while True:
+        for page in range(1, MAX_PAGES + 1):
             issues = call("GET", f"repos/{repo}/projects/{board_id}/columns/{cid}/issues?limit=50&page={page}")
+            if not issues:
+                break
             if any(i["id"] == issue_id for i in issues):
                 return title
-            if len(issues) < 50:
-                break
-            page += 1
+        else:
+            raise RuntimeError(f"{title}: no empty page after {MAX_PAGES} pages; is paging honoured?")
     return None
 
 
