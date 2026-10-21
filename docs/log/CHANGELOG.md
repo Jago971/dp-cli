@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [FIXED] 2026-10-21 - test_push_image runs on Docker Desktop
+
+- The test registry runs in the daemon's network namespace, so pushes reach it on Docker Desktop as on Linux; `ci/local-check.sh` is green on the laptop (#92).
+
+---
+
 ### [ADDED] 2026-10-21 - One local check for DEVKIT (plugin 0.7.2)
 
 - `ci/local-check.sh` runs every check DEVKIT's CI runs (pytest, conformance, versions, the hook, actionlint, gitleaks, osv-scanner, plugin validate) in containers on your own Docker, one PASS or FAIL line each; tool versions come from the workflows (#91).

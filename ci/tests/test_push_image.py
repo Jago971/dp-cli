@@ -1,12 +1,15 @@
 """Tests for ci/push-image.sh against a throwaway local registry.
 
-The registry runs on the host's Docker, published on a loopback port the
-daemon can push to; the registry's own answers are read from a container in
-its network namespace, so the test also works from a CI job container.
+The registry runs in the daemon's own network namespace (--network host),
+listening on its loopback, so the daemon can push to it on Linux and on Docker
+Desktop alike: Desktop publishes ports on the Windows side, out of reach of
+the daemon in its VM. The test also works from a CI job container.
 Integration tier: needs a Docker daemon, and skips without one.
 """
 import os
+import random
 import subprocess
+import time
 import uuid
 
 import pytest
@@ -38,12 +41,19 @@ def image_id(tag):
 def registry():
     """Starts registry:2 on a random loopback port; removes it and every tag under it afterwards."""
     name = f"push-image-test-{uuid.uuid4().hex[:8]}"
-    docker("run", "-d", "--name", name, "-p", "127.0.0.1::5000", "registry:2")
-    port = docker("port", name, "5000").splitlines()[0].rsplit(":", 1)[1]
-    yield name, f"localhost:{port}"
+    host = f"127.0.0.1:{random.randint(20000, 39999)}"
+    docker("run", "-d", "--name", name, "--network", "host", "-e", f"REGISTRY_HTTP_ADDR={host}", "registry:2")
+    for _ in range(40):  # up within seconds; a taken port fails here, not in the test
+        if subprocess.run(["docker", "exec", name, "wget", "-q", "-O-", f"http://{host}/v2/"],
+                          capture_output=True).returncode == 0:
+            break
+        time.sleep(0.25)
+    else:
+        pytest.fail(f"registry on {host} did not start")
+    yield host
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     tags = subprocess.run(["docker", "images", "--format", "{{.Repository}}:{{.Tag}}",
-                           "--filter", f"reference=localhost:{port}/*"],
+                           "--filter", f"reference={host}/*"],
                           capture_output=True, text=True).stdout.split()
     for tag in tags:
         subprocess.run(["docker", "image", "rm", "-f", tag], capture_output=True)
@@ -66,11 +76,11 @@ def build(tmp_path):
         subprocess.run(["docker", "image", "rm", "-f", tag], capture_output=True)
 
 
-def served_manifest(registry_name, repo, tag):
-    """The manifest the registry serves for repo:tag."""
-    return docker("run", "--rm", "--network", f"container:{registry_name}", "alpine:3.20",
+def served_manifest(host, repo, tag):
+    """The manifest the registry at host serves for repo:tag."""
+    return docker("run", "--rm", "--network", "host", "alpine:3.20",
                   "wget", "-q", "-O-", "--header", f"Accept: {MANIFEST_TYPES}",
-                  f"http://localhost:5000/v2/{repo}/manifests/{tag}")
+                  f"http://{host}/v2/{repo}/manifests/{tag}")
 
 
 def push(local, *tags):
@@ -80,7 +90,7 @@ def push(local, *tags):
 
 
 def test_push_tag_the_host_runs_from_keeps_it_on_its_image(registry, build):
-    name, host = registry
+    host = registry
     deployed = build("old")
     docker("tag", deployed, f"{host}/app:prep")
     docker("image", "rm", deployed)  # as on the host: :prep is the old image's only tag
@@ -92,11 +102,11 @@ def test_push_tag_the_host_runs_from_keeps_it_on_its_image(registry, build):
     push(new, f"{host}/app:prep")
 
     assert image_id(f"{host}/app:prep") == deployed_id
-    assert served_manifest(name, "app", "prep") == served_manifest(name, "app", "reference")
+    assert served_manifest(host, "app", "prep") == served_manifest(host, "app", "reference")
 
 
 def test_push_tag_absent_on_host_removes_it_afterwards(registry, build):
-    _, host = registry
+    host = registry
     new = build("new")
 
     push(new, f"{host}/app:prep-abc1234")
