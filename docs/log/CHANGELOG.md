@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [DOCS] 2026-10-21 - SBOMs for nginx frontends (plugin 0.5.8)
+
+- `docker-compose-conventions`: every image carries `/sbom.json`; backends and dev frontends also write a dated copy into `./sboms` at boot; a prod nginx frontend (non-root) keeps it in the image, mounts no `./sboms`, and is read with `docker cp`; Dependency-Track receives every image's SBOM once configured.
+
+---
+
 ### [DOCS] 2026-10-21 - The nginx frontend serve stage (plugin 0.5.7)
 
 - `docker-compose-conventions/frontend.md` (new, loaded from the skill's branches) records the frontend serve stage CURATOR and AHJ use: `nginx-unprivileged` on 3000, `default.conf.template` filled at start (SPA fallback, `/api` proxy to the backend named in the instance env file, extra backend paths, `client_max_body_size`), no compose start command, branding mounted read-only. The `nginx:alpine` example is gone.
