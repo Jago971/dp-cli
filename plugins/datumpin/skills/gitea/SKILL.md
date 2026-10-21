@@ -62,7 +62,7 @@ Org-level, shared by every repo:
 | `STATUS` | `BLOCKED`, `NEEDS-INFO` | Why it cannot move. |
 | `TYPE` | `FEATURE`, `BUG`, `CHORE`, `DOCUMENTATION`, `DoD` | One per issue. `DoD` marks a DoD ticket. |
 | `PRIORITY` | `CRITICAL`, `HIGH`, `MEDIUM`, `LOW` | |
-| `STAGE` | `PROT`, `PREP` | Target tier. `PROT` work is exploratory and skips DoD. |
+| `STAGE` | `PROT`, `PREP` | Target tier. `PROT` is exploratory work on a `prot/` branch in dev that skips DoD; `PREP` work goes through PRs to prep. |
 | `ORIGIN` | `INTERNAL`, `AGENT` | `INTERNAL`: a dev todo managers can filter out. `AGENT`: the agent created it. Not exclusive. |
 
 Repo-level: `COMPONENT/<NAME>`, one per entry in the repo's `components` config (name → folder globs). A ticket carries the component of every folder it touches; docs-only work carries none. Not exclusive.

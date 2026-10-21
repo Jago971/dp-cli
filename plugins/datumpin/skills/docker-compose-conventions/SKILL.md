@@ -19,7 +19,7 @@ Branches that load a sibling file:
 Which files, tags and env file each environment uses is in `gitea-workflows`, Environments. What the compose files add:
 
 - **dev** builds on the laptop: its images are tagged `:dev` and its container names end `-dev`, so a local image is never mistaken for the registry's `:prep`.
-- **prep and prod** share `docker-compose.yml`. It pulls `${IMAGE_REGISTRY}/<app>-<service>:${IMAGE_TAG}`, ends container names with `-${CHANNEL}`, and the host's env file sets all three. A server runs `docker compose pull` and `up -d`; only CI builds `Dockerfile`. A `.env.<app>-<instance>.prod` appears only when prod shares a host with prep.
+- **prep and prod** share `docker-compose.yml`. It pulls `${IMAGE_REGISTRY}/<app>-<service>:${IMAGE_TAG}`, ends container names with `-${CHANNEL}`, and the host's env file sets all three. A server runs `docker compose pull` and `up -d`; only CI builds `Dockerfile`.
 
 Run one environment per host, because their ports collide; `config-led-deployment` shifts the ports where two must share one.
 

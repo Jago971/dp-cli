@@ -16,7 +16,7 @@ Leads the user along the flows in `../../flows.yaml` (relative to this skill's b
 ```yaml
 flow: ticket
 step: review
-ticket: 52
+ticket: 52   # a number; anything else is ignored
 updated: 2026-10-21T16:40:00
 ```
 
@@ -30,9 +30,9 @@ updated: 2026-10-21T16:40:00
    | Triage | `shape` |
    | Backlog | `pick` |
    | In Progress | the state's step when it is `build` to `fix`, else `build` |
-   | Review | `merge` |
+   | Review | the state's step when it is `fix` or `pr`, else `merge` |
    | Testing | `try` |
-   | DoD | the release flow, at `gate` |
+   | DoD | the release flow, at `review` |
    | Done | the session flow, at `board` |
 
    The release, deploy and session flows carry no ticket and trust the state file. When Gitea is unreachable, print one log line and go on from the state file.
@@ -43,7 +43,7 @@ updated: 2026-10-21T16:40:00
    - `agent`: do the step directly, in its `formats` shape.
    - `human`: print what the person does, and wait for them to say it is done.
 
-   After `shape`, ask which of its tickets to pick.
+   After `shape`, ask which of its tickets to pick. Offer `tag` only once the release PR is merged on `main` (`gitea`); a state file alone never reaches it.
 5. **Record.** Write the new position to the state file, then go back to step 3. On `stop`, write the state and end with one log line naming where to resume.
 
 ## Done when

@@ -2,11 +2,15 @@
 # Runs, on your own Docker and in containers only, every check DEVKIT's CI
 # runs on a PR (ci.yml and security-scan.yml), so a change is checked before
 # it is pushed; CI then runs them again. Tool versions are read from those
-# workflows, so each one is set in one place. Prints one PASS or FAIL line per
-# check and exits 1 when any fails. Commit first: gitleaks scans the commits
-# since origin/prep, as CI scans a PR's.
+# workflows, so each one is set in one place. Prints one PASS, FAIL or SKIP
+# line per check and exits 1 when any fails. Commit first: gitleaks scans the
+# commits since origin/prep, as CI scans a PR's.
+#
+# Run it only on a branch you trust: the pytest check hands its container
+# your Docker socket, which is control of your Docker.
 #
 #   ci/local-check.sh        (from the DEVKIT root)
+
 # No -e: one failing check must not stop the rest; check() records it.
 set -uo pipefail
 
@@ -17,11 +21,12 @@ LOGS=$(mktemp -d)
 trap 'rm -rf "$LOGS"' EXIT
 FAILED=0
 
-# The value of KEY: "value" in a workflow file; stops when it is missing.
+# The value of KEY: "value" in a workflow file. A version is letters, digits,
+# dots and dashes only, since some reach a shell command; anything else stops.
 pin() {
   local value
   value=$(sed -n "s/^ *$2: \"\(.*\)\"/\1/p" ".gitea/workflows/$1" | head -n 1)
-  [[ -n "$value" ]] || { echo "local-check: no $2 in .gitea/workflows/$1" >&2; exit 2; }
+  [[ "$value" =~ ^[0-9A-Za-z.-]+$ ]] || { echo "local-check: no valid $2 in .gitea/workflows/$1" >&2; exit 2; }
   echo "$value"
 }
 ACTIONLINT=$(pin ci.yml ACTIONLINT_VERSION) || exit 2
@@ -52,14 +57,18 @@ osv_scan() {
 
 check pytest docker run --rm -e PYTHONDONTWRITEBYTECODE=1 \
   -v /var/run/docker.sock:/var/run/docker.sock -v "$ROOT/ci:/w/ci" -w /w/ci/tests python:3.11-alpine \
-  sh -c 'apk add -q bash docker-cli && pip install -q -r requirements.txt && python -m pytest -m "unit or integration"'
+  sh -c 'apk add -q bash docker-cli && pip install -q -r requirements.txt && python -m pytest -q -p no:cacheprovider -m "unit or integration"'
 check conformance in_repo python:3.11-alpine python ci/conformance.py .
 check versions in_repo python:3.11-alpine python ci/versions.py .
 check hook in_repo python:3.11-alpine python -c \
   'p = "plugins/datumpin/hooks/session_status.py"; compile(open(p).read(), p, "exec")'
 check actionlint in_repo "rhysd/actionlint:$ACTIONLINT" -color .gitea/workflows/*.yml
-check gitleaks in_repo --entrypoint sh "zricethezav/gitleaks:v$GITLEAKS" -c \
-  'git config --global --add safe.directory /w && gitleaks git --redact --no-banner --log-opts="origin/prep..HEAD" /w'
+if [[ $(git rev-list --count origin/prep..HEAD) -eq 0 ]]; then
+  echo "SKIP  gitleaks: no commits since origin/prep"
+else
+  check gitleaks in_repo --entrypoint sh "zricethezav/gitleaks:v$GITLEAKS" -c \
+    'git config --global --add safe.directory /w && gitleaks git --redact --no-banner --log-opts="origin/prep..HEAD" /w'
+fi
 check osv-scanner osv_scan
 check plugin in_repo node:22-alpine sh -c \
   "npm install --global --silent @anthropic-ai/claude-code@$CLAUDE_CODE && claude plugin validate ./plugins/datumpin && claude plugin validate ."
