@@ -26,8 +26,9 @@ name: Docker image
 # credential reaches a layer. The read token builds; only the push uses the
 # write token. Before the push, ci/check-entrypoint.sh fails an image whose
 # ENTRYPOINT file is missing or not executable, and trivy fails the job on a
-# CRITICAL vulnerability that has a fix, and lists HIGH ones. When the org variable DEPENDENCY_TRACK_URL is
-# set, the image's CycloneDX SBOM goes to OWASP Dependency-Track.
+# CRITICAL vulnerability that has a fix, and lists HIGH ones. When the org
+# variable DEPENDENCY_TRACK_URL is set, the image's CycloneDX SBOM goes to
+# OWASP Dependency-Track.
 on:
   workflow_call:
     inputs:
@@ -108,7 +109,7 @@ jobs:
             --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
             -f "${CONTEXT}/${DOCKERFILE}" -t "$LOCAL" "$CONTEXT"
 
-      - name: Fetch DEVKIT's scripts from main
+      - name: Fetch the entrypoint check from DEVKIT main
         uses: actions/checkout@v4
         with:
           repository: Datumpin/DEVKIT
@@ -117,11 +118,19 @@ jobs:
 
       - name: Check the entrypoint
         # A missing or non-executable ENTRYPOINT fails here, before the push,
-        # not when a host starts the image. DEVKIT tests its own script.
+        # not when a host starts the image. DEVKIT checks itself with the PR's
+        # own script, so a change to it is tested on the PR that makes it.
+        # Like versions.py, the script comes from main: a DEVKIT branch tried
+        # from a consumer branch before release finds none and skips, saying so.
         env:
           LOCAL: ${{ steps.tags.outputs.local }}
           SCRIPT: ${{ github.repository == 'Datumpin/DEVKIT' && 'ci/check-entrypoint.sh' || '.devkit/ci/check-entrypoint.sh' }}
-        run: bash "$SCRIPT" "$LOCAL"
+        run: |
+          if [ ! -f "$SCRIPT" ]; then
+            echo "SKIP  $SCRIPT is not on DEVKIT main yet; entrypoint not checked"
+            exit 0
+          fi
+          bash "$SCRIPT" "$LOCAL"
 
       - name: Install trivy
         run: |
