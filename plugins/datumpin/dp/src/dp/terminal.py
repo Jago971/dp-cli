@@ -1,4 +1,4 @@
-"""dp guide's look at a terminal: the DP palette, the rail, the menus and the Job prompt panel.
+"""dp guide's look at a terminal: colour where it directs the eye, the rail, the menus and the Job prompt panel.
 
 Summary: Terminal, the guide's prompts (guide.Plain) in colour.
 Input:   what dp.guide asks and shows.
@@ -19,47 +19,36 @@ from rich.text import Text
 
 from dp import guide
 
-# The DP palette (AHJ instances/dp/branding/theme.css), without its navy, which a
-# dark terminal hides. Cyan is structure (about half), pink is focus (about a
-# third), yellow is attention (the rest); grey mutes, red fails.
-CYAN, PINK, YELLOW, GREY, RED = "#00b5cc", "#e0197d", "#f9d800", "#a8b8c8", "#c0392b"
-OUTCOMES = {"DONE": CYAN, "PASS": CYAN, "READY": CYAN, "CHANGES": YELLOW, "SKIPPED": GREY,
-            "FAILED": RED, "BLOCKED": RED}
-SEVERITIES = {"high": RED, "medium": YELLOW, "low": GREY}
-MARKS = {"done": ("✓", CYAN), "current": ("●", f"bold {PINK}"), "next": ("○", GREY)}
+# Each colour means one thing, from the DP palette (AHJ instances/dp/branding/
+# theme.css); the rest is the terminal's own text, or its own grey to recede.
+PINK = "#e0197d"  # you are here, act now: the current step, a question, the Job prompt
+CYAN = "#00b5cc"  # the cursor: the highlighted menu row
+YELLOW = "#f9d800"  # attention: a correction, Gitea unreachable, a gate
+RED = "#c0392b"  # failure
+MUTED = "bright_black"  # the terminal theme's grey, for what supports the main text
+OUTCOMES = {"FAILED": RED, "BLOCKED": RED, "CHANGES": YELLOW}
+SEVERITIES = {"high": RED, "medium": YELLOW}
+MARKS = {"done": "✓", "current": "●", "next": "○"}
 CLIPBOARDS = (["clip"], ["pbcopy"], ["wl-copy"], ["xclip", "-selection", "clipboard"])
-REF = re.compile(r"\[(\S+)( #\d+)?\]")
+REF = re.compile(r"\[[^\]]+\]")
 SHORTCUTS = 36  # questionary's limit for number and letter shortcuts
 
 MENU = questionary.Style([
     ("qmark", f"fg:{PINK} bold"), ("question", "bold"), ("pointer", f"fg:{CYAN} bold"),
-    ("highlighted", f"fg:{CYAN} bold"), ("answer", f"fg:{PINK} bold"), ("instruction", f"fg:{GREY}"),
-    ("name", f"fg:{CYAN}"), ("ticket", f"fg:{PINK} bold"), ("does", f"fg:{GREY}"), ("fork", f"fg:{PINK}")])
-GATE = questionary.Style([("qmark", f"fg:{YELLOW} bold"), ("question", "bold"), ("answer", f"fg:{YELLOW} bold")])
+    ("highlighted", f"fg:{CYAN} bold"), ("answer", "bold"), ("instruction", "fg:ansibrightblack")])
+GATE = questionary.Style([("qmark", f"fg:{YELLOW} bold"), ("question", "bold"), ("answer", "bold")])
 
 
 def log_line(line, colour=""):
-    """A Log line (formats) with its ref, separators and outcome words in colour."""
+    """A Log line (formats): its ref and separators recede; a failure or a change stands out."""
     text = Text(line, style=colour)
     found = REF.match(line)
     if found:
-        text.stylize(GREY, 0, found.end())
-        text.stylize(CYAN, *found.span(1))
-        if found.group(2):
-            text.stylize(PINK, *found.span(2))
-    text.highlight_regex(r" · ", GREY)
+        text.stylize(MUTED, *found.span())
+    text.highlight_regex(r" · ", MUTED)
     for word, outcome in OUTCOMES.items():
         text.highlight_words([word], f"bold {outcome}")
     return text
-
-
-def title(label):
-    """A menu row from a choice label: the name, its `does` line, and a flow it switches to."""
-    name, _, rest = label.partition(" ")
-    if name.startswith("#"):
-        return [("class:ticket", name), ("", f" {rest}")]
-    does, arrow, flow = rest.partition(" → ")
-    return [("class:name", name), ("class:does", f" {does}"), ("class:fork", f"{arrow}{flow}")]
 
 
 def copy(text):
@@ -86,43 +75,46 @@ class Terminal(guide.Plain):
         self.console.print(log_line(line, YELLOW))
 
     def outro(self, line):
-        self.console.print(Text("└ ", style=CYAN) + log_line(line))
+        self.console.print(Text("└ ", style=MUTED) + log_line(line))
 
-    def header(self, position, env, rail):
-        line = Text.assemble((" dp ", f"bold #ffffff on {PINK}"), (" guide ", f"bold {CYAN}"), "  ")
+    def header(self, position, env, rail, does):
+        line = Text.assemble((" dp ", f"bold #ffffff on {PINK}"), (" guide  ", MUTED))
         if not position:
-            line.append("no position", GREY)
+            line.append("no position")
         else:
-            line.append(f"{position['flow']} flow", CYAN)
+            line.append(f"{position['flow']} flow")
             if position["ticket"]:
-                line.append(" · ", GREY).append(f"#{position['ticket']}", f"bold {PINK}")
-            line.append(" · ", GREY).append(position["step"], "bold").append(f"  {env} ", f"bold {YELLOW}")
+                line.append(" · ", MUTED).append(f"#{position['ticket']}")
+            line.append(" · ", MUTED).append(position["step"], "bold").append(f" ({env})", MUTED)
         self.console.print()
         self.console.print(line)
         if rail:
-            steps = [Text.assemble((MARKS[state][0], MARKS[state][1]), " ",
-                                   (step, MARKS[state][1] if state == "current" else GREY)) for step, state in rail]
-            self.console.print(Text(" ").append(Text(" ─ ", style=GREY).join(steps)))
+            steps = [Text(f"{MARKS[state]} {step}", style=f"bold {PINK}" if state == "current" else MUTED)
+                     for step, state in rail]
+            self.console.print(Text(" ").append(Text(" ─ ", style=MUTED).join(steps)))
+        if does:
+            self.console.print(f" {does}", markup=False)
         self.console.print()
 
     def job(self, prompt):
         copied = copy(prompt)
         self.console.print(Panel(Text(prompt, style="bold"), box=box.ROUNDED, border_style=PINK, expand=False,
                                  title="paste into a session", title_align="left",
-                                 subtitle=Text("copied to the clipboard ✓", style=CYAN) if copied else None,
+                                 subtitle=Text("copied to the clipboard", style=MUTED) if copied else None,
                                  subtitle_align="right"))
 
     def finding(self, finding):
         self.console.print(Text.assemble(
-            (finding["id"], f"bold {PINK}"), " ", (finding["severity"], SEVERITIES.get(finding["severity"], GREY)),
-            " ", (f"{finding['file']}:{finding['line']}", CYAN), " ", finding["finding"]))
+            (finding["id"], "bold"), " ", (finding["severity"], SEVERITIES.get(finding["severity"], MUTED)),
+            " ", (f"{finding['file']}:{finding['line']}", MUTED), " ", finding["finding"]))
 
     def busy(self, message):
-        return self.console.status(Text(f"{message}…", style=GREY), spinner="dots", spinner_style=CYAN)
+        return self.console.status(Text(f"{message}…", style=MUTED), spinner="dots", spinner_style=MUTED)
 
     def choose(self, message, options):
+        # Plain titles, so questionary marks the cursor's row in cyan.
         index = questionary.select(
-            message, [questionary.Choice(title(label), value=n) for n, (label, _) in enumerate(options)],
+            message, [questionary.Choice(label, value=n) for n, (label, _) in enumerate(options)],
             qmark="◆", pointer="❯", style=MENU, use_shortcuts=len(options) <= SHORTCUTS,
             instruction="(arrows or a number)").unsafe_ask()
         return options[index][1]

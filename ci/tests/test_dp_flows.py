@@ -48,7 +48,7 @@ def test_in_progress_keeps_a_state_step_from_build_to_fix(flow_map):
 
 @pytest.mark.unit
 def test_dod_moves_to_the_release_flow_without_a_ticket(flow_map):
-    assert flows.position(flow_map, state("try"), "DoD") == (state("review", "release", None), True)
+    assert flows.position(flow_map, state("test"), "DoD") == (state("review", "release", None), True)
 
 
 @pytest.mark.unit
@@ -70,7 +70,7 @@ def test_choices_are_the_next_and_optional_steps_the_flow_lists(flow_map):
 
 @pytest.mark.unit
 def test_a_fork_into_another_flow_names_it(flow_map):
-    offered = flows.choices(flow_map, state("try"))
+    offered = flows.choices(flow_map, state("test"))
 
     assert [(c["step"], c["flow"]) for c in offered] == [
         ("pick", "ticket"), ("gate", "release"), ("board", "session")]
@@ -95,7 +95,7 @@ def test_the_rail_marks_the_usual_path_done_current_and_to_come(flow_map):
     rail = flows.rail(flow_map, state("review"))
 
     assert [step for step, _ in rail] == ["pick", "build", "check", "commit", "review", "fix", "pr",
-                                          "merge", "try"]
+                                          "merge", "test"]
     assert dict(rail)["commit"] == "done"
     assert dict(rail)["review"] == "current"
     assert dict(rail)["fix"] == "next"

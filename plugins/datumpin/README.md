@@ -74,11 +74,11 @@ To pick up a new plugin version: `claude plugin marketplace update datumpin`, th
 
 `dp guide`, in a repo, walks the flows with no session, so finding the position and the next step costs no tokens. It prints the position (the state file `.factory/guide.yaml`, corrected from the ticket's board column) and offers the next steps as an arrow-key menu. A chosen step runs by its kind:
 
-- **A person's gate:** `pick` lists the Backlog, moves the chosen ticket to In Progress (into the open milestone due first, when it has none) and branches from `prep`; `merge`, `try` and `sign-off` ask whether it is done; leaving `review` asks a disposition for each finding in `findings.json`.
+- **A person's gate:** `pick` lists the Backlog, moves the chosen ticket to In Progress (into the open milestone due first, when it has none) and branches from `prep`; `merge`, `test` and `sign-off` ask whether it is done; leaving `review` asks a disposition for each finding in `findings.json`.
 - **An agent step:** it writes a brief to `.factory/jobs/<ticket>/<step>.md` (the ticket, its comments and column, the diff stat, and the skill text the step needs: the map's `brief` sections, else the whole skill) and prints a Job prompt (`formats`) to paste into a session.
 - **A user-invoked skill** (`handoff`, `retro`): it prints the command to type in the session you worked in.
 
-`tag` first asks whether the release PR is merged on `main`. Before any brief but a review's, undecided findings are asked for. The look follows the DP palette (cyan, pink, yellow) with a rail of the flow's usual path, a spinner while Gitea answers, number shortcuts in menus, and the Job prompt in a panel, copied to the clipboard when the system has `clip`, `pbcopy`, `wl-copy` or `xclip`; `NO_COLOR` turns colour off.
+`tag` first asks whether the release PR is merged on `main`. Before any brief but a review's, undecided findings are asked for. Colour directs the eye, one meaning each, from the DP palette: pink is where you are and what to act on, cyan is the menu cursor, yellow needs attention, red failed; the rest is the terminal's own text and grey. It shows a rail of the flow's usual path with the current step's `does` line under it, a spinner while Gitea answers, number shortcuts in menus, and the Job prompt in a panel, copied to the clipboard when the system has `clip`, `pbcopy`, `wl-copy` or `xclip`; `NO_COLOR` turns colour off.
 
 Each step reached is written to the state file, so the `guide` skill carries on where `dp guide` stopped. Off a terminal it prints the Guide prompt and exits; `--json` gives the position and choices, which the `guide` skill reads.
 

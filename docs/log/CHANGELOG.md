@@ -4,6 +4,13 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-22 - dp guide: colour with meaning (plugin 0.8.3)
+
+- One meaning per colour: pink for where you are and what to act on, cyan for the menu cursor, yellow for attention, red for failure. Everything else is the terminal's own text, or its own grey (`bright_black`) instead of a fixed hex grey, so it matches the theme. Menu rows are plain, so the cursor's row is the one in colour (#125).
+- The ticket flow's `try` step is `test`, matching the Testing column; the header shows the current step's `does` line under the rail. A state file still at `try` shows no position once; pick the flow again.
+
+---
+
 ### [ADDED] 2026-10-21 - dp guide: the flows at a terminal (plugin 0.8.2)
 
 - `dp guide` walks the flows with no session: the position from the state file and the board, the next steps as an arrow-key menu (questionary), the person's gates (pick, merge, try, sign-off, review dispositions) as CLI prompts, and a job brief in `.factory/jobs/<ticket>/<step>.md` with a Job prompt for each agent step (#125).

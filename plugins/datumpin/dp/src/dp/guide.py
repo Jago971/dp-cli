@@ -43,7 +43,8 @@ class Plain:
         """A line the person should act on: a correction, Gitea unreachable."""
         self.say(line)
 
-    def header(self, position, env, rail):
+    def header(self, position, env, rail, does):
+        """The position; a terminal adds the rail and the current step's `does` line."""
         self.say(header(position, env))
 
     def job(self, prompt):
@@ -264,8 +265,9 @@ def walk(root, prompts, gitea, git):
     root, flow_map = Path(root), flows.load()
     position = locate(flow_map, read_state(root), gitea, prompts)
     while True:
-        env = position and flow_map["steps"][position["step"]]["env"]
-        prompts.header(position, env, position and flows.rail(flow_map, position))
+        here = position and flow_map["steps"][position["step"]]
+        prompts.header(position, here and here["env"], position and flows.rail(flow_map, position),
+                       here and here["does"])
         offered = [(label(choice, position), choice) for choice in flows.choices(flow_map, position)]
         choice = prompts.choose("Next?", offered + [("stop", None)])
         if choice is None:
