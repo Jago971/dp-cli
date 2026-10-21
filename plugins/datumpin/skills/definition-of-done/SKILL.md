@@ -15,7 +15,7 @@ Three levels use the same idea:
 |---|---|---|
 | Step done | the agent, at the end of each skill step | the "Done when" of each skill |
 | **Change done** | the engineer, then `change-review` | this skill |
-| Promotion done (proto → prep → prod) | engineer, reviewer, security, with sign-off | the worksheet in WIKI `business_processes/reviews/templates/software_lifecycle_review_checklist.md` |
+| Promotion done (dev → prep → prod, `gitea-workflows` Environments) | engineer, reviewer, security, with sign-off | the worksheet in WIKI `business_processes/reviews/templates/software_lifecycle_review_checklist.md` |
 
 ## Change checklist
 
@@ -46,7 +46,7 @@ Three levels use the same idea:
 
 ## Promotion gate
 
-A promotion PR (proto → prep → prod) adds the full worksheet: Stage 1 orientation, Stage 2 quality, Stage 3 security, the meta-review, the final decision and the sign-off table. An independent `change-review` pass and the `security-review` skill run first and fill the Rev and Sec columns with findings, and the reviewer and security owner confirm, dismiss or escalate each. The gate closes when a named person signs. The model never signs for itself.
+A promotion PR (dev → prep → prod) adds the full worksheet: Stage 1 orientation, Stage 2 quality, Stage 3 security, the meta-review, the final decision and the sign-off table. An independent `change-review` pass and the `security-review` skill run first and fill the Rev and Sec columns with findings, and the reviewer and security owner confirm, dismiss or escalate each. The gate closes when a named person signs. The model never signs for itself.
 
 ## Done when
 

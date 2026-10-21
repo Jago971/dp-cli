@@ -67,7 +67,7 @@ The loader reads the instance's own folder, never another instance's and never a
 
 ## Env files
 
-Env files stay at the repo root, one pair per instance: `.env.<app>-<instance>` (prod) and `.env.<app>-<instance>.dev`, app first (`.env.ahj-dp`, `.env.curator-dp`, `.env.bds-dp`, `.env.bds-rur`). BDS is one app, so its api and processor share one file per instance and differ by prefix (`API_`, `PROCESSOR_`). Every instance gets its own named file.
+Env files stay at the repo root, one pair per instance: `.env.<app>-<instance>` (prep and prod) and `.env.<app>-<instance>.dev` (dev; `gitea-workflows`, Environments), app first (`.env.ahj-dp`, `.env.curator-dp`, `.env.bds-dp`, `.env.bds-rur`). BDS is one app, so its api and processor share one file per instance and differ by prefix (`API_`, `PROCESSOR_`). Every instance gets its own named file.
 
 Each file holds everything that instance's containers need: its own settings and its own copy of any build-time secret (a registry token). Tracked `.env.<app>-<instance>.example` files document each file's shape, and the real files are gitignored. Wire the file into each service with `env_file:` and start an instance with an explicit `--env-file`:
 

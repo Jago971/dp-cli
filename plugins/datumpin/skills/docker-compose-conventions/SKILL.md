@@ -15,7 +15,7 @@ Branches that load a sibling file:
 
 ## Two environments
 
-Each environment has its own Dockerfile and compose file: `Dockerfile` + `docker-compose.yml` (prod), `Dockerfile.dev` + `docker-compose.dev.yml` (dev). Distinct `container_name` and image tags (`-prod` against `-prep`/`-dev`) keep them apart. Run one environment per host, because their ports collide.
+Which host runs which environment: `gitea-workflows`, Environments. Each environment has its own Dockerfile and compose file: `Dockerfile` + `docker-compose.yml` (prep and prod), `Dockerfile.dev` + `docker-compose.dev.yml` (dev). Distinct `container_name` and image tags (`-prod` against `-prep`/`-dev`) keep them apart. Run one environment per host, because their ports collide.
 
 Where a repo has several instances, `scripts/compose.py` generates the compose files from the instance folders, and each instance starts with its own env file through `--env-file` (see `config-led-deployment`).
 

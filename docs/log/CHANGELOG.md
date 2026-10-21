@@ -4,6 +4,13 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - dev, prep and prod defined once (plugin 0.7.0)
+
+- `gitea-workflows` gains an Environments table: host, branch, image, compose and env file for dev (laptop), prep (Hammond) and prod (not built). Servers pull and never build or test; the agent tooling is the laptop's one host exemption (#89).
+- `definition-of-done`, `docker-compose-conventions` and `config-led-deployment` link it; `proto` becomes `dev`.
+
+---
+
 ### [FIXED] 2026-10-21 - v0.6.0 release-review fixes (plugin 0.6.14)
 
 - The `Refs` and `No ticket:` regexes run in linear time on any PR body (they were quadratic on blank lines); a test guards it (#101).
