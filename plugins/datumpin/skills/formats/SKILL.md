@@ -205,6 +205,14 @@ Title: as a ticket title. Labels: one `TYPE`, `ORIGIN/AGENT`, one `STAGE`.
 ## Changes
 - `<path or area>`: <what changed>
 
+## Review
+Evidence: <test count, --check result, what was verified by hand>
+
+| # | Finding | Sev | Disposition |
+|---|---|---|---|
+| S1 | <Standards finding> | low | Fixed (<sha>) |
+| P1 | <Spec finding> | medium | Dismissed: <reason> |
+
 ## Refs
 Refs #N · Owner/Repo#N
 See #N
@@ -214,6 +222,7 @@ See #N
 ```
 
 - `Refs` names only the tickets the PR works on; board-sync moves them with the PR. `See` names related tickets, which keep their column. Omit `See` when there are none.
+- `Review` holds the `change-review` run before the PR opened. Finding ids are `S` (Standards), `P` (Spec), `X` (Security). A disposition is `Fixed (<sha>)`, `Dismissed: <reason>`, `Escalated: <to whom>` or `Deferred: #N`, where `#N` is a Triage ticket opened for it. With no findings, one row says so per axis. A promotion PR records its findings in the worksheet's Rev and Sec columns instead (`definition-of-done`).
 
 ## Git
 

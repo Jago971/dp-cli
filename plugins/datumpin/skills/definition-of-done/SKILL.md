@@ -51,4 +51,4 @@ A promotion PR (proto → prep → prod) adds the full worksheet: Stage 1 orient
 ## Done when
 
 - Every box above is checked with evidence or marked n/a with a reason.
-- The PR description lists the evidence (test count, `--check` result, review findings and their disposition).
+- The PR description's `Review` section (`formats`) lists the evidence (test count, `--check` result) and the review findings with their dispositions.
