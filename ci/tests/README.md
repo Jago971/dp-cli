@@ -23,7 +23,7 @@ The tests sit flat in `ci/tests/`, one file per script, rather than in `unit/` a
 
 ## Running locally
 
-Run the suite on your own Docker before pushing, the way CI runs it; CI runs it again on the PR. From the DEVKIT root (Git Bash on Windows needs `MSYS_NO_PATHCONV=1`):
+Run the suite on your own Docker before pushing, the way CI runs it; CI runs it again on the PR. On Docker Desktop the two `test_push_image.py` tests fail until #92: the daemon cannot reach a registry published on the laptop's loopback. From the DEVKIT root (Git Bash on Windows needs `MSYS_NO_PATHCONV=1`):
 
 ```
 docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v /var/run/docker.sock:/var/run/docker.sock \

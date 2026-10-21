@@ -3,7 +3,7 @@
 **Scope:** What the `datumpin` Claude Code plugin holds, how a repo installs it, and how it is released. The workflow design itself lives in the proposal linked below.
 **Status:** current
 **Last reviewed:** 2026-10-20
-**Governed by:** [Agentic Development Workflow](../../business_processes/proposals/agentic_workflow.md)
+**Governed by:** Agentic Development Workflow, WIKI `business_processes/proposals/agentic_workflow.md`
 
 ---
 
