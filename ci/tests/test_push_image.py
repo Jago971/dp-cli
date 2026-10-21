@@ -13,7 +13,11 @@ import pytest
 from conftest import docker_works
 
 SCRIPT = os.path.join(os.path.dirname(__file__), "..", "push-image.sh")
-MANIFEST_TYPES = ("application/vnd.oci.image.manifest.v1+json,"
+# A BuildKit build (as in CI) pushes an image index with its attestations;
+# the legacy builder pushes a single manifest. Accept either.
+MANIFEST_TYPES = ("application/vnd.oci.image.index.v1+json,"
+                  "application/vnd.oci.image.manifest.v1+json,"
+                  "application/vnd.docker.distribution.manifest.list.v2+json,"
                   "application/vnd.docker.distribution.manifest.v2+json")
 
 pytestmark = [pytest.mark.integration,
