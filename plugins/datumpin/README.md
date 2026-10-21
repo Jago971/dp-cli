@@ -70,13 +70,13 @@ To pick up a new plugin version: `claude plugin marketplace update datumpin`, th
 
 ## Token usage
 
-`bin/token_report.py` prints the turns, tool calls and tokens (input, cache read, cache write, output) each flow step of one session used, with a total. A turn belongs to the step named by the guide's next write to `.factory/guide.yaml`; in a session without the guide, a step starts at each Skill call. It needs Python 3 and nothing else.
+`bin/token_report.py` prints the turns, tool calls and tokens (input, cache read, cache write, output) each flow step of one session used, with a total. A turn belongs to the step named by the guide's next write to `.factory/guide.yaml` (a Write or Edit of it, or a shell redirect into it); in a session without the guide, a step starts at each Skill call. It needs Python 3 and nothing else.
 
 1. **Find the log:** sessions are logged at `~/.claude/projects/<project>/<session-id>.jsonl`, where `<project>` is the repo path with `:` and `\` as `-` (for example `c--Users-mattm-Documents-BDS`). The newest file is the latest session.
 2. **Run it:** `python plugins/datumpin/bin/token_report.py <log>` from the DEVKIT root, or from the installed copy under `~/.claude/plugins/cache/datumpin/datumpin/<version>/`.
 3. **Subagents:** each subagent logs separately, in `<session-id>/subagents/agent-*.jsonl`; run the script on each.
 
-Cache reads are most of the tokens, and every turn re-reads the context, so turns per step is the number to cut. The baseline is the BDS#107 guide run (DEVKIT #120).
+Cache reads are most of the tokens, and every turn re-reads the context, so turns per step is the number to cut.
 
 ## Releasing a change
 

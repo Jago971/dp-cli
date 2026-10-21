@@ -5,9 +5,10 @@ Summary: books each turn's usage to a flow step and prints a table with a total.
 Input:   the path of a session log (~/.claude/projects/<project>/<session>.jsonl).
 Process: a turn is one API response; the log writes one line per content block
          and repeats the response's usage on each, so lines sharing a message id
-         are one turn. When the guide wrote its state to .factory/guide.yaml, a
-         turn belongs to the step the next state write names (turns after the
-         last write stay with it); otherwise a step starts at each Skill call.
+         are one turn. A state write is a Write or Edit of .factory/guide.yaml,
+         or a shell command redirecting into it; when the log has one, a turn
+         belongs to the step the next write names, otherwise a step starts at
+         each Skill call.
 Output:  one row per step (turns, tools, input, cache_read, cache_write, output)
          and a TOTAL row.
 
@@ -18,6 +19,7 @@ import re
 import sys
 
 STATE_FILE = ".factory/guide.yaml"
+STATE_REDIRECT = re.compile(r">\s*[\"']?[^\s\"'|;&]*" + re.escape(STATE_FILE))
 STEP = re.compile(r"step: ([\w-]+)")
 COUNTS = ("turns", "tools", "input", "cache_read", "cache_write", "output")
 USAGE = {"input": "input_tokens", "cache_read": "cache_read_input_tokens",
@@ -37,19 +39,36 @@ def turns(lines):
     return list(by_id.values())
 
 
+def written_text(tool):
+    """What a tool call writes to the guide's state file, or None."""
+    given = tool["input"]
+    if tool["name"] in ("Write", "Edit"):
+        if given.get("file_path", "").replace("\\", "/").endswith(STATE_FILE):
+            return given.get("content", given.get("new_string"))
+    elif tool["name"] in ("Bash", "PowerShell"):
+        command = given.get("command", "")
+        if STATE_REDIRECT.search(command.replace("\\", "/")):
+            return command
+    return None
+
+
 def state_write(tools):
     """The step a turn's tool calls last write to the guide's state file, or None."""
     named = None
     for tool in tools:
-        text = json.dumps(tool["input"])
-        match = STEP.search(text)
-        if STATE_FILE in text and match and tool["name"] != "Read":
-            named = match.group(1)
+        found = STEP.findall(written_text(tool) or "")
+        named = found[-1] if found else named
     return named
 
 
 def steps(log):
-    """The step each turn is booked to."""
+    """The step each turn is booked to.
+
+    Process: with any state write in the log, walk back from the last one so
+    each turn takes the step its next write names, and turns after the last
+    write keep that step. Without one, a step starts at each Skill call, and
+    the turns before the first call are "start".
+    """
     written = [state_write(tools) for _, tools in log]
     if any(written):
         # Walk back from the last write, so a turn takes the next write's step.

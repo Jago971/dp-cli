@@ -1,4 +1,4 @@
-"""Tests for plugins/datumpin/bin/token_report.py at its report() seam."""
+"""Unit tier: plugins/datumpin/bin/token_report.py at its report() seam."""
 import json
 import os
 import sys
@@ -9,12 +9,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "plugins"
 import token_report  # noqa: E402
 
 
-def turn(cache_read, tool=None):
+def turn(cache_read, tool=None, message_id=None):
     """One assistant turn of a session log, as a JSON line."""
     content = [tool] if tool else [{"type": "text", "text": "..."}]
     usage = {"input_tokens": 1, "output_tokens": 2, "cache_read_input_tokens": cache_read,
              "cache_creation_input_tokens": 0}
-    return json.dumps({"type": "assistant", "message": {"content": content, "usage": usage}})
+    message = {"content": content, "usage": usage, **({"id": message_id} if message_id else {})}
+    return json.dumps({"type": "assistant", "message": message})
 
 
 def state_write(step):
@@ -24,6 +25,11 @@ def state_write(step):
 
 def skill(name):
     return {"type": "tool_use", "name": "Skill", "input": {"skill": name}}
+
+
+def edit(file_path, old, new):
+    return {"type": "tool_use", "name": "Edit",
+            "input": {"file_path": file_path, "old_string": old, "new_string": new}}
 
 
 def by_step(rows):
@@ -48,3 +54,23 @@ def test_report_without_state_writes_splits_on_skill_calls():
 
     assert (rows["datumpin:tdd"]["turns"], rows["datumpin:tdd"]["cache_read"]) == (2, 7)
     assert (rows["datumpin:change-review"]["turns"], rows["datumpin:change-review"]["tools"]) == (1, 1)
+
+
+@pytest.mark.unit
+def test_report_counts_the_lines_of_one_response_as_one_turn():
+    log = [turn(10, skill("datumpin:tdd"), message_id="msg_1"), turn(10, message_id="msg_1")]
+
+    rows = by_step(token_report.report(log))
+
+    assert (rows["datumpin:tdd"]["turns"], rows["datumpin:tdd"]["cache_read"]) == (1, 10)
+
+
+@pytest.mark.unit
+def test_report_reads_the_new_step_from_an_edit_of_the_state_file_only():
+    log = [turn(1, edit(r"C:\repo\.factory\guide.yaml", "step: pick", "step: build")),
+           turn(2, edit("skills/guide/SKILL.md", "", "Write `step: review` to .factory/guide.yaml."))]
+
+    rows = by_step(token_report.report(log))
+
+    assert list(rows) == ["build"]
+    assert rows["build"]["turns"] == 2
