@@ -84,6 +84,7 @@ def skill_text(step):
 
 
 def findings_table(findings):
+    """The findings as the PR Review table (formats, Pull request)."""
     rows = [f"| {f['id']} | {f['file']}:{f['line']} {f['finding']} | {f['severity']} | {f.get('disposition', '')} |"
             for f in findings]
     return "\n".join(["| # | Finding | Sev | Disposition |", "|---|---|---|---|", *rows])

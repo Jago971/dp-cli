@@ -1,6 +1,6 @@
 # The flows, as steps. `dp guide` (and the guide skill through it) reads this
-# file to show where you are and offer what comes next, so the order of work lives in one place instead
-# of in each skill. A step is defined once under `steps`; a flow lists the
+# file to show where you are and offer what comes next, so the order of work
+# lives in one place instead of in each skill. A step is defined once under `steps`; a flow lists the
 # steps it uses. The guide offers only the `next` and `optional` steps the
 # current flow lists, so a shared step (review) carries each flow's
 # successor; a `fork` may lead into another flow (the one that lists its step).

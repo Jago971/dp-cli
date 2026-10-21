@@ -9,7 +9,7 @@ from dp.gitea import GiteaError
 from fake_gitea import FakeGitea
 
 
-class Script:
+class Script(guide.Plain):
     """The person at the terminal: answers in order, and what the guide said."""
 
     def __init__(self, *answers):
@@ -58,13 +58,14 @@ def saved(root):
 
 @pytest.mark.unit
 def test_pick_moves_the_ticket_and_branches_from_prep(tmp_path, gitea):
-    gitea.add_issue(4, title="Fix the thing: in detail", labels=["TYPE/BUG"])
+    gitea.add_issue(4, title="Fix the thing: in detail", labels=["TYPE/BUG"], milestone="v1.0.0")
     gitea.put("Backlog", 4)
     git = Git()
 
     walk(tmp_path, Script("ticket", "#4", None, "stop"), gitea, git)
 
     assert gitea.column_of(4) == "In Progress"
+    assert not [w for w in gitea.writes if w[0] == "milestone"]
     assert git.calls == [("switch", "-c", "fix/4-fix-the-thing", "prep")]
     assert (saved(tmp_path)["step"], saved(tmp_path)["ticket"]) == ("pick", 4)
 
@@ -166,3 +167,45 @@ def test_a_state_with_a_ticket_that_is_not_a_number_drops_it(tmp_path):
     (tmp_path / ".factory" / "guide.yaml").write_text("flow: ticket\nstep: build\nticket: abc\n")
 
     assert saved(tmp_path)["ticket"] is None
+
+
+@pytest.mark.unit
+def test_pick_puts_a_ticket_without_a_milestone_in_the_one_due_first(tmp_path, gitea):
+    gitea.milestones += [{"id": 1, "title": "v2", "due_on": None},
+                         {"id": 2, "title": "v1.1", "due_on": "2026-12-01T00:00:00Z"},
+                         {"id": 3, "title": "v1", "due_on": "2026-11-01T00:00:00Z"}]
+    gitea.add_issue(4, title="A ticket")
+    gitea.put("Backlog", 4)
+    script = Script("ticket", "#4", None, "stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert ("milestone", 4, 3) in gitea.writes
+    assert "[ticket #4] joined v1" in script.said
+
+
+@pytest.mark.unit
+def test_a_tag_waits_for_the_release_pr_on_main(tmp_path):
+    guide.write_state(tmp_path, {"flow": "release", "step": "sign-off", "ticket": None})
+
+    walk(tmp_path, Script("tag", False, "stop"), None)
+    assert saved(tmp_path)["step"] == "sign-off"
+    assert not (tmp_path / ".factory" / "jobs").exists()
+
+    walk(tmp_path, Script("tag", True, "stop"), None)
+    assert (tmp_path / ".factory" / "jobs" / "release" / "tag.md").is_file()
+
+
+@pytest.mark.unit
+def test_findings_left_undecided_are_asked_before_the_next_brief(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "fix", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Review", 4)
+    findings = tmp_path / ".factory" / "jobs" / "4" / "findings.json"
+    findings.parent.mkdir(parents=True)
+    findings.write_text(json.dumps([{"id": "S1", "file": "a.py", "line": 3, "severity": "low",
+                                     "finding": "Too long"}]))
+
+    walk(tmp_path, Script("pr", "Escalate", "MattM", "stop"), gitea)
+
+    assert json.loads(findings.read_text())[0]["disposition"] == "Escalated: MattM"

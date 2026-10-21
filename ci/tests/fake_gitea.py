@@ -76,8 +76,13 @@ class FakeGitea:
             return self.issue(int(found.group(1)))
         if method == "PATCH" and found:
             number = int(found.group(1))
-            self.writes.append(("assign", number, body["assignees"]))
-            self.issues[number]["assignees"] = [{"login": login} for login in body["assignees"]]
+            if "milestone" in body:
+                self.writes.append(("milestone", number, body["milestone"]))
+                title = next(m["title"] for m in self.milestones if m["id"] == body["milestone"])
+                self.issues[number]["milestone"] = {"title": title}
+            if "assignees" in body:
+                self.writes.append(("assign", number, body["assignees"]))
+                self.issues[number]["assignees"] = [{"login": login} for login in body["assignees"]]
             return self.issues[number]
         found = re.search(r"/issues/(\d+)/comments$", path)
         if method == "GET" and found:

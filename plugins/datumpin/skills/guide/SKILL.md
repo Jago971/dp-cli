@@ -24,8 +24,8 @@ updated: 2026-10-21T16:40:00
 
 ## Steps
 
-1. **Position.** Run `dp guide --json` (`gitea`, Calling dp). It reads the map, the state file and, in the ticket flow, the ticket's board column, which places the ticket over the state file (the map's `columns`). It returns the `position` and its `env`, `notes` (a log line for each correction, or for Gitea unreachable) and the `choices`. Print the notes. With no position (no state, one the map does not know, or a finished flow) the choices are the flows, each at its first step.
-2. **Offer.** Print the Guide prompt (`formats`): each choice's `name` and `does`, ending `→ <flow> flow` when its `flow` differs from the position's, then `stop`.
+1. **Position.** Run `dp guide --json` (`gitea`, Calling dp). It reads the map, the state file and, in the ticket flow, the ticket's board column, which places the ticket over the state file (the map's `columns`). It returns the `position` (null with no state, one the map does not know, or a finished flow) and its `env`, `notes` (a log line for each correction, or for Gitea unreachable) and the `choices`. Print the notes.
+2. **Offer.** Print the Guide prompt (`formats`) from the position and the choices.
 3. **Run.** On a choice, run the step:
    - a skill: call the Skill tool with it and the ticket as the argument; the skill decides its own output and prompts.
    - a user-invoked skill (`handoff`, `retro`): print the command for the user to type.

@@ -138,6 +138,16 @@ def move(call, repo, number, column, assignee=None):
     return {"number": number, "from": current, "to": title, "assigned": assigned}
 
 
+def join_earliest_milestone(call, repo, number):
+    """Put ticket N in the open milestone due first (the oldest when none is due); its title, or None."""
+    open_milestones = paged(call, f"repos/{repo}/milestones?state=open")
+    if not open_milestones:
+        return None
+    earliest = min(open_milestones, key=lambda m: (m.get("due_on") is None, m.get("due_on") or "", m["id"]))
+    call("PATCH", f"repos/{repo}/issues/{number}", {"milestone": earliest["id"]})
+    return earliest["title"]
+
+
 def pr(call, repo, head, base, title, body, labels):
     """Open a pull request; labels are names, from the repo's labels or its org's."""
     org = repo.split("/")[0]

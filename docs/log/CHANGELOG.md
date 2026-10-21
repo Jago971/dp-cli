@@ -9,6 +9,7 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 - `dp guide` walks the flows with no session: the position from the state file and the board, the next steps as an arrow-key menu (questionary), the person's gates (pick, merge, try, sign-off, review dispositions) as CLI prompts, and a job brief in `.factory/jobs/<ticket>/<step>.md` with a Job prompt for each agent step (#125).
 - `flows.yaml` gains `columns` (where a board column places a ticket, moved from the `guide` skill) and per-step `brief` sections; `dp` ships with the map and the skills. The `guide` skill finds its position through `dp guide --json`.
 - `dp tokens` books turns to the step the last Job prompt names. `formats` gains the Job prompt.
+- At a terminal, `dp guide` uses the DP palette (`dp/terminal.py`): a rail of the flow's path, a spinner on Gitea reads, number shortcuts, and the Job prompt in a panel copied to the clipboard.
 - `dp` pins `pyyaml==6.0.3`, not the master's 6.0, which has no wheel for Python 3.12 or later.
 
 ---

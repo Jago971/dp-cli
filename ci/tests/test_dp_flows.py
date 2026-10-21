@@ -88,3 +88,22 @@ def test_without_a_position_each_flow_is_offered_at_its_first_step(flow_map):
 @pytest.mark.unit
 def test_a_finished_flow_offers_the_flows(flow_map):
     assert flows.choices(flow_map, state("retro", "session", None)) == flows.choices(flow_map, None)
+
+
+@pytest.mark.unit
+def test_the_rail_marks_the_usual_path_done_current_and_to_come(flow_map):
+    rail = flows.rail(flow_map, state("review"))
+
+    assert [step for step, _ in rail] == ["pick", "build", "check", "commit", "review", "fix", "pr",
+                                          "merge", "try"]
+    assert dict(rail)["commit"] == "done"
+    assert dict(rail)["review"] == "current"
+    assert dict(rail)["fix"] == "next"
+
+
+@pytest.mark.unit
+def test_an_off_path_step_sits_on_the_rail_after_the_step_leading_to_it(flow_map):
+    rail = flows.rail(flow_map, state("diagnose"))
+
+    assert [step for step, _ in rail][:4] == ["pick", "build", "diagnose", "check"]
+    assert dict(rail)["build"] == "done"

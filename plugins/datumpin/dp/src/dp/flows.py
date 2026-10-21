@@ -1,7 +1,7 @@
 """The flow map: where the work stands and what may come next.
 
-Summary: the position from the state file and a ticket's board column, and
-         the choices from that position.
+Summary: the position from the state file and a ticket's board column, the
+         choices from that position, and the rail: the flow's usual path.
 Input:   flows.yaml, packaged with dp from the plugin; a state as
          {flow, step, ticket}.
 Output:  plain dicts, as `dp guide --json` prints them.
@@ -17,6 +17,7 @@ def load():
 
 
 def known(flow_map, state):
+    """True when the map has the state's flow and lists its step in that flow."""
     return bool(state) and state.get("flow") in flow_map["flows"] \
         and state.get("step") in flow_map["flows"][state["flow"]]["steps"]
 
@@ -65,3 +66,27 @@ def choices(flow_map, position):
                      "does": flow_map["steps"][s]["does"]} for s in step.get("fork", {}).values()]
     return offered or [{"name": name, "step": listed["steps"][0], "flow": name, "does": listed["does"]}
                        for name, listed in flow_map["flows"].items()]
+
+
+def leads_to(flow_map, step):
+    defined = flow_map["steps"][step]
+    return defined.get("next", []) + defined.get("optional", []) + list(defined.get("fork", {}).values())
+
+
+def path(flow_map, flow):
+    """A flow's usual path: its first step, then each step's first `next` the flow lists."""
+    listed = flow_map["flows"][flow]["steps"]
+    steps = [listed[0]]
+    while following := [s for s in flow_map["steps"][steps[-1]].get("next", []) if s in listed and s not in steps]:
+        steps.append(following[0])
+    return steps
+
+
+def rail(flow_map, position):
+    """The usual path as (step, done | current | next); a step off it follows the step leading to it."""
+    steps, current = path(flow_map, position["flow"]), position["step"]
+    if current not in steps:
+        leading = [n for n, step in enumerate(steps) if current in leads_to(flow_map, step)]
+        steps.insert(leading[0] + 1 if leading else 0, current)
+    at = steps.index(current)
+    return [(step, "done" if n < at else "current" if n == at else "next") for n, step in enumerate(steps)]

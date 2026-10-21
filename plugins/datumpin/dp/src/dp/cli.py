@@ -12,15 +12,14 @@ import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Callable
 
-import questionary
 import typer
 from rich.console import Console
 
 from dp import commands, guide, tokens
 from dp.gitea import GiteaError, agent_login, human_username, logins, repo_slug, run, tea
+from dp.terminal import Terminal
 
 FULL_COLUMN = 8  # a longer column lists numbers only, as the formats Board view
 
@@ -43,6 +42,7 @@ def git(*args):
 
 
 def repo_root():
+    """The top of the git repo in the working directory."""
     return Path(git("rev-parse", "--show-toplevel"))
 
 
@@ -150,17 +150,6 @@ def pointer(number: int, text: str, as_json: bool = JSON):
     emit(posted, as_json, lambda p: say(f"#{p['number']} pointer posted"))
 
 
-def terminal():
-    """The guide's prompts at a terminal: questionary menus; Ctrl-C raises KeyboardInterrupt."""
-    def choose(message, options):
-        index = questionary.select(message, [questionary.Choice(label, value=n)
-                                             for n, (label, _) in enumerate(options)]).unsafe_ask()
-        return options[index][1]
-    return SimpleNamespace(choose=choose, say=say,
-                           confirm=lambda message: questionary.confirm(message).unsafe_ask(),
-                           text=lambda message, default: questionary.text(message, default=default).unsafe_ask())
-
-
 @app.command(name="guide")
 @reports_errors
 def guide_command(as_json: bool = JSON):
@@ -175,7 +164,7 @@ def guide_command(as_json: bool = JSON):
         emit(guide.show(root, gitea), as_json, lambda shown: say(guide.guide_prompt(shown)))
         return
     try:
-        guide.walk(root, terminal(), gitea, git)
+        guide.walk(root, Terminal(), gitea, git)
     except KeyboardInterrupt:
         raise typer.Exit(130)
 
