@@ -1,6 +1,6 @@
 # ci/tests/
 
-**Scope:** tests for the CI scripts in `ci/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 11 tests: 5 `unit`, 6 `integration` (need a Docker daemon; skipped without one).
+**Scope:** tests for the CI scripts in `ci/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 12 tests: 5 `unit`, 7 `integration` (need a Docker daemon; skipped without one).
 **Status:** current
 **Last reviewed:** 2026-10-21
 **Governed by:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)

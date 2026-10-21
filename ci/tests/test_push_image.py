@@ -32,18 +32,22 @@ def image_id(tag):
 
 @pytest.fixture
 def registry():
+    """Starts registry:2 on a random loopback port; removes it and every tag under it afterwards."""
     name = f"push-image-test-{uuid.uuid4().hex[:8]}"
     docker("run", "-d", "--name", name, "-p", "127.0.0.1::5000", "registry:2")
     port = docker("port", name, "5000").splitlines()[0].rsplit(":", 1)[1]
     yield name, f"localhost:{port}"
-    docker("rm", "-f", name)
-    for tag in docker("images", "--format", "{{.Repository}}:{{.Tag}}",
-                      "--filter", f"reference=localhost:{port}/*").splitlines():
+    subprocess.run(["docker", "rm", "-f", name], capture_output=True)
+    tags = subprocess.run(["docker", "images", "--format", "{{.Repository}}:{{.Tag}}",
+                           "--filter", f"reference=localhost:{port}/*"],
+                          capture_output=True, text=True).stdout.split()
+    for tag in tags:
         subprocess.run(["docker", "image", "rm", "-f", tag], capture_output=True)
 
 
 @pytest.fixture
 def build(tmp_path):
+    """Builds a one-file image under a throwaway local tag; removes the tags afterwards."""
     tags = []
 
     def make(marker):
@@ -65,17 +69,32 @@ def served_manifest(registry_name, repo, tag):
                   f"http://localhost:5000/v2/{repo}/manifests/{tag}")
 
 
-def test_push_leaves_host_tag_on_the_image_it_had(registry, build):
+def push(local, *tags):
+    subprocess.run(["bash", SCRIPT, local, *tags], check=True, capture_output=True, text=True)
+
+
+def test_push_tag_the_host_runs_from_keeps_it_on_its_image(registry, build):
     name, host = registry
     deployed = build("old")
-    docker("tag", deployed, f"{host}/app:prep")  # what the host runs
+    docker("tag", deployed, f"{host}/app:prep")
+    docker("image", "rm", deployed)  # as on the host: :prep is the old image's only tag
+    deployed_id = image_id(f"{host}/app:prep")
+    new = build("new")
+    docker("tag", new, f"{host}/app:reference")
+    docker("push", "-q", f"{host}/app:reference")  # what the registry serves for the new image
+
+    push(new, f"{host}/app:prep")
+
+    assert image_id(f"{host}/app:prep") == deployed_id
+    assert served_manifest(name, "app", "prep") == served_manifest(name, "app", "reference")
+
+
+def test_push_tag_absent_on_host_removes_it_afterwards(registry, build):
+    _, host = registry
     new = build("new")
 
-    subprocess.run(["bash", SCRIPT, new, f"{host}/app:prep", f"{host}/app:prep-abc1234"],
-                   check=True, capture_output=True, text=True)
+    push(new, f"{host}/app:prep-abc1234")
 
-    assert image_id(f"{host}/app:prep") == image_id(deployed)
     assert image_id(f"{host}/app:prep-abc1234") is None
-    assert served_manifest(name, "app", "prep") == served_manifest(name, "app", "prep-abc1234")
-    docker("pull", "-q", f"{host}/app:prep-abc1234")  # an absent tag: pulling it disturbs nothing
+    docker("pull", "-q", f"{host}/app:prep-abc1234")
     assert image_id(f"{host}/app:prep-abc1234") == image_id(new)
