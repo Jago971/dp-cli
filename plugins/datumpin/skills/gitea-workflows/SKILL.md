@@ -23,7 +23,7 @@ A change to a shared workflow is tested on its DEVKIT PR, or from a consumer bra
 
 ## Images
 
-`docker-image` builds one image per app, never per instance (`config-led-deployment`), passes the build secrets `gitea_user`, `gitea_token`, `gitea_host` and `gitea_package_owner` to BuildKit, and scans with trivy: a fixable CRITICAL fails the job, HIGH ones are listed. Images follow the package channels: a push to `prep` publishes `:prep` and `:prep-<sha>`, a `vX.Y.Z` tag on `main` publishes `:X.Y.Z`. The account behind `PKG_WRITE_TOKEN` needs write on the org's packages.
+`docker-image` builds one image per app, never per instance (`config-led-deployment`), passes the build secrets `gitea_user`, `gitea_token`, `gitea_host` and `gitea_package_owner` to BuildKit, checks the image's `ENTRYPOINT` file is executable (`ci/check-entrypoint.sh`, no app config needed), and scans with trivy: a fixable CRITICAL fails the job, HIGH ones are listed. Both run before the push. Images follow the package channels: a push to `prep` publishes `:prep` and `:prep-<sha>`, a `vX.Y.Z` tag on `main` publishes `:X.Y.Z`. The account behind `PKG_WRITE_TOKEN` needs write on the org's packages.
 
 ## Test suite job
 

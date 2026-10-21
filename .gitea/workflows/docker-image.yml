@@ -24,9 +24,11 @@ name: Docker image
 # Private packages install through BuildKit secrets (gitea_user, gitea_token,
 # gitea_host, gitea_package_owner, as every Dockerfile reads them), so no
 # credential reaches a layer. The read token builds; only the push uses the
-# write token. trivy fails the job on a CRITICAL vulnerability that has a
-# fix, and lists HIGH ones. When the org variable DEPENDENCY_TRACK_URL is
-# set, the image's CycloneDX SBOM goes to OWASP Dependency-Track.
+# write token. Before the push, ci/check-entrypoint.sh fails an image whose
+# ENTRYPOINT file is missing or not executable, and trivy fails the job on a
+# CRITICAL vulnerability that has a fix, and lists HIGH ones. When the org
+# variable DEPENDENCY_TRACK_URL is set, the image's CycloneDX SBOM goes to
+# OWASP Dependency-Track.
 on:
   workflow_call:
     inputs:
@@ -106,6 +108,29 @@ jobs:
             --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
             --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
             -f "${CONTEXT}/${DOCKERFILE}" -t "$LOCAL" "$CONTEXT"
+
+      - name: Fetch the entrypoint check from DEVKIT main
+        uses: actions/checkout@v4
+        with:
+          repository: Datumpin/DEVKIT
+          ref: main
+          path: .devkit
+
+      - name: Check the entrypoint
+        # A missing or non-executable ENTRYPOINT fails here, before the push,
+        # not when a host starts the image. DEVKIT checks itself with the PR's
+        # own script, so a change to it is tested on the PR that makes it.
+        # Like versions.py, the script comes from main: a DEVKIT branch tried
+        # from a consumer branch before release finds none and skips, saying so.
+        env:
+          LOCAL: ${{ steps.tags.outputs.local }}
+          SCRIPT: ${{ github.repository == 'Datumpin/DEVKIT' && 'ci/check-entrypoint.sh' || '.devkit/ci/check-entrypoint.sh' }}
+        run: |
+          if [ ! -f "$SCRIPT" ]; then
+            echo "SKIP  $SCRIPT is not on DEVKIT main yet; entrypoint not checked"
+            exit 0
+          fi
+          bash "$SCRIPT" "$LOCAL"
 
       - name: Install trivy
         run: |
