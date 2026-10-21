@@ -2,6 +2,7 @@
 import json
 import os
 import sys
+import time
 
 import pytest
 
@@ -59,3 +60,14 @@ def test_pr_ticket_without_pull_request_event_passes(monkeypatch, tmp_path):
     ok, _ = conformance.check_pr_ticket(tmp_path)
 
     assert ok
+
+
+@pytest.mark.unit
+def test_pr_ticket_body_of_blank_lines_answers_in_linear_time(monkeypatch, tmp_path):
+    pull_request_with(monkeypatch, tmp_path, "\n" * 50_000)  # a quadratic regex takes seconds here
+
+    start = time.monotonic()
+    ok, _ = conformance.check_pr_ticket(tmp_path)
+
+    assert not ok
+    assert time.monotonic() - start < 1

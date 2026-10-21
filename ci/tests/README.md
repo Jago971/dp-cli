@@ -1,6 +1,6 @@
 # ci/tests/
 
-**Scope:** tests for the CI scripts in `ci/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 22 tests: 13 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
+**Scope:** tests for the CI scripts in `ci/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 23 tests: 14 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
 **Status:** current
 **Last reviewed:** 2026-10-21
 **Governed by:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)
@@ -23,7 +23,7 @@ The tests sit flat in `ci/tests/`, one file per script, rather than in `unit/` a
 
 ## Running locally
 
-Run the suite on your own Docker before pushing, the way CI runs it; CI runs it again on the PR. On Docker Desktop the two `test_push_image.py` tests fail until #92: the daemon cannot reach a registry published on the laptop's loopback. From the DEVKIT root (Git Bash on Windows needs `MSYS_NO_PATHCONV=1`):
+Run the suite on your own Docker before pushing, the way CI runs it; CI runs it again on the PR. The integration tests need the Docker socket, which gives the test container control of your Docker: run only this repo's tests this way. On Docker Desktop the two `test_push_image.py` tests fail until #92: the daemon cannot reach a registry published on the laptop's loopback. From the DEVKIT root (Git Bash on Windows needs `MSYS_NO_PATHCONV=1`):
 
 ```
 docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v /var/run/docker.sock:/var/run/docker.sock \
