@@ -42,7 +42,7 @@ def call(method, path, body=None):
 def tickets_named(pull):
     text = f"{pull.get('title', '')}\n{pull.get('body') or ''}"
     numbers = set()
-    for line in re.findall(r"(?im)^\s*Refs\b.*$", text):
+    for line in re.findall(r"(?im)^[ \t]*Refs\b.*$", text):
         numbers |= {int(n) for n in re.findall(r"(?<![\w/])#(\d+)", line)}
     branch = re.match(r"^[a-z]+/(\d+)-", pull.get("head", {}).get("ref", ""))
     if branch:

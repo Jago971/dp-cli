@@ -6,15 +6,16 @@ Run from CI through DEVKIT's conformance workflow, or by hand:
 
 Each check prints PASS, FAIL or SKIP with the rule it enforces; the exit code
 is 1 when any check fails. The rules come from the plugin's skills
-(claude-md-authoring, documentation-cross-cutting, formats, gitea-workflows) and the
-plugin README's onboarding list; this script only makes the mechanical ones
-automatic. A repo skips a check that does not apply by naming it in its
-.claude/flow.yaml:
+(claude-md-authoring, documentation-cross-cutting, formats, gitea-workflows)
+and the plugin README's onboarding list; this script only makes the
+mechanical ones automatic. A repo skips a check that does not apply by
+naming it in its .claude/flow.yaml:
 
     conformance:
       skip: [changelog]   # with a comment saying why
 
-Standard library only, so it runs anywhere Python does.
+Standard library only, so it runs anywhere Python does; it imports
+board_sync.py from its own folder, so the two ship together.
 """
 import json
 import os
@@ -34,7 +35,7 @@ DOCS = {
     "roadmap": "docs/plan/ROADMAP.md",
     "changelog": "docs/log/CHANGELOG.md",
 }
-NO_TICKET = re.compile(r"(?im)^\s*No ticket:\s*\S")
+NO_TICKET = re.compile(r"(?im)^[ \t]*No ticket:[ \t]*\S")  # [ \t], not \s: linear on any body
 DEVKIT_CALL = re.compile(r"uses:\s*Datumpin/DEVKIT/\.gitea/workflows/([\w.-]+)@(\S+)")
 
 

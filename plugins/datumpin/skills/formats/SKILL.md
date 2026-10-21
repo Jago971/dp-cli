@@ -131,8 +131,8 @@ To close · 2 superseded
 ### Handover
 
 ```
-Handover · C:\Users\mattm\Documents\DEVKIT\.factory\handoff-2026-10-21.md
-Next prompt   Read C:\Users\mattm\Documents\DEVKIT\.factory\handoff-2026-10-21.md, then run /datumpin:board and continue #89.
+Handover · <repo>\.factory\handoff-2026-10-21.md
+Next prompt   Read <repo>\.factory\handoff-2026-10-21.md, then run /datumpin:board and continue #89.
 Your steps    1. Merge DEVKIT#99
               2. Merge Datumpin/AHJ#169
 ```
