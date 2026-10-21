@@ -34,7 +34,6 @@ docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v /var/run/docker.sock:/var/run/do
 ## Bugs caught
 
 - `test_push_image.py` failed on Docker Desktop: its registry was published on the laptop's loopback, which Desktop's daemon, inside its VM, cannot reach (`dial tcp [::1]` timed out, `127.0.0.1` was refused). The registry now runs with `--network host` on the daemon's loopback, which works on Linux and Desktop alike.
-
 - `board_sync.py` read only the first 50 tickets of a column, so a ticket further down was added to the board again instead of moved. Fixed by reading every page.
 - The first fix stopped at a page shorter than 50, which assumed Gitea's default page cap; a server with a lower cap brought the bug back, and a server ignoring `page` would loop until the job timed out. Now it stops at an empty page and gives up after 40 pages.
 - An image whose `ENTRYPOINT` script was stored without the executable bit built, scanned and pushed cleanly, and failed only when a host started it (`permission denied`). `check-entrypoint.sh` now fails the image build instead; the non-executable test image reproduces it.

@@ -43,12 +43,17 @@ def registry():
     name = f"push-image-test-{uuid.uuid4().hex[:8]}"
     host = f"127.0.0.1:{random.randint(20000, 39999)}"
     docker("run", "-d", "--name", name, "--network", "host", "-e", f"REGISTRY_HTTP_ADDR={host}", "registry:2")
-    for _ in range(40):  # up within seconds; a taken port fails here, not in the test
-        if subprocess.run(["docker", "exec", name, "wget", "-q", "-O-", f"http://{host}/v2/"],
-                          capture_output=True).returncode == 0:
+    # Ready when this registry logs that it listens: a probe of the port could
+    # be answered by another service on the host if the random port is taken.
+    ready = False
+    for _ in range(40):
+        logs = subprocess.run(["docker", "logs", name], capture_output=True, text=True)
+        ready = f"listening on {host}" in logs.stdout + logs.stderr
+        if ready or docker("inspect", "-f", "{{.State.Running}}", name) != "true":
             break
         time.sleep(0.25)
-    else:
+    if not ready:
+        subprocess.run(["docker", "rm", "-f", name], capture_output=True)
         pytest.fail(f"registry on {host} did not start")
     yield host
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
