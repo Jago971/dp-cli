@@ -4,6 +4,14 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - Windows dev machines: plain Docker Desktop, LF everywhere (plugin 0.7.3)
+
+- Decision: plain Docker Desktop with checkouts on the Windows drive for now; the move into WSL2 is #110 (#94).
+- `docker-compose-conventions/windows.md`: line endings, Git Bash paths, bind mounts and ports on Windows.
+- `.gitattributes` makes every text file LF (`* text=auto eol=lf`); BDS, AHJ, CURATOR and PACKAGES follow in their own PRs.
+
+---
+
 ### [FIXED] 2026-10-21 - test_push_image runs on Docker Desktop
 
 - The test registry runs in the daemon's network namespace, so pushes reach it on Docker Desktop as on Linux; `ci/local-check.sh` is green on the laptop (#92).

@@ -33,4 +33,5 @@ v0.5.0 – Shared CI and images is released.
 - **Channels are versions:** packages and images use the same rule; `prep` publishes pre-releases, `main` publishes finals.
 - **Local first:** work is built and tested in containers on the laptop before it is pushed; CI is the second check, and staging and production hosts never run tests or builds (2026-10-21).
 - **Milestone when started:** a Backlog ticket may have no milestone; it joins the earliest open milestone when work starts (#62, 2026-10-21).
+- **Plain Docker Desktop on Windows, for now:** checkouts stay on the Windows drive, with LF line endings in every repo; moving them into WSL2 is the better long-term setup, tracked in #110 (#94, 2026-10-21).
 - **A mechanical rule gets a check:** what `conformance` can check, it checks; the skills hold the judgement calls.

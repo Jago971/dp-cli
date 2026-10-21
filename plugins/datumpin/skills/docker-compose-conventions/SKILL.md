@@ -12,6 +12,7 @@ Branches that load a sibling file:
 - A prod frontend served by nginx: [frontend.md](frontend.md).
 - A service that runs cron: [cron.md](cron.md).
 - A dev machine whose Docker cannot reach the private registry: [local-packages.md](local-packages.md).
+- A Windows dev machine (line endings, Git Bash paths, bind mounts): [windows.md](windows.md).
 
 ## Two environments
 
