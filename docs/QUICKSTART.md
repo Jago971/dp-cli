@@ -2,7 +2,7 @@
 
 **Scope:** The short tour of DEVKIT and the datumpin workflow: set a machine up, use the flows day to day, release a change, and where to look when stuck.
 **Status:** current
-**Last reviewed:** 2026-10-20
+**Last reviewed:** 2026-10-21
 
 ---
 
@@ -17,7 +17,8 @@ On a new machine, once:
 1. Add the `gitea` SSH alias (`Host gitea`, `HostName 192.168.10.101`, `Port 2222`, `User git`) to `~/.ssh/config`.
 2. Check it: `git ls-remote git@gitea:Datumpin/DEVKIT.git main` prints a commit.
 3. Install `tea` and add two logins: your own (the default) and `squire`.
-4. In each repo you work in: `claude plugin install datumpin@datumpin --scope project` (the repo's committed `.claude/settings.json` names the marketplace).
+4. Install Docker Desktop. Builds and tests run in containers on the laptop; nothing else is installed on the host but `git`, `tea`, Python (for the status hook) and Claude Code.
+5. In each repo you work in: `claude plugin install datumpin@datumpin --scope project` (the repo's committed `.claude/settings.json` names the marketplace).
 
 A new session starts with a `datumpin status` line: Triage counts and open PRs. Start with `/datumpin:board`.
 
@@ -38,7 +39,7 @@ flowchart LR
 - `plugins/datumpin/`: the plugin ([README](../plugins/datumpin/README.md)); `skills/` holds every skill and flow.
 - `.gitea/workflows/`: what repos call from `ci.yml` (`python-tests`, `node-tests`, `compose-check`, `security-scan`, `conformance`), `board.yml` (`board-sync`) and `image.yml` (`docker-image`); PACKAGES' publish jobs call `publish-python` and `publish-npm`. DEVKIT's own `ci.yml` and `board.yml` call them from the checkout.
 - `ci/master/`: the approved dependency versions every repo's pins must match (the `versions` job); a version changes here first, through a reviewed PR.
-- `ci/`: the scripts the shared workflows fetch from `main`: `conformance.py`, `versions.py`, `board_sync.py`, `check-entrypoint.sh`, `push-image.sh`, `release-channel.sh`; their tests are in `ci/tests/` (`ci/tests/README.md`), run by `ci.yml` through `python-tests`.
+- `ci/`: the scripts the shared workflows fetch from `main`: `conformance.py`, `versions.py`, `board_sync.py`, `check-entrypoint.sh`, `push-image.sh`, `release-channel.sh`; their tests are in `ci/tests/`: run them locally first (`ci/tests/README.md`, Running locally); `ci.yml` re-runs them through `python-tests`.
 
 ## How to deploy
 
@@ -48,7 +49,7 @@ A DEVKIT release is a promotion: merge PRs into `prep`, then an Owner merges a `
 
 ```mermaid
 flowchart LR
-  T[Triage] --> B[Backlog] --> I["In Progress: branch"] --> V["Review: PR to prep"] --> S["Testing: merged, on Hammond"] --> D[DoD] --> N["Done: released on main"]
+  T[Triage] --> B[Backlog] --> I["In Progress: branch, tested locally"] --> V["Review: PR to prep, CI"] --> S["Testing: prep on Hammond"] --> D[DoD] --> N["Done: released on main"]
 ```
 
 - **Pick up work:** `/datumpin:board`, then work a ticket on `<type>/<issue>-<slug>`.

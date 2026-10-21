@@ -4,6 +4,13 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [DOCS] 2026-10-21 - Local-first direction
+
+- The roadmap leads with local-first, containers-only development (milestone v0.7.0) and lists the open milestones; the release gate moves to v0.8.0.
+- The quickstart adds Docker Desktop to machine setup and the local test step to the ticket flow; `ci/tests/README.md` gives the local test command.
+
+---
+
 ### [CHANGED] 2026-10-21 - Every PR names a local ticket or says why not (plugin 0.6.10)
 
 - `conformance` gains `pr-ticket`: a PR names a local ticket board-sync moves (a `Refs` line or its branch) or has a `No ticket: <reason>` line, so repo-wide work shows on the repo's Board (#57). The `formats` PR shape documents the line.
