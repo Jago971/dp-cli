@@ -146,8 +146,8 @@ Your steps    1. Merge DEVKIT#99
 ```
 Guide · ticket flow · #52 · review (dev)
 Done          change-review · CHANGES · Standards 2 · Spec 1
-1. fix        Apply the human's dispositions, then commit
-2. pr         Push and open the PR as the agent, with its Review section; CI runs
+1. fix        Apply the dispositions, then commit
+2. pr         Push and open the PR, with its Review section
 3. stop
 ? Next? (1 / 2 / 3)
 ```

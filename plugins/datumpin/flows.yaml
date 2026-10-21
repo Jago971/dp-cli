@@ -1,16 +1,19 @@
 # The flows, as steps. The guide skill reads this file to show where you are
-# and offer what comes next; each step runs the skill it names. A step is
-# defined once under `steps`; a flow lists the steps it uses. The guide
-# offers only the `next` and `optional` steps the current flow lists, so a
-# shared step (review) carries each flow's successor; a `fork` may lead into
-# another flow (the one that lists its step).
+# and offer what comes next, so the order of work lives in one place instead
+# of in each skill. A step is defined once under `steps`; a flow lists the
+# steps it uses. The guide offers only the `next` and `optional` steps the
+# current flow lists, so a shared step (review) carries each flow's
+# successor; a `fork` may lead into another flow (the one that lists its step).
 #
 # Per step:
-#   skill     the skill that runs the step (or `human` for a person's action)
-#   env       where it runs: dev, ci, prep or prod (gitea-workflows, Environments)
-#   does      one line, shown with the choice
+#   skill     the skill that runs the step. Two have no skill file: `agent`,
+#             a step the agent does directly in its `formats` shape (a commit,
+#             a tag), and `human`, a person's action the guide waits for.
+#   env       where the step runs (gitea-workflows, Environments), so the
+#             guide can say whether it touches the laptop, CI or a server
+#   does      the choice line the guide prints
 #   next      the steps that may follow; the first is the usual one
-#   optional  steps that may be inserted before the next one
+#   optional  steps that may come before the next one
 #   fork      condition -> step, offered beside `next`; it may switch flow
 
 flows:
@@ -40,9 +43,9 @@ steps:
   pick:
     skill: board
     env: dev
-    does: Move a ticket to In Progress, assigned to you, on its branch
+    does: Take a Backlog ticket into In Progress on its branch
     next: [build]
-    fork: {ticket in Triage or unscoped: shape}
+    fork: {the ticket is in Triage or unscoped: shape}
   shape:
     skill: shape
     env: dev
@@ -51,75 +54,76 @@ steps:
   build:
     skill: tdd
     env: dev
-    does: Agree the seams, then red, then green, in the dev containers
+    does: Agree the seams, then build red to green in the dev containers
     next: [check]
     optional: [diagnose]
   diagnose:
     skill: diagnosing-bugs
     env: dev
-    does: Build a red feedback loop for a hard bug first
+    does: Build a red feedback loop for a hard bug
     next: [build]
   check:
     skill: definition-of-done
     env: dev
-    does: Tick the change checklist; the tests pass locally (testing-conventions, The local loop)
+    does: Tick the change checklist, with the tests passing locally
     next: [commit]
   commit:
-    skill: formats
+    skill: agent
     env: dev
-    does: Commit in the Commit shape on the ticket branch
+    does: Commit on the ticket branch
     next: [review]
   review:
     skill: change-review
     env: dev
-    does: Review the diff on Standards and Spec (and Security at a promotion)
+    does: Review the diff (Standards, Spec; Security at a promotion)
     next: [fix, pr, release-pr]
   fix:
     skill: change-review
     env: dev
-    does: Apply the human's dispositions, then commit
+    does: Apply the dispositions, then commit
     next: [pr, release-pr]
+    optional: [review]
   pr:
     skill: gitea
     env: ci
-    does: Push and open the PR as the agent, with its Review section; CI runs
+    does: Push and open the PR, with its Review section
     next: [merge]
   merge:
     skill: human
     env: ci
-    does: You merge the PR into prep; board-sync moves the ticket to Testing
+    does: Merge the PR into prep once CI is green
     next: [try, pick]
     fork: {prep must pull first: deploy-prep}
   try:
     skill: human
     env: prep
-    does: Try the change on prep (Hammond) once it pulls the new images
+    does: Try the change on prep
     next: [pick]
-    fork: {every ticket in the milestone is tried: gate}
+    fork: {every ticket in the milestone is tried: gate, carry on: board}
   gate:
     skill: definition-of-done
     env: prep
-    does: Move the milestone's tickets to DoD and start the promotion
+    does: Move the milestone's tickets to DoD
     next: [review]
   release-pr:
-    skill: gitea
+    skill: definition-of-done
     env: ci
     does: Open the prep -> main PR with the DoD worksheet
     next: [sign-off]
   sign-off:
     skill: human
     env: ci
-    does: You fill the worksheet's sign-off and merge; merging is the sign-off
+    does: Sign the worksheet and merge the release PR
     next: [tag]
   tag:
-    skill: gitea-workflows
+    skill: agent
     env: prod
-    does: Tag vX.Y.Z on main; CI publishes the release images; repos update the plugin
+    does: Tag vX.Y.Z on main and update the plugin in each repo
     next: [close]
   close:
     skill: gitea
     env: prod
-    does: Post Done pointers; you close the tickets and the milestone
+    does: Post Done pointers for the tickets and milestone to close
     next: []
     fork: {carry on: board}
   align:
@@ -131,12 +135,12 @@ steps:
   deploy-prep:
     skill: config-led-deployment
     env: prep
-    does: docker compose pull and up -d on Hammond for the :prep images
+    does: Pull and restart the :prep images on Hammond
     next: [try]
   handoff:
     skill: handoff
     env: dev
-    does: Write the handoff document and print the Handover block
+    does: Write the handoff document and its Handover block
     next: [retro]
   retro:
     skill: retro
