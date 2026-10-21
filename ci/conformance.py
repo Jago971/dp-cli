@@ -17,6 +17,7 @@ automatic. A repo skips a check that does not apply by naming it in its
 Standard library only, so it runs anywhere Python does.
 """
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -31,6 +32,8 @@ DOCS = {
     "roadmap": "docs/plan/ROADMAP.md",
     "changelog": "docs/log/CHANGELOG.md",
 }
+LOCAL_TICKET = re.compile(r"(?<![\w/])#\d+")  # #N, not Owner/Repo#N
+NO_TICKET = re.compile(r"(?im)^\s*No ticket:\s*\S")
 DEVKIT_CALL = re.compile(r"uses:\s*Datumpin/DEVKIT/\.gitea/workflows/([\w.-]+)@(\S+)")
 
 
@@ -128,6 +131,20 @@ def check_board(root):
     return ok, "board.yml calls DEVKIT's board-sync" if ok else "board.yml must call DEVKIT's board-sync (@main)"
 
 
+def check_pr_ticket(root):
+    """A pull request names a local ticket, so its work shows on this repo's Board."""
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
+    if not event_path:
+        return True, "not a pull request"
+    pull = json.loads(Path(event_path).read_text(encoding="utf-8")).get("pull_request")
+    if pull is None:
+        return True, "not a pull request"
+    body = pull.get("body") or ""
+    if LOCAL_TICKET.search(body) or NO_TICKET.search(body):
+        return True, "the description names a local ticket or says No ticket"
+    return False, "the description must name a local #N or give a 'No ticket: <reason>' line (formats)"
+
+
 def doc_check(rel):
     def check(root):
         if not (root / rel).exists():
@@ -145,6 +162,7 @@ CHECKS = {
     "no-skills-copy": check_no_skills_copy,
     "ci": check_ci,
     "board": check_board,
+    "pr-ticket": check_pr_ticket,
     **{name: doc_check(rel) for name, rel in DOCS.items()},
 }
 

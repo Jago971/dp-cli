@@ -19,7 +19,7 @@ Package monorepo publishing (PACKAGES): [package-publishing.md](package-publishi
 
 A repo keeps a workflow of its own only for what no shared one does (PACKAGES' `test_suite/test.yml` tests only the packages a PR touches). Credentials are org secrets (`PKG_USER`, `PKG_READ_TOKEN`, `PKG_WRITE_TOKEN`, `BOARD_TOKEN`) and variables (`PKG_REGISTRY_HOST`, `PKG_REGISTRY_OWNER`); the read token installs, only image and package publishing use the write token. Pin action versions (`actions/checkout@v4`) and tool binaries (version plus SHA-256).
 
-A change to a shared workflow is tested on its DEVKIT PR, or from a consumer branch that points at the DEVKIT branch, then released (`prep` → `main`); a consumer never pins a branch, and `conformance` fails one that does. Merge the feature PRs into DEVKIT `prep` before opening the release PR.
+A change to a shared workflow is tested on its DEVKIT PR, or from a consumer branch that points at the DEVKIT branch, then released (`prep` → `main`); a consumer never pins a branch, and `conformance` fails one that does. `conformance` also fails a PR whose description names no local `#N` and has no `No ticket: <reason>` line (`formats`); editing the description does not re-run CI, so re-run the job after the fix. Merge the feature PRs into DEVKIT `prep` before opening the release PR.
 
 ## Images
 

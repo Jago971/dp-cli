@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - Every PR names a local ticket or says why not (plugin 0.6.10)
+
+- `conformance` gains `pr-ticket`: a PR description names a local `#N` or has a `No ticket: <reason>` line, so repo-wide work shows on the repo's Board (#57). The `formats` PR shape documents the line.
+
+---
+
 ### [CHANGED] 2026-10-21 - Superseded tickets: pointer plus a to-close list (plugin 0.6.9)
 
 - `shape` and `align` end with a To-close list (a new `formats` shape) of the tickets they superseded, each with its pointer verdict (#56).
