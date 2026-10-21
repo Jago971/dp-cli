@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - handoff ends with a Handover block (plugin 0.6.13)
+
+- `handoff` writes `.factory/handoff-<date>.md` in the repo the next session starts in, and ends with a Handover block (new in `formats`): the path, the prompt to paste, and the human's open steps (#78).
+
+---
+
 ### [CHANGED] 2026-10-21 - A milestone once work starts (plugin 0.6.12)
 
 - A Backlog ticket may have no milestone; `board` gives a picked one the earliest open milestone, and flags a missing milestone only from In Progress on (#62).

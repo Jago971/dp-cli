@@ -16,7 +16,7 @@ credited here as a courtesy, not a licence requirement.
 | [writing-for-agents](writing-for-agents/SKILL.md) | `skills/productivity/writing-for-agents` | None |
 | [grilling](grilling/SKILL.md) | `skills/productivity/grilling` | None |
 | [grill-me](grill-me/SKILL.md) | `skills/productivity/grill-me` | None |
-| [handoff](handoff/SKILL.md) | `skills/productivity/handoff` | "ADRs" reworded to "decision-log entries" |
+| [handoff](handoff/SKILL.md) | `skills/productivity/handoff` | "ADRs" reworded to "decision-log entries"; saves to `.factory/` and ends with the `formats` Handover block |
 | [diagnosing-bugs](diagnosing-bugs/SKILL.md) | `skills/engineering/diagnosing-bugs` | "ADRs" reworded to "the decision log" |
 | [tdd](tdd/SKILL.md) | `skills/engineering/tdd` | "ADRs" reworded to "the decision log"; pointer to his `codebase-design` skill removed, because that skill is not carried here; one line added pointing to `testing-conventions`; the review-stage pointer names our own `change-review` skill |
 | [retro](retro/SKILL.md) | `skills/engineering/retro` | None |
