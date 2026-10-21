@@ -1,6 +1,6 @@
 ---
 name: formats
-description: Formats - the fixed shape of everything the plugin prints or writes - terminal lines, prompts, board, drafts, questions, tickets, milestones, comments, PRs, commits, branches. Use before printing a workflow message or writing to Gitea or git.
+description: Formats - the fixed shape of everything the plugin prints or writes - terminal lines, prompts, board, drafts, questions, handover, tickets, milestones, comments, PRs, commits, branches. Use before printing a workflow message or writing to Gitea or git.
 ---
 
 # Formats
@@ -18,6 +18,7 @@ A flow that prints or writes something new adds its shape to this file before it
 | Drift between code, tickets and plans | Drift report |
 | Tickets or milestones before pushing | Draft list |
 | Superseded tickets left for a human to close | To-close list |
+| The end of a session, for the next one | Handover |
 | A scoping question | Shaping question |
 | Gitea issue | Ticket |
 | Gitea milestone | Milestone |
@@ -126,6 +127,18 @@ To close · 2 superseded
 - #96 · Carried forward → #120
 - #97 · Duplicate → #88
 ```
+
+### Handover
+
+```
+Handover · C:\Users\mattm\Documents\DEVKIT\.factory\handoff-2026-10-21.md
+Next prompt   Read C:\Users\mattm\Documents\DEVKIT\.factory\handoff-2026-10-21.md, then run /datumpin:board and continue #89.
+Your steps    1. Merge DEVKIT#99
+              2. Merge Datumpin/AHJ#169
+```
+
+- `Next prompt` is one line the user pastes as is; it names the document and the next flow step.
+- `Your steps` lists only what the human must do first, numbered; `none` when empty.
 
 ### Shaping question
 
