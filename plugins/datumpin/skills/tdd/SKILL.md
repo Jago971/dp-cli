@@ -37,4 +37,5 @@ Ask: "What's the public interface, and which seams should we test?" Give each pr
 
 - **Red before green.** Write the failing test first, then only enough code to pass it. Don't anticipate future tests or add speculative features.
 - **One slice at a time.** One seam, one test, one minimal implementation per cycle.
+- **A guard check that passes first.** A test that passes on its first run, because an earlier slice already made it true, stays only if it guards behaviour a later change could break; otherwise delete it. Break the code once to watch it fail, so it is not tautological, then keep it and name it a guard in the step's log line: `[tdd #N] PASS · <test> · guard, already true from <slice>`.
 - **Refactoring is not part of the loop.** It belongs to the review stage (see the `change-review` skill), not the red → green implementation cycle.
