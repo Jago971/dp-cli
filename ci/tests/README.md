@@ -1,6 +1,6 @@
 # ci/tests/
 
-**Scope:** tests for the CI scripts in `ci/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 20 tests: 11 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
+**Scope:** tests for the CI scripts in `ci/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 22 tests: 13 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
 **Status:** current
 **Last reviewed:** 2026-10-21
 **Governed by:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)
@@ -20,6 +20,16 @@
 `test_clean_run.py` checks `clean-run.sh` removes only what carries a run label, and that the example labels what it starts.
 
 The tests sit flat in `ci/tests/`, one file per script, rather than in `unit/` and `integration/` folders: there are few, and each file holds one tier (its markers say which).
+
+## Running locally
+
+Run the suite on your own Docker before pushing, the way CI runs it; CI runs it again on the PR. From the DEVKIT root (Git Bash on Windows needs `MSYS_NO_PATHCONV=1`):
+
+```
+docker run --rm -e PYTHONDONTWRITEBYTECODE=1 -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$PWD/ci:/w/ci" -w /w/ci/tests python:3.12-alpine sh -c \
+  'apk add -q bash docker-cli && pip install -q -r requirements.txt && python -m pytest -q -p no:cacheprovider -m "unit or integration"'
+```
 
 ## Bugs caught
 

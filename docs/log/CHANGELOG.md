@@ -6,7 +6,7 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ### [CHANGED] 2026-10-21 - Every PR names a local ticket or says why not (plugin 0.6.10)
 
-- `conformance` gains `pr-ticket`: a PR description names a local `#N` or has a `No ticket: <reason>` line, so repo-wide work shows on the repo's Board (#57). The `formats` PR shape documents the line.
+- `conformance` gains `pr-ticket`: a PR names a local ticket board-sync moves (a `Refs` line or its branch) or has a `No ticket: <reason>` line, so repo-wide work shows on the repo's Board (#57). The `formats` PR shape documents the line.
 
 ---
 

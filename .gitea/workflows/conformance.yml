@@ -2,7 +2,7 @@ name: Conformance
 # Fails when a repo drifts from the standard use of the datumpin plugin and
 # workflow: plugin source and pin, flow.yaml, CLAUDE.md sections and order,
 # the .factory/ ignore, the required docs, ci.yml calling DEVKIT @main, and
-# on a pull request, a description naming a local #N or "No ticket: <reason>".
+# on a pull request, a local ticket board-sync moves or "No ticket: <reason>".
 # The rules live in the plugin's skills; ci/conformance.py checks the
 # mechanical ones. A repo's CI calls it:
 #
