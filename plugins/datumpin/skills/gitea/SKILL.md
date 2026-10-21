@@ -87,6 +87,7 @@ An open ticket not on the board is unsorted. A ticket moves to Done when it is c
 
 - A milestone is one customer release, titled `vX.Y.Z – <theme>` and described in the milestone shape (see `formats`). Older milestones keep their names.
 - Milestones belong to one repo. The same title in several repos marks cross-repo work.
+- A ticket needs a milestone once work starts (a package monorepo's own work aside, below). A Backlog ticket may have none, which means scoped but not planned into a release; when it is picked, it joins the earliest open milestone, so everything that ships is in a release.
 - A package monorepo (PACKAGES) has no release of its own: each package versions on its own. A ticket that serves a consumer's release sits in a milestone with that consumer's title; the monorepo's own work has no milestone.
 
 Milestones and the board are separate: the milestone says which release a ticket ships in, the column says where it is now. Other projects in a repo are humans' own; the flows read and write only `Board`. The project API needs Gitea 28 or later.
