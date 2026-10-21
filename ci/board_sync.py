@@ -48,6 +48,23 @@ def tickets_named(pull):
     return sorted(numbers)
 
 
+def column_holding(repo, board_id, columns, issue_id):
+    """The title of the column holding the issue, or None when it is not on the Board.
+
+    Gitea returns at most 50 issues a page, so each column is read page by page.
+    """
+    for title, cid in columns.items():
+        page = 1
+        while True:
+            issues = call("GET", f"repos/{repo}/projects/{board_id}/columns/{cid}/issues?limit=50&page={page}")
+            if any(i["id"] == issue_id for i in issues):
+                return title
+            if len(issues) < 50:
+                break
+            page += 1
+    return None
+
+
 def move(repo, number, column, forward_only):
     board = next((p for p in call("GET", f"repos/{repo}/projects?state=open") if p["title"] == "Board"), None)
     if board is None:
@@ -57,9 +74,7 @@ def move(repo, number, column, forward_only):
     issue = call("GET", f"repos/{repo}/issues/{number}")
     if issue.get("pull_request"):
         return
-    current = next((title for title, cid in columns.items()
-                    if any(i["id"] == issue["id"] for i in
-                           call("GET", f"repos/{repo}/projects/{board['id']}/columns/{cid}/issues?limit=50"))), None)
+    current = column_holding(repo, board["id"], columns, issue["id"])
     if current == column:
         print(f"KEEP  #{number}: already in {column}")
         return

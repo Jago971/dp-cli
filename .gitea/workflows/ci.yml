@@ -31,6 +31,12 @@ jobs:
       - name: Hook script compiles
         run: python -m py_compile plugins/datumpin/hooks/session_status.py
 
+      - name: Tests for the CI scripts
+        # pytest is pinned to the master copy (ci/master/requirements.txt).
+        run: |
+          python -m pip install --quiet "pytest==9.0.3"
+          python -m pytest -q ci/tests
+
       - name: Lint the workflows
         run: |
           curl -sSfL -o /tmp/actionlint.tar.gz \
