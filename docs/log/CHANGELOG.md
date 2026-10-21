@@ -6,7 +6,7 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ### [CHANGED] 2026-10-21 - board picks from the current milestone first (plugin 0.6.1)
 
-- `board` suggests the earliest open milestone's tickets first (CRITICAL anywhere still first), then priority; the board view gains a `Milestones` line with each open milestone's progress.
+- `board` suggests the earliest open milestone's tickets first (CRITICAL anywhere still first), then priority; the board view gains a `Milestones` line with each open milestone's progress. Its sync reads every page of each column, as board-sync does since #53.
 
 ---
 
