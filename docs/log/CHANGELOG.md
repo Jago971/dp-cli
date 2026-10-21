@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - Image smoke tests and guard checks in the testing skills (plugin 0.6.7)
+
+- `testing-conventions` places image smoke tests (`<service>/tests/smoke-image.sh`): what they check, how to run them, and the CI wiring through `docker-image`. `tdd` keeps a test that passes first as a named guard, once it has been seen to fail (#45).
+
+---
+
 ### [CHANGED] 2026-10-21 - Pre-PR review findings go in the PR description (plugin 0.6.6)
 
 - The `formats` PR shape gains a `Review` section: the evidence, and a findings table with each disposition (`Fixed`, `Dismissed`, `Deferred: #N`). `change-review` writes a pre-PR review there and later reviews in PR comments (#49).

@@ -29,7 +29,7 @@ repo once it installs the plugin and drops its copy.
 | [documentation-cross-cutting](documentation-cross-cutting/SKILL.md) | Placing or writing documentation: docs architecture, where a fact belongs, writing any single markdown file (folder README, reference doc, guide) |
 | [quickstart-guide](quickstart-guide/SKILL.md) | Creating or updating a repo's `docs/QUICKSTART.md` — the short, human-readable tour: run it, deploy it, maintain it, where to go deeper |
 | [code-comments-and-docstrings](code-comments-and-docstrings/SKILL.md) | Writing or editing comments, docstrings or `#region` fold markers in any source file |
-| [testing-conventions](testing-conventions/SKILL.md) | Writing tests, test READMEs, or setting up a test suite |
+| [testing-conventions](testing-conventions/SKILL.md) | Writing tests, image smoke tests, test READMEs, or setting up a test suite |
 | [api-documentation](api-documentation/SKILL.md) | Documenting or building HTTP APIs (FastAPI/Express/etc.) |
 | [secrets-handling](secrets-handling/SKILL.md) | Adding config, env vars, or credentials anywhere in a project |
 | [docker-compose-conventions](docker-compose-conventions/SKILL.md) | Writing/editing Dockerfiles or docker-compose files |

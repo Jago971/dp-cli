@@ -1,6 +1,6 @@
 ---
 name: testing-conventions
-description: Tests - marker taxonomy (unit/integration/contract), naming, factories, CI wiring, test README as a bug log, running pytest. The test-first loop, seams and mocking belong to tdd.
+description: Tests - marker taxonomy (unit/integration/contract), image smoke tests, naming, factories, CI wiring, test README as a bug log, running pytest. The test-first loop, seams and mocking belong to tdd.
 ---
 
 # Testing conventions
@@ -27,6 +27,13 @@ markers =
 ```
 
 `--durations=10` stays on so slow tests surface early. Directories mirror the tiers: `tests/unit/`, `tests/integration/`, `tests/contract/`.
+
+## Image smoke tests
+
+A built image's own check sits outside the pytest tiers: a shell script at `<service>/tests/smoke-image.sh` that takes the image tag, starts the image (and any stub it needs), and checks over HTTP what only the built image can show: it starts, serves its health route and key paths, and reads its mounted config. It checks only what the built image shows.
+
+- Run it locally with `bash <service>/tests/smoke-image.sh <tag>` after building the image.
+- CI runs it through `docker-image`'s `smoke-test` input, before the push. The script contract lives in `gitea-workflows`, Images; DEVKIT's `ci/tests/smoke-example.sh` is the shape to copy.
 
 ## Naming
 
@@ -70,3 +77,4 @@ instead of the no-op its docstring promised — fixed, with a regression test.
 - `python -m pytest -q` exits 0 inside the container, and the test README's count matches.
 - The README names at least one real bug (cause and fix) per area.
 - CI selects `unit` and `integration` and excludes `contract`.
+- A service with an image has `<service>/tests/smoke-image.sh`, wired through `smoke-test`.
