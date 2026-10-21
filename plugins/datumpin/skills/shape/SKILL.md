@@ -7,7 +7,7 @@ effort: high
 
 # Shape
 
-Turns loose intent into tickets an agent can build from, through a short interview. Use the `gitea` skill for every call and the `formats` skill for everything printed or written.
+Turns loose intent into tickets an agent can build from, through a short interview. Use the `gitea` skill for every call and the `formats` skill for everything printed or written, including its Quiet steps rule.
 
 ## Steps
 

@@ -25,7 +25,7 @@ Three positions, each with its own source of truth:
 | `NO-DIRECTION` | A ticket nothing in the docs supports | Ask: keep in Triage, record the direction, or close |
 | `DOCS-BEHIND` | A doc lists done work as open, or contradicts the code | A doc fix in a PR |
 
-Use the `gitea` skill for every call and the `formats` skill for everything printed or written.
+Use the `gitea` skill for every call and the `formats` skill for everything printed or written, including its Quiet steps rule.
 
 ## Modes
 

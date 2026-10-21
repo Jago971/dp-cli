@@ -4,6 +4,13 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - Quiet flow steps; review effort scales with the change (plugin 0.6.0)
+
+- `formats` Quiet steps: nothing printed between tool calls while a flow step runs; the step ends with its shaped output and at most one prompt. `board`, `shape`, `align`, `tdd`, `definition-of-done`, `change-review` and `retro` point to it.
+- `change-review` scales reviewers to the change: one reviewer on a smaller model for docs and skill text, two for code, both plus `security-review` for a promotion; reviewers read the skills they cite.
+
+---
+
 ### [CHANGED] 2026-10-21 - v0.5.0 release review fixes (plugin 0.5.10)
 
 - `docker-image`: the entrypoint check always uses main's script (the DEVKIT branch never ran), with `--network none` and a 2-minute timeout; the smoke test gets a run label (`CI_RUN_LABEL`) and a final step removes what carries it (`ci/clean-run.sh`).

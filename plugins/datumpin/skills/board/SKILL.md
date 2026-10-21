@@ -7,7 +7,7 @@ effort: low
 
 # Board
 
-Gitea holds the board, the repo's project titled `Board`; this flow reads it, shows it and proposes the next ticket. Use the `gitea` skill for every call and the `formats` skill for everything printed or written.
+Gitea holds the board, the repo's project titled `Board`; this flow reads it, shows it and proposes the next ticket. Use the `gitea` skill for every call and the `formats` skill for everything printed or written, including its Quiet steps rule.
 
 ## Steps
 
