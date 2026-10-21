@@ -26,7 +26,7 @@ A change can pass one axis and fail the other, so the report keeps them separate
    - **Standards brief:** report every place the diff breaks a documented rule, citing the skill and the rule, and quote the hunk. Skip what a linter or test already enforces.
    - **Spec brief:** report requirements that are missing or partial, behaviour in the diff nobody asked for, and requirements that look implemented but wrong. Quote the spec line for each.
 5. **Report** under `## Standards` and `## Spec` headings, each finding with file, line, severity and the rule or spec line. End with the finding count per axis and the worst finding within each axis.
-6. **A human adjudicates.** The engineer or reviewer confirms, dismisses or escalates each finding, and the disposition is written next to it (PR comment or review note). The agent never approves its own review.
+6. **A human adjudicates.** The engineer or reviewer confirms, dismisses or escalates each finding, and the findings with their dispositions are written down: in the PR description's `Review` section (`formats`, which lists the dispositions) when the review ran before the PR, otherwise in a PR comment. The agent never approves its own review.
 
 ## Security
 

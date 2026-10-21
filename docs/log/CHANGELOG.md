@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-21 - Pre-PR review findings go in the PR description (plugin 0.6.6)
+
+- The `formats` PR shape gains a `Review` section: the evidence, and a findings table with each disposition (`Fixed`, `Dismissed`, `Deferred: #N`). `change-review` writes a pre-PR review there and later reviews in PR comments (#49).
+
+---
+
 ### [FIXED] 2026-10-21 - board assigns by Gitea username (plugin 0.6.5)
 
 - `gitea` says how to read the human's username (`tea api --login <their login> user`); `board` assigns a picked ticket to it, not to the tea login name (#43).
