@@ -158,7 +158,13 @@ jobs:
         if: ${{ always() && inputs.smoke-test != '' }}
         env:
           CI_RUN_LABEL: ${{ github.run_id }}-${{ inputs.image }}
-        run: bash .devkit/ci/clean-run.sh "$CI_RUN_LABEL" || true
+        run: |
+          SCRIPT=.devkit/ci/clean-run.sh
+          if [ ! -f "$SCRIPT" ]; then
+            echo "SKIP  $SCRIPT is not on DEVKIT main yet; nothing removed"
+            exit 0
+          fi
+          bash "$SCRIPT" "$CI_RUN_LABEL" || echo "WARN  cleanup failed; check the runner for containers labelled datumpin.ci-run=$CI_RUN_LABEL"
 
       - name: Install trivy
         run: |
