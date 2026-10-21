@@ -1,6 +1,6 @@
 ---
 name: formats
-description: Formats - the fixed shape of everything the plugin prints or writes - terminal lines, prompts, board, drafts, questions, tickets, milestones, comments, PRs, commits, branches. Use before printing a workflow message or writing to Gitea or git.
+description: Formats - the fixed shape of everything the plugin prints or writes - terminal lines, prompts, board, drafts, questions, handover, tickets, milestones, comments, PRs, commits, branches. Use before printing a workflow message or writing to Gitea or git.
 ---
 
 # Formats
@@ -131,8 +131,8 @@ To close · 2 superseded
 ### Handover
 
 ```
-Handover · .factory/handoff-2026-10-21.md
-Next prompt   Read .factory/handoff-2026-10-21.md, then run /datumpin:board and continue #89.
+Handover · C:\Users\mattm\Documents\DEVKIT\.factory\handoff-2026-10-21.md
+Next prompt   Read C:\Users\mattm\Documents\DEVKIT\.factory\handoff-2026-10-21.md, then run /datumpin:board and continue #89.
 Your steps    1. Merge DEVKIT#99
               2. Merge Datumpin/AHJ#169
 ```
