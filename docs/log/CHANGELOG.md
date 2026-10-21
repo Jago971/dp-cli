@@ -4,6 +4,14 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [ADDED] 2026-10-21 - Images: entrypoint check before the push (plugin 0.5.5)
+
+- `ci/check-entrypoint.sh`: fails an image whose `ENTRYPOINT` file is missing or not executable, by running `test -x` inside it; `docker-image` runs it after the build, before the scan and push. BDS's api image shipped that fault and failed only on Hammond.
+- `ci/tests/test_check_entrypoint.py`: integration tests against three tiny images.
+- `gitea-workflows` Images section names the check.
+
+---
+
 ### [FIXED] 2026-10-21 - board-sync reads every page of a column
 
 - `ci/board_sync.py` read only the first 50 tickets of each column, so a ticket further down looked "not on the Board" and was added again instead of moved (AHJ's Backlog holds 54).
