@@ -49,12 +49,25 @@ A repo with more than one contributor gets a short `CONTRIBUTING.md` or a root R
 
 A ticket that builds on another ticket's unmerged branch waits for that PR to merge, then branches from `prep`. When waiting blocks the work, stack instead: branch from the other branch, rebase onto `prep` once it merges, and open the PR after the rebase, its Summary starting `Stacked on #N` (`formats`).
 
+## Environments
+
+Work moves dev → prep → prod, and only through PRs and images. This table is the one place that names them; the other skills link here.
+
+| Environment | Host | Branch | Image | Compose | Env file |
+|---|---|---|---|---|---|
+| dev | The laptop, Docker Desktop | A ticket branch | Built locally from `Dockerfile.dev`, tagged `:dev` | `docker-compose.dev.yml` | `.env.<app>-<instance>.dev` |
+| prep | Hammond, internal staging | `prep` | `:prep`, pulled | `docker-compose.yml`, `CHANNEL=prep` | `.env.<app>-<instance>` on the host |
+| prod | External server, not built yet | `main`, tag `vX.Y.Z` | `:X.Y.Z`, pulled | `docker-compose.yml`, `CHANNEL=prod` | `.env.<app>-<instance>` on the host |
+
+- Everything runs in containers. A host holds Docker, git and its env files; the laptop also holds the agent tooling (Claude Code, `tea`, and the Python that the plugin's status hook, `hooks/hooks.json`, runs), the one exemption.
+- Builds and tests run in dev before the push, and CI runs them again. Servers pull images; they never build or run tests.
+
 ## Branch model and protection
 
 | Branch | Role | Protection |
 |---|---|---|
-| `prot/<topic>` | Exploratory spikes, on laptops | None |
-| `prep` | Default branch and trunk; deployed to Hammond | Standard rule |
+| `prot/<topic>` | Exploratory spikes, in dev | None |
+| `prep` | Default branch and trunk; deployed to prep | Standard rule |
 | `main` | Customer release | Standard rule; only the Owners team merges |
 | `<type>/<issue>-<slug>` | One ticket, short-lived | None |
 
