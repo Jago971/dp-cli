@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "datumpin-dp"
+description = "dp: the datumpin plugin's command line for repeated Gitea work and token reports"
+requires-python = ">=3.11"
+dependencies = [
+    "typer==0.27.3",
+    "rich==15.0.0",
+]
+dynamic = ["version"]
+
+[project.scripts]
+dp = "dp.cli:main"
+
+# One version for the plugin and dp: the plugin's own.
+[tool.hatch.version]
+path = "../.claude-plugin/plugin.json"
+pattern = '"version": "(?P<version>[^"]+)"'
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dp"]

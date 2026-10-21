@@ -5,7 +5,18 @@ description: Gitea - tickets, labels, milestones, comments and PRs through the t
 
 # Gitea
 
-Gitea is the single source for tickets, milestones and the board. Read and write it with `tea`, Gitea's CLI.
+Gitea is the single source for tickets, milestones and the board. Read and write it with `dp`, the plugin's command line, for the tasks it covers, and with `tea`, Gitea's CLI, for the rest.
+
+## Calling dp
+
+`dp` does each repeated task in one call. Add `--json` and read the result from it. It finds the repo from the working directory and writes as the agent login. A failure, Gitea unreachable included, prints one `dp:` line and exits 1. When `dp` is not installed, print a `FAILED` log line pointing to the plugin README (Each machine) and stop.
+
+| Need | Command |
+|---|---|
+| The board, in one listing | `dp board --json`: each column's tickets (every page) with labels, milestone, assignees and each open ticket's `last_comment`; open issues off the board (`unsorted`); open PRs; open milestones with `open` and `closed` counts |
+| Move a ticket, or put it on the board | `dp move N "<column>" --json`; to In Progress it also assigns the human (Human's username). With several human logins it stops; ask which, and pass `--assignee USER`. |
+| Open a PR | `dp pr --title T --body-file F --labels "A,B,C" --json`, from the current branch into `prep` (`--base` for another) |
+| Pointer comment | `dp pointer N "<text>" --json`; it refuses text outside the Pointer shape (`formats`) |
 
 ## Calling tea
 
@@ -31,13 +42,7 @@ Gitea is the single source for tickets, milestones and the board. Read and write
 | Assign | `tea issues edit N --repo R --login L --add-assignees USER`, with `USER` the username |
 | Comment | `tea comment N --repo R --login L --description "<text>"` |
 | Create a milestone | `tea milestones create --repo R --login L --title T --description D` |
-| Find the board | `tea api --login L "repos/R/projects?state=open"`, the one titled `Board` |
-| Its columns | `tea api --login L repos/R/projects/P/columns` |
-| Tickets in a column | `tea api --login L "repos/R/projects/P/columns/C/issues?limit=50&page=N"` |
-| Put a ticket on the board | `tea api --login L repos/R/projects/P/columns/C/issues/ID -X POST` |
-| Move a ticket | `tea api --login L repos/R/projects/P/issues/ID/move -X POST -F column_id=C` |
-
-Board calls take the issue's global `id` (from `repos/R/issues/N`), not its number `N`.
+| Set a milestone | `tea issues edit N --repo R --login L --milestone M`, with `M` the full title |
 
 Page through `issues ls` with `--page` until a page returns fewer than the limit.
 

@@ -14,7 +14,7 @@
 | [skills/](skills/README.md) | The Datumpin convention skills, the process skills, and the workflow flows (`board`, `shape`, `align`, `guide`) with their references (`gitea`, `formats`) |
 | [flows.yaml](flows.yaml) | The flow map the `guide` skill walks: each flow's steps, their skills and environments |
 | [hooks/](hooks/hooks.json) | A session-start status line: this repo's Triage count and open PRs, and DEVKIT's Triage count, so parked tickets and plugin findings are seen. It needs `python` and `tea` on the PATH and prints nothing when Gitea is unreachable. |
-| [bin/](bin/token_report.py) | `token_report.py`: tokens per flow step for one session (see Token usage) |
+| [dp/](dp/pyproject.toml) | `dp`, the flows' command line: one call each for the Board listing, moving a ticket, opening a PR and posting a Pointer (the `gitea` skill), and `dp tokens` (see Token usage). Installed on the host with pipx; its version is the plugin's. |
 | [defaults/flow.yaml](defaults/flow.yaml) | Workflow settings in flow order. A repo overrides any key in its own `.claude/flow.yaml`. |
 | `.claude-plugin/plugin.json` | Name and version |
 
@@ -42,6 +42,8 @@ A skill header applies only to the turn the skill starts in; your next message r
 
 2. Check it: `git ls-remote git@gitea:Datumpin/DEVKIT.git main` prints a commit.
 3. Install `tea` and add two logins: the engineer's own, and `squire` (the agent's).
+4. Install pipx: `python -m pip install --user pipx`, then `python -m pipx ensurepath`, and open a new terminal.
+5. Install `dp` from the installed plugin, once the plugin is installed in a repo: `pipx install --force ~/.claude/plugins/cache/datumpin/datumpin/<version>/dp`, with `<version>` from `claude plugin list`. Check it: `dp board` in a repo prints its Board.
 
 ## Bringing a repo into the workflow
 
@@ -66,15 +68,15 @@ Run in order. A check that cannot pass yet becomes a ticket on the repo's board;
 
 The board needs Gitea 28 or later (the project API).
 
-To pick up a new plugin version: `claude plugin marketplace update datumpin`, then `claude plugin update datumpin@datumpin`.
+To pick up a new plugin version: `claude plugin marketplace update datumpin`, then `claude plugin update datumpin@datumpin`, then reinstall `dp` from the new version (Each machine, step 5).
 
 ## Token usage
 
-`bin/token_report.py` prints the turns, tool calls and tokens (input, cache read, cache write, output) each flow step of one session used, with a total. A turn belongs to the step named by the guide's next write to `.factory/guide.yaml` (a Write or Edit of it, or a shell redirect into it); in a session without the guide, a step starts at each Skill call. It needs Python 3 and nothing else.
+`dp tokens <log>` prints the turns, tool calls and tokens (input, cache read, cache write, output) each flow step of one session used, with a total. A turn belongs to the step named by the guide's next write to `.factory/guide.yaml` (a Write or Edit of it, or a shell redirect into it); in a session without the guide, a step starts at each Skill call. `--json` gives the rows.
 
 1. **Find the log:** sessions are logged at `~/.claude/projects/<project>/<session-id>.jsonl`, where `<project>` is the repo path with `:` and `\` as `-` (for example `c--Users-mattm-Documents-BDS`). The newest file is the latest session.
-2. **Run it:** `python plugins/datumpin/bin/token_report.py <log>` from the DEVKIT root, or from the installed copy under `~/.claude/plugins/cache/datumpin/datumpin/<version>/`.
-3. **Subagents:** each subagent logs separately, in `<session-id>/subagents/agent-*.jsonl`; run the script on each.
+2. **Run it:** `dp tokens <log>`.
+3. **Subagents:** each subagent logs separately, in `<session-id>/subagents/agent-*.jsonl`; run `dp tokens` on each.
 
 Cache reads are most of the tokens, and every turn re-reads the context, so turns per step is the number to cut.
 
