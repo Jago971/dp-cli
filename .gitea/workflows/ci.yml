@@ -15,6 +15,13 @@ jobs:
   security:
     uses: ./.gitea/workflows/security-scan.yml
 
+  scripts:
+    # Tests for the CI scripts in ci/ (board_sync.py), as every repo's tests run.
+    uses: ./.gitea/workflows/python-tests.yml
+    with:
+      working-directory: ci/tests
+    secrets: inherit
+
   checks:
     name: workflows, plugin and conformance
     runs-on: ubuntu-latest
