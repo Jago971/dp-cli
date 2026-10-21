@@ -77,6 +77,7 @@ REVIEW (0)
 TESTING (0)
 DOD (0)
 UNSORTED (11)     #24 #23 #22 #21 #20 #19 #18 #17 #16 #15 #14
+Milestones        v0.4.0 – Sampling · 2 of 9 done · 1 in DoD
 PRs               #29 Pilot the datumpin plugin · chore/datumpin-plugin → prep
 Flags             #25 no milestone · #26 STATUS/BLOCKED
 Next              1. #25 Addressing Validation · HIGH, unblocked, in v0.4.0
@@ -84,7 +85,8 @@ Next              1. #25 Addressing Validation · HIGH, unblocked, in v0.4.0
 
 - The sync time is date and time. Every column prints, empty ones as a single line.
 - A column with more than 8 tickets lists numbers only.
-- `PRs`, `Flags` and `Next` come last, in that order; an empty one is omitted.
+- `Milestones` lists each open milestone, earliest first: closed tickets of its total, and how many sit in DoD.
+- `Milestones`, `PRs`, `Flags` and `Next` come last, in that order; an empty one is omitted.
 
 ### Drift report
 
