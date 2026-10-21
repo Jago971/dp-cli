@@ -20,7 +20,7 @@ A change can pass one axis and fail the other, so the report keeps them separate
 2. **Find the spec.** In order: an issue or PR reference in the commit messages, a path the user passes, the matching expansion or section in `docs/plan/` (`REBUILD_PLAN.md`, `ROADMAP.md`, a standalone plan). With none found, ask. With none existing, skip the Spec axis and say so in the report.
 3. **Find the standards.** The skills `CLAUDE.md` lists for the kinds of file in the diff (Python, compose, docs, tests, frontend), plus the repo's own reference docs. A documented repo standard decides each case.
 4. **Run the reviewers, scaled to the change.** Give each the diff command, the commit list, the skill files to read (not only the diff) and a word limit.
-   - Docs, skill text or config only: one reviewer covering both axes, on a smaller model, under 250 words, keeping the two axes as separate headings.
+   - Docs, skill text or config only: one reviewer covering both axes, on the model `flow.yaml` sets for `change_review.single`, under 250 words, keeping the two axes as separate headings.
    - Code: both subagents together, in the foreground, under 400 words each.
    - A promotion: both, plus `security-review` (see Security).
    - **Standards brief:** report every place the diff breaks a documented rule, citing the skill and the rule, and quote the hunk. Skip what a linter or test already enforces.
