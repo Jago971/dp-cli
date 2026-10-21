@@ -26,7 +26,8 @@ Gitea is the single source for tickets, milestones and the board. Read and write
 | Milestones | `tea milestones ls --repo R --login L --output json` |
 | Create an issue | `tea issues create --repo R --login L --title T --description-file F --labels "A,B" --milestone M` |
 | Move labels | `tea issues edit N --repo R --login L --add-labels "A" --remove-labels "B"` |
-| Assign | `tea issues edit N --repo R --login L --add-assignees USER` |
+| Human's username | `tea api --login H user`, its `login` field (the username, which can differ from the tea login name). `H` is the human's tea login in `tea login ls` (any login but the agent's); ask when there is more than one. |
+| Assign | `tea issues edit N --repo R --login L --add-assignees USER`, with `USER` the username |
 | Comment | `tea comment N --repo R --login L --description "<text>"` |
 | Create a milestone | `tea milestones create --repo R --login L --title T --description D` |
 | Find the board | `tea api --login L "repos/R/projects?state=open"`, the one titled `Board` |

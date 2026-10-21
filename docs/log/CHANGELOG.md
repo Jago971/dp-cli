@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [FIXED] 2026-10-21 - board assigns by Gitea username (plugin 0.6.5)
+
+- `gitea` says how to read the human's username (`tea api --login <their login> user`); `board` assigns a picked ticket to it, not to the tea login name (#43).
+
+---
+
 ### [FIXED] 2026-10-21 - Status line also on resumed sessions (plugin 0.6.4)
 
 - The session-start hook runs on `resume` as well as `startup`, so a reloaded window still shows Triage counts and open PRs (#41).
