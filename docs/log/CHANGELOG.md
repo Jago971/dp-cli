@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [DOCS] 2026-10-21 - The nginx frontend serve stage (plugin 0.5.7)
+
+- `docker-compose-conventions` records the frontend serve stage CURATOR and AHJ use: `nginx-unprivileged` on 3000, `default.conf.template` filled at start (SPA fallback, `/api` proxy to the backend named in the instance env file, extra backend paths, `client_max_body_size`), no compose start command, branding mounted read-only. The `nginx:alpine` example is gone.
+
+---
+
 ### [ADDED] 2026-10-21 - Images: a repo's smoke test before the push (plugin 0.5.6)
 
 - `docker-image` takes an optional `smoke-test` input: a script in the repo, run with the built image's tag after the entrypoint check; a failure stops the push.

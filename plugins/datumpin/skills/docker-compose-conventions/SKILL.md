@@ -25,11 +25,24 @@ The builder stage installs and builds. The final stage copies only the built art
 ```dockerfile
 FROM node:20.20-slim AS builder
 ...
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY default.conf.template /etc/nginx/templates/default.conf.template
+EXPOSE 3000
 ```
 
-An SPA behind nginx gets an explicit fallback route for the client-side router.
+### Frontend serve stage
+
+One frontend image serves every instance, so nothing instance-specific is baked in: the app calls a relative `/api`, and nginx proxies it.
+
+- **Image:** `nginxinc/nginx-unprivileged`. It runs as its own non-root user, so the server listens on 3000 and compose maps the host port.
+- **Config:** `frontend/default.conf.template`, copied to `/etc/nginx/templates/`. nginx's own entrypoint fills `${VAR}`s from the environment when the container starts and leaves nginx's `$uri`-style variables alone. It holds:
+  - the SPA fallback, `try_files $uri $uri/ /index.html`;
+  - `location /api/ { proxy_pass http://${<APP>_BACKEND_SERVICE}:8000/; }`, where the trailing slash strips `/api`, matching the dev server's proxy;
+  - any other backend path the app loads, such as `/static/`, proxied with its path kept;
+  - `client_max_body_size` on `/api/` when uploads go through it. nginx refuses bodies over 1 MB by default, and the dev proxy has no limit, so this only shows in prod.
+- **Compose:** the frontend reads the backend's service name from the instance env file through `env_file:`, shares a network with the backend, and mounts the instance's `branding/` read-only into the web root. It sets no `entrypoint:` or start command, because that would skip nginx's template step.
+- **Check:** an image smoke test (`gitea-workflows`, Images) starts the image beside a stub backend and requests `/`, a deep link, `/api` and the branding.
 
 ## Dev: anonymous volumes protect installed dependencies
 
@@ -64,8 +77,8 @@ USER appuser
 
 - Prod and dev Dockerfiles both create `appuser`.
 - Every writer to a shared bind-mounted directory uses the same non-root uid. The first user a Debian-based image creates gets uid 1000, so separate images agree without coordination.
-- Node frontends run by `npm run dev` or `serve` create `appuser` too. `nginx:alpine` already drops privileges for its workers and needs nothing added.
-- Ports below 1024 need root. A non-root service listens on a port of 1024 or more inside the container (`serve -l 3000`), and compose maps the host side unchanged.
+- Node frontends run by `npm run dev` create `appuser` too. A prod frontend serves from `nginx-unprivileged`, which runs as its own user and needs nothing added.
+- Ports below 1024 need root. A non-root service listens on a port of 1024 or more inside the container (nginx-unprivileged on 3000), and compose maps the host side unchanged.
 - A service that runs cron keeps the daemon as root: see [cron.md](cron.md).
 
 ## BuildKit
