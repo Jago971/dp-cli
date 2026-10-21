@@ -14,7 +14,7 @@ Gitea is the single source for tickets, milestones and the board. Read and write
 | Need | Command |
 |---|---|
 | The board, in one listing | `dp board --json`: each column's tickets (every page) with labels, milestone, assignees and each open ticket's `last_comment`; open issues off the board (`unsorted`); open PRs; open milestones with `open` and `closed` counts |
-| Move a ticket, or put it on the board | `dp move N "<column>" --json`; to In Progress it also assigns the human (Human's username) |
+| Move a ticket, or put it on the board | `dp move N "<column>" --json`; to In Progress it also assigns the human (Human's username). With several human logins it stops; ask which, and pass `--assignee USER`. |
 | Open a PR | `dp pr --title T --body-file F --labels "A,B,C" --json`, from the current branch into `prep` (`--base` for another) |
 | Pointer comment | `dp pointer N "<text>" --json`; it refuses text outside the Pointer shape (`formats`) |
 
@@ -42,6 +42,7 @@ Gitea is the single source for tickets, milestones and the board. Read and write
 | Assign | `tea issues edit N --repo R --login L --add-assignees USER`, with `USER` the username |
 | Comment | `tea comment N --repo R --login L --description "<text>"` |
 | Create a milestone | `tea milestones create --repo R --login L --title T --description D` |
+| Set a milestone | `tea issues edit N --repo R --login L --milestone M`, with `M` the full title |
 
 Page through `issues ls` with `--page` until a page returns fewer than the limit.
 

@@ -34,6 +34,21 @@ def test_json_prints_the_command_result(gitea):
 
 
 @pytest.mark.unit
+def test_move_with_an_assignee_skips_looking_up_the_human(gitea, monkeypatch):
+    def several_humans():
+        raise GiteaError("need exactly one human tea login besides squire; found: matt, ops")
+
+    monkeypatch.setattr(cli.connect(), "human", several_humans)
+    gitea.add_issue(4)
+    gitea.put("Backlog", 4)
+
+    result = run("move", "4", "In Progress", "--assignee", "Ops", "--json")
+
+    assert result.exit_code == 0
+    assert json.loads(result.output)["assigned"] == "Ops"
+
+
+@pytest.mark.unit
 def test_board_honours_no_color_even_when_colour_is_forced(gitea):
     gitea.add_issue(4, title="Ticket", labels=["TYPE/BUG"])
     gitea.put("Backlog", 4)

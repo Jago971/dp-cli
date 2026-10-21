@@ -106,10 +106,15 @@ def board(as_json: bool = JSON):
 
 @app.command()
 @reports_errors
-def move(number: int, column: str, as_json: bool = JSON):
+def move(number: int, column: str,
+         assignee: str = typer.Option(None, help="Who In Progress assigns, when tea has several human logins."),
+         as_json: bool = JSON):
     """Move ticket NUMBER to COLUMN; In Progress also assigns you."""
     gitea = connect()
-    assignee = gitea.human() if column.lower() == "in progress" else None
+    if column.lower() == "in progress":
+        assignee = assignee or gitea.human()
+    else:
+        assignee = None
     moved = commands.move(gitea.call, gitea.repo, number, column, assignee=assignee)
     emit(moved, as_json, lambda m: say(
         f"#{m['number']} {m['from'] or 'off the Board'} → {m['to']}"
@@ -140,13 +145,6 @@ def pointer(number: int, text: str, as_json: bool = JSON):
     emit(posted, as_json, lambda p: say(f"#{p['number']} pointer posted"))
 
 
-def main():
-    """The `dp` command: UTF-8 out, whatever the console's code page, then the app."""
-    for stream in (sys.stdout, sys.stderr):
-        stream.reconfigure(encoding="utf-8")
-    app()
-
-
 @app.command(name="tokens")
 def tokens_command(log: Path = typer.Argument(..., exists=True, dir_okay=False, help="A session log (.jsonl)."),
                    as_json: bool = JSON):
@@ -154,3 +152,10 @@ def tokens_command(log: Path = typer.Argument(..., exists=True, dir_okay=False, 
     with log.open(encoding="utf-8") as lines:
         rows = tokens.report(lines)
     emit(rows, as_json, lambda r: say(tokens.table(r)))
+
+
+def main():
+    """The `dp` command: UTF-8 out, whatever the console's code page, then the app."""
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding="utf-8")
+    app()
