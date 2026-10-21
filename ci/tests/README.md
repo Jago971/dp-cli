@@ -1,6 +1,6 @@
 # ci/tests/
 
-**Scope:** tests for the CI scripts in `ci/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 8 tests: 5 `unit`, 3 `integration` (need a Docker daemon; skipped without one).
+**Scope:** tests for the CI scripts in `ci/`, run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 10 tests: 5 `unit`, 5 `integration` (need a Docker daemon; skipped without one).
 **Status:** current
 **Last reviewed:** 2026-10-21
 **Governed by:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)
@@ -10,6 +10,8 @@
 `fake_gitea.py` is an in-memory Gitea Board: it answers the calls `board_sync.py` makes through `call()`, pages like Gitea (50 by default, or a smaller server cap), can ignore `page` to model a broken server, and records every write. A call budget makes a runaway loop fail the test instead of hanging it. Tests swap it in for `call()` and assert on the board and the writes.
 
 `test_check_entrypoint.py` builds three tiny images (executable, non-executable and no entrypoint) and runs `check-entrypoint.sh` on each.
+
+`smoke-example.sh` is the smoke-test contract's example (`gitea-workflows`, Images); `test_smoke_contract.py` runs it from a container on the Docker socket, as a CI job does, against a working and a broken image.
 
 ## Bugs caught
 
