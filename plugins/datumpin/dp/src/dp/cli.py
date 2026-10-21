@@ -1,6 +1,6 @@
 """dp's command line: one command per repeated Gitea task, the guide and the token report.
 
-Summary: `dp board`, `dp move`, `dp pr`, `dp pointer`, `dp guide` and `dp tokens`.
+Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp guide` and `dp tokens`.
 Input:   the repo in the working directory (its git remote and
          `.claude/flow.yaml`) and tea's logins; writes go as the agent login.
 Output:  compact text through Rich, which honours NO_COLOR, or JSON with
@@ -124,6 +124,18 @@ def move(number: int, column: str,
     emit(moved, as_json, lambda m: say(
         f"#{m['number']} {m['from'] or 'off the Board'} → {m['to']}"
         + (f" · assigned {m['assigned']}" if m["assigned"] else "")))
+
+
+@app.command()
+@reports_errors
+def pick(number: int,
+         branch: str = typer.Option(None, help="The branch; by default <type>/<N>-<slug> from the ticket."),
+         as_json: bool = JSON):
+    """Take ticket NUMBER in: In Progress and assigned to you, in a milestone, on its branch from prep."""
+    gitea = connect()
+    ticket = commands.issue(gitea.call, gitea.repo, number)
+    taken = guide.take(gitea, git, ticket, branch or guide.branch_name(ticket))
+    emit(taken, as_json, lambda t: say(*guide.taken_lines(t)))
 
 
 @app.command()

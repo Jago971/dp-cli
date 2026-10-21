@@ -96,3 +96,16 @@ def test_report_books_turns_to_the_job_brief_the_last_prompt_names():
     assert list(rows) == ["start", "build", "check"]
     assert (rows["build"]["turns"], rows["build"]["cache_read"]) == (3, 9)
     assert rows["check"]["turns"] == 1
+
+
+@pytest.mark.unit
+def test_report_names_the_models_each_step_ran_on():
+    log = [json.dumps({"type": "assistant", "message": {"content": [skill("datumpin:shape")], "model": "claude-opus",
+                                                         "usage": {}}}),
+           json.dumps({"type": "assistant", "message": {"content": [skill("datumpin:board")], "model": "claude-sonnet",
+                                                         "usage": {}}})]
+
+    rows = by_step(tokens.report(log))
+
+    assert rows["datumpin:shape"]["models"] == ["claude-opus"]
+    assert "claude-sonnet" in tokens.table(list(rows.values()))

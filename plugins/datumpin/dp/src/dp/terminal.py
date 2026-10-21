@@ -4,8 +4,10 @@ Summary: Terminal, the guide's prompts (guide.Plain) in colour.
 Input:   what dp.guide asks and shows.
 Output:  Rich lines, panels and spinners, and questionary menus. Colour
          follows NO_COLOR, and a terminal without true colour gets the
-         nearest it has. A Job prompt is also copied to the clipboard when the
-         system has a tool for it.
+         nearest it has. An agent step starts Claude Code in this terminal on
+         the step's model and effort; without `claude` on the PATH, its Job
+         prompt shows in a panel, copied to the clipboard when the system has
+         a tool for it.
 """
 import re
 import shutil
@@ -51,6 +53,14 @@ def log_line(line, colour=""):
     return text
 
 
+def claude_command(prompt, model, effort):
+    """The command that starts Claude Code on the prompt, or None without `claude` on the PATH."""
+    claude = shutil.which("claude")
+    if not claude:
+        return None
+    return [claude, *(["--model", model] if model else []), *(["--effort", effort] if effort else []), prompt]
+
+
 def copy(text):
     """Put text on the clipboard with the system's tool; False when there is none or it fails."""
     command = next((c for c in CLIPBOARDS if shutil.which(c[0])), None)
@@ -80,7 +90,7 @@ class Terminal(guide.Plain):
     def header(self, position, env, rail, does):
         line = Text.assemble((" dp ", f"bold #ffffff on {PINK}"), (" guide  ", MUTED))
         if not position:
-            line.append("no position")
+            line.append("start")
         else:
             line.append(f"{position['flow']} flow")
             if position["ticket"]:
@@ -96,12 +106,19 @@ class Terminal(guide.Plain):
             self.console.print(f" {does}", markup=False)
         self.console.print()
 
-    def job(self, prompt):
+    def job(self, prompt, model, effort):
+        on = " · ".join(filter(None, [model, effort])) or "the session's model"
+        command = claude_command(prompt, model, effort)
+        if command:
+            self.console.print(Text.assemble(("◆ ", f"bold {PINK}"), ("Claude", "bold"), (f" · {on}", MUTED),
+                                             (" · exit to come back", MUTED)))
+            subprocess.run(command)
+            return
         copied = copy(prompt)
+        hint = f"use {on} first" + (" · copied to the clipboard" if copied else "")
         self.console.print(Panel(Text(prompt, style="bold"), box=box.ROUNDED, border_style=PINK, expand=False,
                                  title="paste into a session", title_align="left",
-                                 subtitle=Text("copied to the clipboard", style=MUTED) if copied else None,
-                                 subtitle_align="right"))
+                                 subtitle=Text(hint, style=MUTED), subtitle_align="right"))
 
     def finding(self, finding):
         self.console.print(Text.assemble(
@@ -111,12 +128,15 @@ class Terminal(guide.Plain):
     def busy(self, message):
         return self.console.status(Text(f"{message}…", style=MUTED), spinner="dots", spinner_style=MUTED)
 
-    def choose(self, message, options):
+    def choose(self, message, options, default=None):
         # Plain titles, so questionary marks the cursor's row in cyan.
+        rows = [questionary.Separator(f"  {label}") if value == guide.SEPARATOR[1]
+                else questionary.Choice(label, value=n) for n, (label, value) in enumerate(options)]
+        preselected = next((row for row, (_, value) in zip(rows, options)
+                            if default is not None and value is default), None)
         index = questionary.select(
-            message, [questionary.Choice(label, value=n) for n, (label, _) in enumerate(options)],
-            qmark="◆", pointer="❯", style=MENU, use_shortcuts=len(options) <= SHORTCUTS,
-            instruction="(arrows or a number)").unsafe_ask()
+            message, rows, default=preselected, qmark="◆", pointer="❯", style=MENU,
+            use_shortcuts=len(rows) <= SHORTCUTS, instruction="(arrows or a number)").unsafe_ask()
         return options[index][1]
 
     def confirm(self, message):
