@@ -42,7 +42,10 @@ def registry():
     """Starts registry:2 on a random loopback port; removes it and every tag under it afterwards."""
     name = f"push-image-test-{uuid.uuid4().hex[:8]}"
     host = f"127.0.0.1:{random.randint(20000, 39999)}"
-    docker("run", "-d", "--name", name, "--network", "host", "-e", f"REGISTRY_HTTP_ADDR={host}", "registry:2")
+    # The run label lets clean-run.sh remove it if the job is killed mid-test.
+    label = f"datumpin.ci-run={os.environ.get('CI_RUN_LABEL', 'local')}"
+    docker("run", "-d", "--name", name, "--label", label, "--network", "host",
+           "-e", f"REGISTRY_HTTP_ADDR={host}", "registry:2")
     # Ready when this registry logs that it listens: a probe of the port could
     # be answered by another service on the host if the random port is taken.
     ready = False
@@ -55,7 +58,7 @@ def registry():
     if not ready:
         subprocess.run(["docker", "rm", "-f", name], capture_output=True)
         pytest.fail(f"registry on {host} did not start")
-    yield host
+    yield name, host
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     tags = subprocess.run(["docker", "images", "--format", "{{.Repository}}:{{.Tag}}",
                            "--filter", f"reference={host}/*"],
@@ -81,9 +84,10 @@ def build(tmp_path):
         subprocess.run(["docker", "image", "rm", "-f", tag], capture_output=True)
 
 
-def served_manifest(host, repo, tag):
-    """The manifest the registry at host serves for repo:tag."""
-    return docker("run", "--rm", "--network", "host", "alpine:3.20",
+def served_manifest(registry, repo, tag):
+    """The manifest the registry serves for repo:tag, read from its own network namespace."""
+    name, host = registry
+    return docker("run", "--rm", "--network", f"container:{name}", "alpine:3.20",
                   "wget", "-q", "-O-", "--header", f"Accept: {MANIFEST_TYPES}",
                   f"http://{host}/v2/{repo}/manifests/{tag}")
 
@@ -95,7 +99,7 @@ def push(local, *tags):
 
 
 def test_push_tag_the_host_runs_from_keeps_it_on_its_image(registry, build):
-    host = registry
+    _, host = registry
     deployed = build("old")
     docker("tag", deployed, f"{host}/app:prep")
     docker("image", "rm", deployed)  # as on the host: :prep is the old image's only tag
@@ -107,11 +111,11 @@ def test_push_tag_the_host_runs_from_keeps_it_on_its_image(registry, build):
     push(new, f"{host}/app:prep")
 
     assert image_id(f"{host}/app:prep") == deployed_id
-    assert served_manifest(host, "app", "prep") == served_manifest(host, "app", "reference")
+    assert served_manifest(registry, "app", "prep") == served_manifest(registry, "app", "reference")
 
 
 def test_push_tag_absent_on_host_removes_it_afterwards(registry, build):
-    host = registry
+    _, host = registry
     new = build("new")
 
     push(new, f"{host}/app:prep-abc1234")

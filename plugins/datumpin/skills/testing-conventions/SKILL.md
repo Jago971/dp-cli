@@ -64,7 +64,7 @@ instead of the no-op its docstring promised — fixed, with a regression test.
 
 ## The local loop
 
-Every change is built and tested in dev, the laptop's containers (`gitea-workflows`, Environments), before it is pushed; CI then runs the same tests again. People and agents run tests only in dev (`gitea-workflows`, Environments). The commands, per repo kind; for an app, `<dev>` is `--env-file .env.<app>-<instance>.dev -f docker-compose.dev.yml --profile <instance>`:
+Every change is built and tested in dev, the laptop's containers (`gitea-workflows`, Environments), before it is pushed; CI then runs the same tests again, and servers run none (`gitea-workflows`, Environments). The commands, per repo kind; for an app, `<dev>` is `--env-file .env.<app>-<instance>.dev -f docker-compose.dev.yml --profile <instance>`:
 
 | Repo kind | Start the dev stack | Run the tests |
 |---|---|---|

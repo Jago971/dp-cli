@@ -135,7 +135,7 @@ steps:
   deploy-prep:
     skill: config-led-deployment
     env: prep
-    does: Pull and restart the :prep images on Hammond
+    does: Pull and restart the :prep images on prep (Hammond)
     next: [try]
   handoff:
     skill: handoff

@@ -4,6 +4,15 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [FIXED] 2026-10-21 - v0.7.0 release-review fixes (plugin 0.7.7)
+
+- `ci/local-check.sh`: run only on trusted branches (it hands a container your Docker); version pins must be plain versions; gitleaks reports SKIP with no commits to scan; no pytest cache in the tree (#115).
+- The push-image test registry carries the CI run label and is probed from its own network.
+- `guide`: a numeric ticket, `tag` only after the release PR merged on `main`, DoD and Review positions corrected.
+- Docs: `STAGE/PROT` explained against dev; one restated rule and the speculative `.prod` env file removed.
+
+---
+
 ### [ADDED] 2026-10-21 - The guide and the flow map (plugin 0.7.6)
 
 - `plugins/datumpin/flows.yaml` maps the flows as steps (ticket, release, align, deploy, session), each step naming its skill and environment, shared steps defined once (#52).
