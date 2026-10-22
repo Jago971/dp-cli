@@ -1,4 +1,6 @@
 """Unit tier: dp guide's look at a terminal (dp.terminal), rendered to text."""
+import contextlib
+import contextlib
 import io
 import re
 from pathlib import Path
@@ -119,3 +121,21 @@ def test_only_the_terminal_module_styles_output():
     styling = [s.name for s in sources if s.name != "terminal.py"
                and re.search(r"^\s*(import|from)\s+(rich|questionary)\b", s.read_text(encoding="utf-8"), re.M)]
     assert styling == []
+
+
+@pytest.mark.unit
+def test_plain_drops_spinners_and_menu_colour(monkeypatch):
+    monkeypatch.setattr(terminal, "plain", True)
+
+    assert isinstance(terminal.busy("Reading the board"), contextlib.nullcontext)
+    assert terminal.menu_look(terminal.MENU) == {"style": None, "color_depth": terminal.ColorDepth.DEPTH_1_BIT}
+
+
+@pytest.mark.unit
+def test_a_done_line_is_written_as_it_is(monkeypatch):
+    shown = Console(file=io.StringIO(), force_terminal=True, color_system="truecolor")
+    monkeypatch.setattr(terminal, "console", lambda stderr=False: shown)
+
+    terminal.done("#4 Fix the FAILED build")
+
+    assert shown.file.getvalue() == "✔ #4 Fix the FAILED build\n"

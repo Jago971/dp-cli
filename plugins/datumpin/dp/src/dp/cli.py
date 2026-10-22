@@ -16,9 +16,9 @@ from typing import Callable
 
 import typer
 
-from dp import commands, guide, terminal, tokens
+from dp import commands, guide, tokens
 from dp.gitea import GiteaError, agent_login, human_username, logins, repo_slug, run, tea
-from dp.terminal import Terminal, at_terminal, busy, done, say
+from dp.terminal import Terminal, at_terminal, busy, done, failed, say, show_board, use_plain
 
 app = typer.Typer(no_args_is_help=True, help="Repeated Gitea work and token reports for the datumpin flows.")
 JSON = typer.Option(False, "--json", help="Print JSON for the agent.")
@@ -26,7 +26,7 @@ JSON = typer.Option(False, "--json", help="Print JSON for the agent.")
 
 @app.callback()
 def options(plain: bool = typer.Option(False, "--plain", help="No colour and no spinners, for logs.")):
-    terminal.use_plain(plain)
+    use_plain(plain)
 
 
 @dataclass
@@ -73,7 +73,7 @@ def reports_errors(command):
         try:
             return command(*args, **kwargs)
         except GiteaError as error:
-            terminal.failed(f"dp: {error}")
+            failed(f"dp: {error}")
             raise typer.Exit(1)
     return wrapper
 
@@ -85,7 +85,7 @@ def board(as_json: bool = JSON):
     gitea = connect()
     with busy("Reading the board", quiet=as_json):
         listing = commands.board(gitea.call, gitea.repo)
-    emit(listing, as_json, terminal.show_board)
+    emit(listing, as_json, show_board)
 
 
 @app.command()
@@ -121,7 +121,7 @@ def pick(number: int = typer.Argument(None, help="The ticket; at a terminal, wit
     with busy(f"Taking #{number} in", quiet=as_json):
         ticket = commands.issue(gitea.call, gitea.repo, number)
         taken = guide.take(gitea, git, ticket, branch or guide.branch_name(ticket))
-    emit(taken, as_json, lambda t: done(*guide.taken_lines(t)))
+    emit(taken, as_json, lambda t: (say(*guide.taken_lines(t)[:-1]), done(guide.taken_lines(t)[-1])))
 
 
 @app.command()

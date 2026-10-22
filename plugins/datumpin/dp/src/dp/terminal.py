@@ -21,9 +21,9 @@ import subprocess
 import sys
 
 import questionary
+from prompt_toolkit.output import ColorDepth
 from rich import box
-from rich.console import Console
-from rich.console import Group
+from rich.console import Console, Group
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
@@ -32,9 +32,9 @@ from dp import guide
 
 # Each colour means one thing, from the DP palette (AHJ instances/dp/branding/
 # theme.css); the rest is the terminal's own text, or its own grey to recede.
-PINK = "#e0197d"  # you are here, act now: the current step, a question, the Job prompt
+PINK = "#e0197d"  # you are here, act now: the current step, a question, the Job prompt, In Progress tickets
 CYAN = "#00b5cc"  # the cursor: the highlighted menu row
-YELLOW = "#f9d800"  # attention: a correction, Gitea unreachable, a gate
+YELLOW = "#f9d800"  # attention: a correction, Gitea unreachable, a gate, a STATUS label
 RED = "#c0392b"  # failure
 MUTED = "bright_black"  # the terminal theme's grey, for what supports the main text
 OUTCOMES = {"FAILED": RED, "BLOCKED": RED, "CHANGES": YELLOW}
@@ -46,7 +46,7 @@ SHORTCUTS = 36  # questionary's limit for number and letter shortcuts
 FULL_COLUMN = 8  # a longer board column lists numbers only, as the formats Board view
 ACTING = "In Progress"  # the board column whose tickets you act on, in pink
 ATTENTION = "STATUS/"  # a label that says why a ticket cannot move, in yellow
-plain = False  # set by `dp --plain`
+plain = False
 
 MENU = questionary.Style([
     ("qmark", f"fg:{PINK} bold"), ("question", "bold"), ("pointer", f"fg:{CYAN} bold"),
@@ -77,10 +77,18 @@ def at_terminal():
     return sys.stdin.isatty() and sys.stdout.isatty()
 
 
+def unstyled():
+    return plain or bool(os.environ.get("NO_COLOR"))
+
+
 def console(stderr=False):
     # NO_COLOR and --plain drop every style, bold included, as output that is not a terminal does.
-    unstyled = plain or bool(os.environ.get("NO_COLOR"))
-    return Console(highlight=False, soft_wrap=True, stderr=stderr, force_terminal=False if unstyled else None)
+    return Console(highlight=False, soft_wrap=True, stderr=stderr, force_terminal=False if unstyled() else None)
+
+
+def menu_look(style):
+    """A questionary prompt's style and colour depth: none of either when unstyled."""
+    return {"style": None, "color_depth": ColorDepth.DEPTH_1_BIT} if unstyled() else {"style": style}
 
 
 def say(*lines):
@@ -89,11 +97,9 @@ def say(*lines):
         out.print(line, markup=False)
 
 
-def done(*lines):
-    """A finished write, one line each: `✔ <what happened>`."""
-    out = console()
-    for line in lines:
-        out.print(Text("✔ ") + log_line(line))
+def done(line):
+    """A finished write: `✔ <what happened>`, as written."""
+    console().print(Text(f"✔ {line}"))
 
 
 def failed(line):
@@ -230,12 +236,12 @@ class Terminal(guide.Plain):
         preselected = next((row for row, (_, value) in zip(rows, options)
                             if default is not None and value is default), None)
         index = questionary.select(
-            message, rows, default=preselected, qmark="◆", pointer="❯", style=MENU,
-            use_shortcuts=len(rows) <= SHORTCUTS, instruction="(arrows or a number)").unsafe_ask()
+            message, rows, default=preselected, qmark="◆", pointer="❯", use_shortcuts=len(rows) <= SHORTCUTS,
+            instruction="(arrows or a number)", **menu_look(MENU)).unsafe_ask()
         return options[index][1]
 
     def confirm(self, message):
-        return questionary.confirm(message, qmark="◆", style=GATE).unsafe_ask()
+        return questionary.confirm(message, qmark="◆", **menu_look(GATE)).unsafe_ask()
 
     def text(self, message, default):
-        return questionary.text(message, default=default, qmark="◆", style=MENU).unsafe_ask()
+        return questionary.text(message, default=default, qmark="◆", **menu_look(MENU)).unsafe_ask()
