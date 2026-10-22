@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
 
+import yaml
+
 FINDINGS = "findings.json"
 NO_SKILL_FILE = ("agent", "human")
 HEADING = re.compile(r"(#{1,6}) (.+)")
@@ -52,9 +54,14 @@ def split_skill(name):
     return head, body.strip()
 
 
+def skill_header(skill):
+    """A packaged skill's frontmatter (its `model` and `effort` among it); {} for agent and human steps."""
+    return {} if skill in NO_SKILL_FILE else yaml.safe_load(split_skill(skill)[0]) or {}
+
+
 def user_invoked(skill):
     """True for a skill only the person starts (handoff, retro): typed in a session, never briefed."""
-    return skill not in NO_SKILL_FILE and "disable-model-invocation: true" in split_skill(skill)[0]
+    return bool(skill_header(skill).get("disable-model-invocation"))
 
 
 def section(markdown, heading):
@@ -96,7 +103,8 @@ def render(job, findings, findings_path):
     where = f"Flow `{job.flow}`, environment `{job.env}`" + (f", board column {job.column}" if job.column else "")
     parts = [f"# Step {job.step}: {title}", f"{job.does}. {where}.",
              "This brief carries what the step needs, its skill text included: do not load that skill "
-             "again. Print in the `formats` shapes, and stop when the step is done."]
+             "again. Print in the `formats` shapes with nothing between tool calls (Quiet steps), and stop "
+             "when the step is done."]
     if ticket:
         comments = "\n\n".join(f"**{c['author']}:** {c['text'].strip()}" for c in ticket["comments"])
         parts += ["## Ticket", ticket["body"].strip() or "(no body)", "## Comments", comments or "(none)"]

@@ -10,12 +10,14 @@ Process: a turn is one API response; the log writes one line per content block
          With job prompts in the log, a turn belongs to the step the last
          prompt named; else, with state writes, to the step the next write
          names; else a step starts at each Skill call.
-Output:  one row per step (turns, tools, input, cache_read, cache_write, output)
-         and, as text, a TOTAL row.
+Output:  one row per step (turns, tools, input, cache_read, cache_write, output,
+         and the models its turns ran on) and, as text, a TOTAL row.
 """
 import json
 import re
+from collections import namedtuple
 
+Turn = namedtuple("Turn", "usage tools job model")  # job: the step the last job prompt named
 STATE_FILE = ".factory/guide.yaml"
 STATE_REDIRECT = re.compile(r">\s*[\"']?[^\s\"'|;&]*" + re.escape(STATE_FILE))
 STEP = re.compile(r"step: ([\w-]+)")
@@ -34,7 +36,7 @@ def typed(message):
 
 
 def turns(lines):
-    """Assistant turns in log order, as (usage, tool_use blocks, the step the last job prompt named)."""
+    """Assistant turns in log order, as Turns."""
     by_id, job = {}, None
     for number, line in enumerate(lines):
         entry = json.loads(line)
@@ -44,8 +46,9 @@ def turns(lines):
         if entry.get("type") != "assistant":
             continue
         message = entry["message"]
-        turn = by_id.setdefault(message.get("id") or number, (message.get("usage", {}), [], job))
-        turn[1].extend(block for block in message["content"] if block.get("type") == "tool_use")
+        turn = by_id.setdefault(message.get("id") or number,
+                                Turn(message.get("usage", {}), [], job, message.get("model")))
+        turn.tools.extend(block for block in message["content"] if block.get("type") == "tool_use")
     return list(by_id.values())
 
 
@@ -80,10 +83,10 @@ def steps(log):
     after the last write keep that step. Else a step starts at each Skill
     call. Turns before the first prompt or call are "start".
     """
-    jobs = [job for _, _, job in log]
+    jobs = [turn.job for turn in log]
     if any(jobs):
         return [job or "start" for job in jobs]
-    written = [state_write(tools) for _, tools, _ in log]
+    written = [state_write(turn.tools) for turn in log]
     if any(written):
         booked, step = [], next(name for name in reversed(written) if name)
         for name in reversed(written):
@@ -91,8 +94,8 @@ def steps(log):
             booked.append(step)
         return booked[::-1]
     booked, step = [], "start"
-    for _, tools, _ in log:
-        step = next((tool["input"]["skill"] for tool in tools if tool["name"] == "Skill"), step)
+    for turn in log:
+        step = next((tool["input"]["skill"] for tool in turn.tools if tool["name"] == "Skill"), step)
         booked.append(step)
     return booked
 
@@ -101,12 +104,14 @@ def report(lines):
     """One row per step, in the order the steps first appear."""
     log = turns(lines)
     rows = {}
-    for (usage, tools, _), step in zip(log, steps(log)):
-        row = rows.setdefault(step, {"step": step, **dict.fromkeys(COUNTS, 0)})
+    for turn, step in zip(log, steps(log)):
+        row = rows.setdefault(step, {"step": step, **dict.fromkeys(COUNTS, 0), "models": []})
+        if turn.model and turn.model not in row["models"]:
+            row["models"].append(turn.model)
         row["turns"] += 1
-        row["tools"] += len(tools)
+        row["tools"] += len(turn.tools)
         for count, field in USAGE.items():
-            row[count] += usage.get(field) or 0
+            row[count] += turn.usage.get(field) or 0
     return list(rows.values())
 
 
@@ -114,7 +119,7 @@ def table(rows):
     """The rows and their TOTAL as aligned text."""
     total = {"step": "TOTAL", **{count: sum(row[count] for row in rows) for count in COUNTS}}
     width = max(len(row["step"]) for row in rows + [total])
-    lines = [f"{'step':<{width}}" + "".join(f"{count:>12}" for count in COUNTS)]
+    lines = [f"{'step':<{width}}" + "".join(f"{count:>12}" for count in COUNTS) + "  models"]
     lines += [f"{row['step']:<{width}}" + "".join(f"{row[count]:>12}" for count in COUNTS)
-              for row in rows + [total]]
+              + f"  {', '.join(row.get('models', []))}".rstrip() for row in rows + [total]]
     return "\n".join(lines)

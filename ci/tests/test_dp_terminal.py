@@ -50,7 +50,7 @@ def test_the_header_shows_the_position_and_only_the_current_step_in_colour(scree
 
 @pytest.mark.unit
 def test_a_job_prompt_without_a_clipboard_tool_is_only_shown(screen):
-    screen.job("Step check of #4: read .factory/jobs/4/check.md and do it.")
+    screen.job("Step check of #4: read .factory/jobs/4/check.md and do it.", None, None)
 
     assert "Step check of #4" in output(screen)
     assert "copied" not in output(screen)
@@ -65,3 +65,19 @@ def test_no_color_drops_the_colour(monkeypatch):
     shown.say("[ticket #4] check · DONE")
 
     assert "\x1b[38;2" not in output(shown)
+
+
+@pytest.mark.unit
+def test_claude_starts_on_the_steps_model_and_effort(monkeypatch):
+    monkeypatch.setattr(terminal.shutil, "which", lambda name: "/bin/claude" if name == "claude" else None)
+
+    assert terminal.claude_command("Step x", "opus", "high") == [
+        "/bin/claude", "--model", "opus", "--effort", "high", "Step x"]
+    assert terminal.claude_command("Step x", None, None) == ["/bin/claude", "Step x"]
+
+
+@pytest.mark.unit
+def test_without_claude_the_panel_names_the_model_to_use(screen):
+    screen.job("Step shape of #4: read .factory/jobs/4/shape.md and do it.", "opus", "high")
+
+    assert "use opus · high first" in output(screen)

@@ -15,8 +15,10 @@ class Script(guide.Plain):
     def __init__(self, *answers):
         self.answers = list(answers)
         self.said = []
+        self.menus = []  # each menu's labels, and the value it preselected
 
-    def choose(self, message, options):
+    def choose(self, message, options, default=None):
+        self.menus.append(([label for label, _ in options], default))
         wanted = self.answers.pop(0)
         return next(value for label, value in options if label.split()[0] == wanted)
 
@@ -121,7 +123,11 @@ def test_leaving_review_asks_a_disposition_for_each_finding(tmp_path, gitea):
         {"id": "S1", "file": "a.py", "line": 3, "severity": "low", "finding": "Too long"},
         {"id": "P1", "file": "b.py", "line": 9, "severity": "medium", "finding": "Not asked for"}]))
 
-    walk(tmp_path, Script("fix", "Fix", "Dismiss", "out of scope", "stop"), gitea)
+    script = Script("Fix", "Dismiss", "out of scope", "fix", "stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert script.menus[2][1]["step"] == "fix"  # the menu after the two findings preselects fix
 
     decided = [f["disposition"] for f in json.loads(findings.read_text())]
     assert decided == ["Fix", "Dismissed: out of scope"]
@@ -209,3 +215,108 @@ def test_findings_left_undecided_are_asked_before_the_next_brief(tmp_path, gitea
     walk(tmp_path, Script("pr", "Escalate", "MattM", "stop"), gitea)
 
     assert json.loads(findings.read_text())[0]["disposition"] == "Escalated: MattM"
+
+
+def pointer_tested(number):
+    return ("Squire", f"Tested by hand, 2026-10-22. Done: prep. → #{number}")
+
+
+@pytest.mark.unit
+def test_the_menu_puts_this_flow_first_then_the_forks_that_hold(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4, milestone="v1")
+    gitea.add_issue(5, milestone="v1")
+    gitea.put("Testing", 4, 5)
+    script = Script("stop")
+
+    walk(tmp_path, script, gitea)
+
+    labels = [label.split()[0] for label in script.menus[0][0]]
+    assert labels == ["pick", "───────────", "board", "flows…", "stop"]  # no gate: #5 is not tested
+
+
+@pytest.mark.unit
+def test_gate_is_offered_once_every_other_ticket_in_the_milestone_is_tested(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4, milestone="v1")
+    gitea.add_issue(5, milestone="v1", comments=[pointer_tested(5)])
+    gitea.add_issue(6, milestone="v2")
+    gitea.put("Testing", 4, 5)
+    gitea.put("Backlog", 6)
+    script = Script("stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert "gate" in [label.split()[0] for label in script.menus[0][0]]
+
+
+@pytest.mark.unit
+def test_leaving_test_posts_a_pointer_tested(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+
+    walk(tmp_path, Script("pick", True, "laptop, names end -dev", "stop"), gitea)
+
+    posted = [w for w in gitea.writes if w[0] == "comment"]
+    assert len(posted) == 1
+    assert posted[0][2].startswith("Tested by hand, ")
+    assert posted[0][2].endswith(". Done: laptop, names end -dev. → #4")
+
+
+@pytest.mark.unit
+def test_an_untested_change_stays_at_test(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+    script = Script("pick", False, "stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert not [w for w in gitea.writes if w[0] == "comment"]
+    assert saved(tmp_path)["step"] == "test"
+    assert "[ticket #4] not tested · staying at test" in script.said
+
+
+@pytest.mark.unit
+def test_leaving_the_ticket_flow_pauses_it_and_flows_resumes_it(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4, comments=[pointer_tested(4)])
+    gitea.put("Testing", 4)
+    script = Script("flows…", "align", True, None, "stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert saved(tmp_path)["flow"] == "align"
+    assert saved(tmp_path)["paused"] == {"flow": "ticket", "step": "test", "ticket": 4}
+
+    script = Script("flows…", "resume", "stop")
+    walk(tmp_path, script, gitea)
+
+    assert "resume      #4 at test" in script.menus[1][0]
+    assert (saved(tmp_path)["flow"], saved(tmp_path)["step"], saved(tmp_path)["ticket"]) == ("ticket", "test", 4)
+
+
+@pytest.mark.unit
+def test_an_agent_step_hands_claude_the_skills_model_and_effort(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "pick", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Backlog", 4)
+    handed = []
+    script = Script("shape", "stop")
+    script.job = lambda prompt, model, effort: handed.append((prompt, model, effort))
+
+    walk(tmp_path, script, gitea)
+
+    assert handed == [("Step shape of #4: read .factory/jobs/4/shape.md and do it.", "opus", "high")]
+
+
+@pytest.mark.unit
+def test_the_end_of_a_flow_lists_the_flows_once(tmp_path):
+    guide.write_state(tmp_path, {"flow": "session", "step": "retro", "ticket": None})
+    script = Script("stop")
+
+    walk(tmp_path, script, None)
+
+    labels = [label.split()[0] for label in script.menus[0][0]]
+    assert labels == ["ticket", "release", "align", "deploy", "session", "stop"]

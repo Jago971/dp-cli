@@ -44,6 +44,7 @@ A skill header applies only to the turn the skill starts in; your next message r
 3. Install `tea` and add two logins: the engineer's own, and `squire` (the agent's).
 4. Install pipx: `python -m pip install --user pipx`, then `python -m pipx ensurepath`, and open a new terminal.
 5. Install `dp` from the installed plugin, once the plugin is installed in a repo: `pipx install --force ~/.claude/plugins/cache/datumpin/datumpin/<version>/dp`, with `<version>` from `claude plugin list`. Check it: `dp board` in a repo prints its Board.
+6. Put `claude` on the PATH, so `dp guide` can start it: Claude Code's native installer or `npm install -g @anthropic-ai/claude-code`. The copy inside the VS Code extension is not on the PATH. Check it: `claude --version` in a new terminal.
 
 ## Bringing a repo into the workflow
 
@@ -74,17 +75,17 @@ To pick up a new plugin version: `claude plugin marketplace update datumpin`, th
 
 `dp guide`, in a repo, walks the flows with no session, so finding the position and the next step costs no tokens. It prints the position (the state file `.factory/guide.yaml`, corrected from the ticket's board column) and offers the next steps as an arrow-key menu. A chosen step runs by its kind:
 
-- **A person's gate:** `pick` lists the Backlog, moves the chosen ticket to In Progress (into the open milestone due first, when it has none) and branches from `prep`; `merge`, `test` and `sign-off` ask whether it is done; leaving `review` asks a disposition for each finding in `findings.json`.
-- **An agent step:** it writes a brief to `.factory/jobs/<ticket>/<step>.md` (the ticket, its comments and column, the diff stat, and the skill text the step needs: the map's `brief` sections, else the whole skill) and prints a Job prompt (`formats`) to paste into a session.
+- **A person's gate:** `pick` lists the Backlog and takes the chosen ticket in (`dp pick`: In Progress, into the open milestone due first when it has none, and a branch from `prep`); `merge`, `test` and `sign-off` ask whether it is done; at `review`, each finding in `findings.json` gets a disposition before the menu, which then preselects `fix` or `pr`; leaving `test` asks `Tested OK?` and posts a Tested Pointer on the ticket, which `gate` waits for.
+- **An agent step:** it writes a brief to `.factory/jobs/<ticket>/<step>.md` (the ticket, its comments and column, the diff stat, and the skill text the step needs: the map's `brief` sections, else the whole skill), then starts Claude Code in the same terminal on the brief, with the model and effort of the step's skill header; exiting Claude brings the menu back. Without `claude` on the PATH, it shows the Job prompt (`formats`) to paste, naming the model to use.
 - **A user-invoked skill** (`handoff`, `retro`): it prints the command to type in the session you worked in.
 
 `tag` first asks whether the release PR is merged on `main`. Before any brief but a review's, undecided findings are asked for. Colour directs the eye, one meaning each, from the DP palette: pink is where you are and what to act on, cyan is the menu cursor, yellow needs attention, red failed; the rest is the terminal's own text and grey. It shows a rail of the flow's usual path with the current step's `does` line under it, a spinner while Gitea answers, number shortcuts in menus, and the Job prompt in a panel, copied to the clipboard when the system has `clip`, `pbcopy`, `wl-copy` or `xclip`; `NO_COLOR` turns colour off.
 
-Each step reached is written to the state file, so the `guide` skill carries on where `dp guide` stopped. Off a terminal it prints the Guide prompt and exits; `--json` gives the position and choices, which the `guide` skill reads.
+The menu lists this flow's next steps first; below a line come the forks whose check holds, then `flows…`, which starts or switches flow and offers `resume #N` for a ticket flow left behind. Each step reached is written to the state file, so the `guide` skill carries on where `dp guide` stopped. Off a terminal it prints the Guide prompt and exits; `--json` gives the position and choices, which the `guide` skill reads.
 
 ## Token usage
 
-`dp tokens <log>` prints the turns, tool calls and tokens (input, cache read, cache write, output) each flow step of one session used, with a total. A turn belongs to the step named by the last Job prompt before it; in a session without one, to the step named by the guide's next write to `.factory/guide.yaml` (a Write or Edit of it, or a shell redirect into it); in a session without either, a step starts at each Skill call. `--json` gives the rows.
+`dp tokens <log>` prints the turns, tool calls and tokens (input, cache read, cache write, output) each flow step of one session used, with a total. A turn belongs to the step named by the last Job prompt before it; in a session without one, to the step named by the guide's next write to `.factory/guide.yaml` (a Write or Edit of it, or a shell redirect into it); in a session without either, a step starts at each Skill call. Each row names the models its turns ran on, so a step's skill header is seen to apply. `--json` gives the rows.
 
 1. **Find the log:** sessions are logged at `~/.claude/projects/<project>/<session-id>.jsonl`, where `<project>` is the repo path with `:` and `\` as `-` (for example `c--Users-mattm-Documents-BDS`). The newest file is the latest session.
 2. **Run it:** `dp tokens <log>`.

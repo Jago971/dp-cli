@@ -149,19 +149,21 @@ Guide · ticket flow · #52 · review (dev)
 Done          change-review · CHANGES · Standards 2 · Spec 1
 1. fix        Apply the dispositions, then commit
 2. pr         Push and open the PR, with its Review section
-3. stop
-? Next? (1 / 2 / 3)
+   ───────────
+3. flows…     Start or switch to any flow
+4. stop
+? Next? (1 / 2 / 3 / 4)
 ```
 
 - The first line is the position: flow, ticket when there is one, step and its environment.
 - `Done` is the last step's outcome line, omitted before the first step.
-- Each choice is the step's name and its `does` line from the flow map; a fork into another flow ends `→ <flow> flow`. `stop` is always last.
-- With no position, the first line is `Guide · no position` and the choices are the flows.
+- Each choice is the step's name and its `does` line from the flow map; a human step's line names the person (`You merge…`). This flow's steps come first; below a `───` line come the forks whose check holds (one into another flow ends `→ <flow> flow`), then `flows…`. `stop` is always last.
+- With no position, the first line is `Guide · start` and the choices are the flows.
 - `dp guide` at a terminal prints the first line and shows the choices as an arrow-key menu.
 
 ### Job prompt
 
-`dp guide` prints it for an agent step; the person pastes it into a session.
+`dp guide` starts Claude Code with it for an agent step; without `claude` on the PATH, the person pastes it into a session on the model the panel names.
 
 ```
 Step build of #125: read .factory/jobs/125/build.md and do it.
@@ -229,7 +231,10 @@ Verdicts: `Covered`, `Carried forward`, `Obsolete`, `Duplicate`, `Done`.
 
 ```
 Backlog reset, 2026-10-20. Carried forward: datetime and timezone convention. → #78
+Tested by hand, 2026-10-22. Done: laptop, containers end -dev. → #107
 ```
+
+A Tested Pointer (Event `Tested by hand`) records a hand test when the ticket leaves `test`; `gate` waits for one on every other ticket in the milestone.
 
 **Scope**: the result of refining a ticket. The ticket sections, then the open questions:
 

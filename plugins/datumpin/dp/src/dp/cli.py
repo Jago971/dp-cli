@@ -1,6 +1,6 @@
 """dp's command line: one command per repeated Gitea task, the guide and the token report.
 
-Summary: `dp board`, `dp move`, `dp pr`, `dp pointer`, `dp guide` and `dp tokens`.
+Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp guide` and `dp tokens`.
 Input:   the repo in the working directory (its git remote and
          `.claude/flow.yaml`) and tea's logins; writes go as the agent login.
 Output:  compact text through Rich, which honours NO_COLOR, or JSON with
@@ -39,6 +39,11 @@ def git(*args):
     if result.returncode:
         raise GiteaError(f"git {args[0]}: {result.stderr.strip()}")
     return result.stdout.strip()
+
+
+def at_terminal():
+    # Both ends: on Windows a null stdin (NUL) passes isatty().
+    return sys.stdin.isatty() and sys.stdout.isatty()
 
 
 def repo_root():
@@ -128,6 +133,23 @@ def move(number: int, column: str,
 
 @app.command()
 @reports_errors
+def pick(number: int = typer.Argument(None, help="The ticket; at a terminal, without it, a Backlog menu."),
+         branch: str = typer.Option(None, help="The branch; by default <type>/<N>-<slug> from the ticket."),
+         as_json: bool = JSON):
+    """Take ticket NUMBER in: In Progress and assigned to you, in a milestone, on its branch from prep."""
+    gitea = connect()
+    if number is None:
+        if as_json or not at_terminal():
+            raise GiteaError("give a ticket number off a terminal: dp pick N")
+        guide.pick(Terminal(), gitea, git)
+        return
+    ticket = commands.issue(gitea.call, gitea.repo, number)
+    taken = guide.take(gitea, git, ticket, branch or guide.branch_name(ticket))
+    emit(taken, as_json, lambda t: say(*guide.taken_lines(t)))
+
+
+@app.command()
+@reports_errors
 def pr(title: str = typer.Option(..., help="The PR title, as a ticket title."),
        body_file: Path = typer.Option(..., exists=True, dir_okay=False, help="The PR body, in the formats shape."),
        labels: str = typer.Option("", help="Label names, comma-separated."),
@@ -159,8 +181,7 @@ def guide_command(as_json: bool = JSON):
         gitea = connect()
     except GiteaError as error:
         gitea = guide.offline(error)
-    # Both ends: on Windows a null stdin (NUL) passes isatty().
-    if as_json or not (sys.stdin.isatty() and sys.stdout.isatty()):
+    if as_json or not at_terminal():
         emit(guide.show(root, gitea), as_json, lambda shown: say(guide.guide_prompt(shown)))
         return
     try:

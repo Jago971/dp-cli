@@ -49,28 +49,41 @@ def flow_of(flow_map, flow, step):
     return next(name for name, listed in flow_map["flows"].items() if step in listed["steps"])
 
 
-def choices(flow_map, position):
-    """What may come next: the step's `next` and `optional` steps its flow lists, then its forks.
+def forks(defined):
+    """A step's forks as (step, check): a fork names a step, or a step and the check that must hold."""
+    return [(target, None) if isinstance(target, str) else (target["step"], target["when"])
+            for target in defined.get("fork", {}).values()]
+
+
+def flow_starts(flow_map):
+    """Each flow at its first step, as choices."""
+    return [{"name": name, "step": listed["steps"][0], "flow": name, "does": listed["does"], "kind": "flow"}
+            for name, listed in flow_map["flows"].items()]
+
+
+def choices(flow_map, position, holds=lambda check: True):
+    """What may come next: the step's `next` and `optional` steps its flow lists, then the forks that hold.
 
     Without a position, or at the end of a flow, each flow at its first step.
-    `name` is what the menu shows: the step, or the flow it starts.
+    `name` is what the menu shows: the step, or the flow it starts; `kind`
+    is `next`, `fork` or `flow`. holds(check) answers a fork's `when`.
     """
     offered = []
     if position:
         flow, step = position["flow"], flow_map["steps"][position["step"]]
         listed = flow_map["flows"][flow]["steps"]
         following = [s for s in step.get("next", []) + step.get("optional", []) if s in listed]
-        offered = [{"name": s, "step": s, "flow": flow, "does": flow_map["steps"][s]["does"]}
+        offered = [{"name": s, "step": s, "flow": flow, "does": flow_map["steps"][s]["does"], "kind": "next"}
                    for s in dict.fromkeys(following)]
         offered += [{"name": s, "step": s, "flow": flow_of(flow_map, flow, s),
-                     "does": flow_map["steps"][s]["does"]} for s in step.get("fork", {}).values()]
-    return offered or [{"name": name, "step": listed["steps"][0], "flow": name, "does": listed["does"]}
-                       for name, listed in flow_map["flows"].items()]
+                     "does": flow_map["steps"][s]["does"], "kind": "fork"}
+                    for s, check in forks(step) if check is None or holds(check)]
+    return offered or flow_starts(flow_map)
 
 
 def leads_to(flow_map, step):
     defined = flow_map["steps"][step]
-    return defined.get("next", []) + defined.get("optional", []) + list(defined.get("fork", {}).values())
+    return defined.get("next", []) + defined.get("optional", []) + [s for s, _ in forks(defined)]
 
 
 def path(flow_map, flow):

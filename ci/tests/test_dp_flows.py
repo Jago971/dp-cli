@@ -33,7 +33,7 @@ def test_every_step_a_flow_names_is_defined(flow_map):
         for step in flow["steps"]:
             defined = flow_map["steps"][step]
             assert set(defined.get("next", []) + defined.get("optional", [])) <= set(flow_map["steps"])
-            assert set(defined.get("fork", {}).values()) <= set(flow_map["steps"])
+            assert {s for s, _ in flows.forks(defined)} <= set(flow_map["steps"])
 
 
 @pytest.mark.unit
@@ -65,7 +65,8 @@ def test_a_state_the_map_does_not_know_has_no_position(flow_map, unknown):
 @pytest.mark.unit
 def test_choices_are_the_next_and_optional_steps_the_flow_lists(flow_map):
     assert steps_of(flows.choices(flow_map, state("review"))) == ["fix", "pr"]
-    assert steps_of(flows.choices(flow_map, state("build"))) == ["check", "diagnose"]
+    assert steps_of(c for c in flows.choices(flow_map, state("pick")) if c["kind"] == "next") == ["build", "diagnose"]
+    assert steps_of(flows.choices(flow_map, state("build"))) == ["check"]
 
 
 @pytest.mark.unit
@@ -105,5 +106,23 @@ def test_the_rail_marks_the_usual_path_done_current_and_to_come(flow_map):
 def test_an_off_path_step_sits_on_the_rail_after_the_step_leading_to_it(flow_map):
     rail = flows.rail(flow_map, state("diagnose"))
 
-    assert [step for step, _ in rail][:4] == ["pick", "build", "diagnose", "check"]
-    assert dict(rail)["build"] == "done"
+    assert [step for step, _ in rail][:4] == ["pick", "diagnose", "build", "check"]
+    assert dict(rail)["pick"] == "done"
+
+
+@pytest.mark.unit
+def test_a_fork_with_a_check_is_offered_only_when_it_holds(flow_map):
+    held = []
+
+    offered = flows.choices(flow_map, state("test"), holds=lambda check: held.append(check) or False)
+
+    assert held == ["milestone_tested"]
+    assert [(c["step"], c["kind"]) for c in offered] == [("pick", "next"), ("board", "fork")]
+
+
+@pytest.mark.unit
+def test_every_fork_check_is_one_dp_runs(flow_map):
+    from dp import guide
+
+    used = {check for step in flow_map["steps"].values() for _, check in flows.forks(step) if check}
+    assert used <= set(guide.CHECKS)

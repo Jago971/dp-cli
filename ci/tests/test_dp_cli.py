@@ -110,6 +110,29 @@ def test_guide_off_a_terminal_prints_the_guide_prompt(gitea, tmp_path, monkeypat
     result = run("guide")
 
     assert result.exit_code == 0
-    assert result.output.splitlines()[0] == "Guide · no position"
+    assert result.output.splitlines()[0] == "Guide · start"
     assert "1. ticket" in result.output
     assert result.output.rstrip().endswith("? Next? (1 / 2 / 3 / 4 / 5 / 6)")
+
+
+@pytest.mark.unit
+def test_pick_takes_a_ticket_in_on_its_branch(gitea, monkeypatch):
+    branched = []
+    monkeypatch.setattr(cli, "git", lambda *args: branched.append(args) or "")
+    gitea.add_issue(4, title="Fix the thing", labels=["TYPE/BUG"], milestone="v1")
+    gitea.put("Backlog", 4)
+
+    result = run("pick", "4", "--json")
+
+    assert result.exit_code == 0
+    taken = json.loads(result.output)
+    assert (taken["to"], taken["assigned"], taken["branch"]) == ("In Progress", "MattM", "fix/4-fix-the-thing")
+    assert branched == [("switch", "-c", "fix/4-fix-the-thing", "prep")]
+
+
+@pytest.mark.unit
+def test_pick_without_a_number_off_a_terminal_asks_for_one(gitea):
+    result = run("pick")
+
+    assert result.exit_code == 1
+    assert "dp pick N" in result.output

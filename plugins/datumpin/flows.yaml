@@ -1,9 +1,10 @@
 # The flows, as steps. `dp guide` (and the guide skill through it) reads this
 # file to show where you are and offer what comes next, so the order of work
-# lives in one place instead of in each skill. A step is defined once under `steps`; a flow lists the
-# steps it uses. The guide offers only the `next` and `optional` steps the
-# current flow lists, so a shared step (review) carries each flow's
-# successor; a `fork` may lead into another flow (the one that lists its step).
+# lives in one place instead of in each skill. A step is defined once under
+# `steps`; a flow lists the steps it uses. The guide offers only the `next`
+# and `optional` steps the current flow lists, so a shared step (review)
+# carries each flow's successor; a `fork` may lead into another flow (the one
+# that lists its step).
 #
 # Per step:
 #   skill     the skill that runs the step. Two have no skill file: `agent`,
@@ -14,7 +15,11 @@
 #   does      the choice line the guide prints
 #   next      the steps that may follow; the first is the usual one
 #   optional  steps that may come before the next one
-#   fork      condition -> step, offered beside `next`; it may switch flow
+#   fork      condition -> step, offered below `next`; it may switch flow. A
+#             fork `{step, when}` is offered only when `dp` finds its check
+#             holds: `unscoped` (the ticket has no Acceptance), or
+#             `milestone_tested` (every other ticket in the ticket's milestone
+#             is in Testing with a Tested Pointer, or past it)
 #   brief     the skill sections (`skill#Heading`) a job brief from `dp guide`
 #             carries; without it, a brief carries the step's whole skill
 #
@@ -59,8 +64,8 @@ steps:
     skill: board
     env: dev
     does: Take a Backlog ticket into In Progress on its branch
-    next: [build]
-    fork: {the ticket is in Triage or unscoped: shape}
+    next: [build, diagnose]
+    fork: {the ticket is unscoped: {step: shape, when: unscoped}}
   shape:
     skill: shape
     env: dev
@@ -71,7 +76,6 @@ steps:
     env: dev
     does: Agree the seams, then build red to green in the dev containers
     next: [check]
-    optional: [diagnose]
   diagnose:
     skill: diagnosing-bugs
     env: dev
@@ -108,15 +112,15 @@ steps:
   merge:
     skill: human
     env: ci
-    does: Merge the PR into prep once CI is green
+    does: You merge the PR into prep once CI is green
     next: [test, pick]
     fork: {prep must pull first: deploy-prep}
   test:
     skill: human
     env: prep
-    does: Test the change by hand on prep
+    does: You test the change by hand where it runs
     next: [pick]
-    fork: {every ticket in the milestone is tested: gate, carry on: board}
+    fork: {every ticket in the milestone is tested: {step: gate, when: milestone_tested}, carry on: board}
   gate:
     skill: definition-of-done
     env: prep
@@ -130,7 +134,7 @@ steps:
   sign-off:
     skill: human
     env: ci
-    does: Sign the worksheet and merge the release PR
+    does: You sign the worksheet and merge the release PR
     next: [tag]
   tag:
     skill: agent

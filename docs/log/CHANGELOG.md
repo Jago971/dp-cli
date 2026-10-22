@@ -4,6 +4,15 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-22 - Guide retest fixes (plugin 0.8.4)
+
+- `dp guide` starts Claude Code for an agent step on its skill's model and effort; without `claude` on the PATH it shows the Job prompt with the model to use. `dp tokens` names each step's models (#127).
+- The menu lists this flow's next steps, then the forks whose check holds (`when: unscoped`, `when: milestone_tested` in `flows.yaml`), then `flows…`, which resumes a ticket flow left for another flow (`paused_ticket` in the state file).
+- Leaving `test` asks `Tested OK?` and posts a Tested Pointer; `gate` waits for one on every other ticket in the milestone. A review's dispositions come before its menu and preselect `fix` or `pr`.
+- `dp pick N` takes a ticket in (In Progress, milestone, branch); `board`, `gitea` and `guide` use it, so a pick no longer reruns the board flow. `diagnose` is offered beside `build`; human steps' lines name the person; `Guide · start` replaces `no position`; briefs ask for no narration.
+
+---
+
 ### [CHANGED] 2026-10-22 - dp guide: colour with meaning (plugin 0.8.3)
 
 - One meaning per colour: pink for where you are and what to act on, cyan for the menu cursor, yellow for attention, red for failure. Everything else is the terminal's own text, or its own grey (`bright_black`) instead of a fixed hex grey, so it matches the theme. Menu rows are plain, so the cursor's row is the one in colour (#125).
