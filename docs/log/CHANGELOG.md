@@ -4,6 +4,13 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-22 - Reviewers get the facts in their brief (plugin 0.8.5)
+
+- `change-review` gathers the spec text, recorded dispositions, commit list, diff stat and changed files once and puts them in each reviewer's brief, with the skill sections to read by heading; a reviewer opens only what it checks (#124).
+- `align` runs `dp board --json` once and hands each subagent its share, with the doc paths, so no subagent calls Gitea or lists the repo again.
+
+---
+
 ### [CHANGED] 2026-10-22 - Guide retest fixes (plugin 0.8.4)
 
 - `dp guide` starts Claude Code for an agent step on its skill's model and effort; without `claude` on the PATH it shows the Job prompt with the model to use. `dp tokens` names each step's models (#127).

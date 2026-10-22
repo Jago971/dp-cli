@@ -19,7 +19,14 @@ A change can pass one axis and fail the other, so the report keeps them separate
 1. **Pin the fixed point.** Use the commit, branch or tag the user names, and ask when none is given. Run `git rev-parse <fixed-point>` and `git diff <fixed-point>...HEAD`, and note `git log <fixed-point>..HEAD --oneline`. Stop here when the ref does not resolve or the diff is empty.
 2. **Find the spec.** In order: an issue or PR reference in the commit messages, a path the user passes, the matching expansion or section in `docs/plan/` (`REBUILD_PLAN.md`, `ROADMAP.md`, a standalone plan). With none found, ask. With none existing, skip the Spec axis and say so in the report.
 3. **Find the standards.** The skills `CLAUDE.md` lists for the kinds of file in the diff (Python, compose, docs, tests, frontend), plus the repo's own reference docs. A documented repo standard decides each case.
-4. **Run the reviewers, scaled to the change.** Give each the diff command, the commit list, the skill files to read (not only the diff) and a word limit.
+4. **Run the reviewers, scaled to the change.** Gather the facts once, so every reviewer works from the same ones, and put them in each brief:
+   - the spec text: the ticket body, its Scope comments and any agreed seams;
+   - the dispositions already recorded on this change;
+   - the commit list, `git diff --stat`, the changed files and the diff command;
+   - the skill sections to read, by heading (`<skill>/SKILL.md#Heading`);
+   - a word limit.
+
+   A reviewer works from its brief and opens only the hunks and files it checks.
    - Docs, skill text or config only: one reviewer covering both axes, on the model `flow.yaml` sets for `change_review.single`, under 250 words, keeping the two axes as separate headings.
    - Code: both subagents together, in the foreground, under 400 words each.
    - A promotion: both, plus `security-review` (see Security).
