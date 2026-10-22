@@ -1,4 +1,4 @@
-# Calling tea
+# tea calls
 
 For what `dp` does not cover. Parent: [SKILL.md](SKILL.md).
 
@@ -15,6 +15,7 @@ For what `dp` does not cover. Parent: [SKILL.md](SKILL.md).
 | One issue, with body | `tea api --login L repos/R/issues/N` |
 | Its comments | `tea api --login L repos/R/issues/N/comments` |
 | Create an issue | `tea issues create --repo R --login L --title T --description-file F --labels "A,B" --milestone M` |
+| Assign, other than on In Progress | `tea issues edit N --repo R --login L --add-assignees USER`, with `USER` the Gitea username |
 | Move labels | `tea issues edit N --repo R --login L --add-labels "A" --remove-labels "B"` |
 | Comment, other than a Pointer | `tea comment N --repo R --login L --description "<text>"` |
 | Create a milestone | `tea milestones create --repo R --login L --title T --description D` |
