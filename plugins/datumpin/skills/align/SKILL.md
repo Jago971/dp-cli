@@ -37,7 +37,7 @@ Pick the mode from the labels and say which in the drift report.
 ## Steps
 
 1. **Config.** Read the plugin defaults at `../../defaults/flow.yaml` (relative to this skill's base directory), then the repo's `.claude/flow.yaml`; repo keys win.
-2. **Review.** Run `dp board --json` once (`gitea`) and list the plan docs, the decision log and the CHANGELOG's latest entries. Dispatch three read-only subagents in one message, each with the model and effort in `align.review`, each returning its report shape below. Each brief carries its share of those facts, so no subagent calls Gitea or lists the repo again; a subagent opens a ticket body only when its title and last comment cannot settle the verdict:
+2. **Review.** Run `dp board --json` once (`gitea`) and list the plan docs, the decision log and the CHANGELOG's latest entries. Dispatch three read-only subagents in one message, each with the model and effort in `align.review`, each returning its report shape below. Each brief carries its share of those facts and names its report shape (`align/SKILL.md#Subagent report shapes`); align has no diff, so no diff stat. A subagent works from its brief, and opens a ticket body only when the title and last comment cannot settle the verdict:
    - **Tickets:** every open ticket and milestone (from the board listing), checked against the code, CHANGELOG and docs.
    - **Own docs:** the open work and open decisions in this repo's roadmap, plan docs and decision log (their paths in the brief), checked against the CHANGELOG; plus any doc that contradicts the code.
    - **Siblings:** the docs of the other repos in the Gitea team `Agents`, for work they need from this repo or are waiting on it for.
