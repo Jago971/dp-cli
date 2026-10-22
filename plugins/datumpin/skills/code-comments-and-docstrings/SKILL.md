@@ -1,6 +1,6 @@
 ---
 name: code-comments-and-docstrings
-description: Comments in source files (py/js/ts) - why-only inline comments, the file header, Summary/Input/Process/Output/Raises docstrings, #region fold markers. Use before writing or editing any comment or docstring.
+description: Comments in source files (py/js/ts) - why-only comments, file headers, Summary/Input/Output docstrings. Use before writing or editing a comment or docstring.
 ---
 
 # Code comments and docstrings

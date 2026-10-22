@@ -1,6 +1,6 @@
 ---
 name: testing-conventions
-description: Tests - marker taxonomy (unit/integration/contract), image smoke tests, naming, factories, CI wiring, test README as a bug log, running pytest. The test-first loop, seams and mocking belong to tdd.
+description: Tests - markers (unit/integration/contract), smoke tests, naming, factories, CI wiring, the test README bug log, running pytest. Test-first loop is tdd.
 ---
 
 # Testing conventions

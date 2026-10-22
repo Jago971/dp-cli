@@ -1,6 +1,6 @@
 ---
 name: align
-description: Align - find drift between where a repo is (code, CHANGELOG), where it planned to go (Gitea tickets, milestones) and where it is heading (roadmap, plan docs, decisions), then fix it. Use when a repo joins the workflow, after a decision changes direction, when a milestone closes, or when asked to check or clean up the backlog.
+description: Align - find and fix drift between code, tickets and plans. Use when a repo joins the workflow, direction changes, a milestone closes, or to clean the backlog.
 model: opus
 effort: high
 ---

@@ -26,6 +26,8 @@ Every document and pointer you add spends one of two budgets:
 
 Material reached only through a pointer escapes context load at the price of the pointer's own line; material with no pointer at all rides entirely on cognitive load.
 
+A skill description is 160 characters or fewer: what the skill is and its trigger words. Detail goes in the body, and a branch only some uses need goes in a sibling file the body links (`ci/tests/test_plugin_skills.py` checks both).
+
 ## Information hierarchy
 
 A document is built from two content types: **steps** (the ordered actions the agent performs) and **reference** (definitions, rules, facts consulted on demand). The two mix freely: all steps (a recipe), all reference (a review's rules, this skill), or both. The core decision is where each piece sits on the **information hierarchy**, a ladder ranked by how immediately the agent needs the material:

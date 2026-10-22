@@ -1,6 +1,6 @@
 ---
 name: documentation-cross-cutting
-description: Placing and writing documentation - where a fact belongs, setting up or auditing a docs tree, writing or editing any single markdown file (folder README, reference page, guide, plan doc).
+description: Placing and writing docs - where a fact belongs, setting up or auditing a docs tree, writing any markdown file (README, reference page, guide, plan doc).
 ---
 
 # Documentation architecture and files

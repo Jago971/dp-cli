@@ -1,6 +1,6 @@
 ---
 name: claude-md-authoring
-description: Writing or updating a repo's CLAUDE.md - the Datumpin Engineering-principles block, the pointer to the datumpin plugin, subfolder CLAUDE.md. General agent-document writing belongs to writing-for-agents.
+description: Writing or updating a repo's CLAUDE.md - the Engineering principles block, the plugin pointer, subfolder CLAUDE.md. Other agent docs go to writing-for-agents.
 ---
 
 # Writing a repo's CLAUDE.md

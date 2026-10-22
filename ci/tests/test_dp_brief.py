@@ -51,8 +51,8 @@ def test_a_step_without_a_brief_list_carries_its_whole_skill():
 def test_a_brief_list_carries_only_its_sections():
     text = brief.skill_text({"skill": "agent", "brief": ["formats#Commit"]})
 
-    assert text.startswith("### Commit")
-    assert "### Branch" not in text
+    assert text.startswith("## Commit")
+    assert "## Branch" not in text
 
 
 @pytest.mark.unit
@@ -116,3 +116,10 @@ def test_every_brief_section_the_map_names_is_in_its_skill():
     for name, step in flows.load()["steps"].items():
         if "brief" in step:
             assert brief.skill_text(step), name
+
+
+@pytest.mark.unit
+def test_a_brief_section_is_found_in_a_skills_sibling_file():
+    text = brief.skill_text({"skill": "agent", "brief": ["docker-compose-conventions#Cron services"]})
+
+    assert text.startswith("# Cron services")

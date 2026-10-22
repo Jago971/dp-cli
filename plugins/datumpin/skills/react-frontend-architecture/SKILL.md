@@ -1,6 +1,6 @@
 ---
 name: react-frontend-architecture
-description: React frontends in the Datumpin fleet - CSS Modules, config-driven components, fetch-function API modules, theming, URL filter state. Folder vocabulary, data widgets, and loading states plus toolchain sit in sibling files.
+description: React frontends - CSS Modules, config-driven components, fetch-function APIs, theming, URL filter state. Folder words, widgets and toolchain in siblings.
 ---
 
 # React frontend architecture

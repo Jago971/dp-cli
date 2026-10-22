@@ -82,10 +82,22 @@ def section(markdown, heading):
     return "\n".join(kept).strip()
 
 
+def skill_section(name, heading):
+    """A heading's section from a packaged skill: its SKILL.md, else the sibling files it loads."""
+    folder = files("dp") / "data" / "skills" / name
+    siblings = sorted(f for f in folder.iterdir() if f.name.endswith(".md") and f.name != "SKILL.md")
+    for text in [split_skill(name)[1], *(f.read_text(encoding="utf-8") for f in siblings)]:
+        try:
+            return section(text, heading)
+        except LookupError:
+            continue
+    raise LookupError(f"no heading {heading!r} in the {name} skill")
+
+
 def skill_text(step):
     """The skill text a step's brief carries: its `brief` sections, else its whole skill."""
     if "brief" in step:
-        return "\n\n".join(section(split_skill(name)[1], heading)
+        return "\n\n".join(skill_section(name, heading)
                            for name, heading in (entry.split("#", 1) for entry in step["brief"]))
     return "" if step["skill"] in NO_SKILL_FILE else split_skill(step["skill"])[1]
 

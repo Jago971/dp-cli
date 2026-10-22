@@ -4,6 +4,14 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-22 - Skill trims (plugin 0.8.6)
+
+- Every skill description is 160 characters or fewer (`writing-for-agents`), so the descriptions loaded every turn cost less; 16 were trimmed (#123).
+- `formats` keeps the table, Quiet steps, Log line and Prompt; the other shapes move to `terminal.md`, `gitea.md` and `git.md`. `gitea-workflows` keeps Workflows, Branches and PRs and the Merge gate; `images.md`, `environments.md` and `dependencies.md` hold the rest. Headings are unchanged, and each sibling is linked. `gitea` leads with `dp`; its `tea` calls move to `tea.md`, cut to what `dp` does not cover.
+- `dp` briefs find a `brief` section in a skill's sibling files too. `ci/tests/test_plugin_skills.py` checks description length and sibling links.
+
+---
+
 ### [CHANGED] 2026-10-22 - Reviewers get the facts in their brief (plugin 0.8.5)
 
 - `change-review` gathers the spec text, recorded dispositions, commit list, diff stat and changed files once and puts them in each reviewer's brief, with the skill sections to read by heading; a reviewer opens only what it checks (#124).

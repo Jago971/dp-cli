@@ -1,6 +1,6 @@
 ---
 name: guide
-description: Guide - walk a flow one step at a time from the flow map - where you are, run the step you choose, then offer the next choices. Use when asked for the guide, what to do next in a flow, or to carry on a ticket, a release or a session.
+description: Guide - walk a flow one step at a time - where you are, the step you choose, the next choices. Use when asked for the guide or to carry on a ticket or release.
 model: sonnet
 effort: medium
 ---

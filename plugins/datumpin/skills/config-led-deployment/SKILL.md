@@ -1,6 +1,6 @@
 ---
 name: config-led-deployment
-description: Instance folders - adding a product instance, or changing how instances are configured, seeded, ported, networked or compose-generated. Frontend branding goes to branding.md, a live-server restructure or host access to rollout.md, service code layering to fastapi-service-architecture.
+description: Instance folders - adding an instance, or how instances are configured, seeded, ported, networked or compose-generated. Branding and rollout sit in siblings.
 ---
 
 # Config-led deployment

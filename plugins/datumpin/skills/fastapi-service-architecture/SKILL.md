@@ -1,6 +1,6 @@
 ---
 name: fastapi-service-architecture
-description: FastAPI services in the Datumpin fleet - routers/services/database layering, route naming, tests. Also adding a router, a model or a settings field. Settings, multi-instance and DB-pattern rules sit in sibling files.
+description: FastAPI services - routers/services/database layering, route naming, tests. Use when adding a router, model or settings field; DB and settings rules in siblings
 ---
 
 # FastAPI service architecture
