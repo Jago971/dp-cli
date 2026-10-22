@@ -3,9 +3,9 @@
 Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp guide` and `dp tokens`.
 Input:   the repo in the working directory (its git remote and
          `.claude/flow.yaml`) and tea's logins; writes go as the agent login.
-Output:  compact text through Rich, which honours NO_COLOR, or JSON with
-         `--json` for the agent; a Gitea failure prints one `dp:` line and
-         exits 1.
+Output:  text through dp.terminal (NO_COLOR, `--plain` and pipes give it
+         unstyled), or JSON with `--json` for the agent; a Gitea failure
+         prints one `✖ dp:` line and exits 1.
 """
 import functools
 import json
@@ -15,16 +15,18 @@ from pathlib import Path
 from typing import Callable
 
 import typer
-from rich.console import Console
 
-from dp import commands, guide, tokens
+from dp import commands, guide, terminal, tokens
 from dp.gitea import GiteaError, agent_login, human_username, logins, repo_slug, run, tea
-from dp.terminal import Terminal
-
-FULL_COLUMN = 8  # a longer column lists numbers only, as the formats Board view
+from dp.terminal import Terminal, at_terminal, busy, done, say
 
 app = typer.Typer(no_args_is_help=True, help="Repeated Gitea work and token reports for the datumpin flows.")
 JSON = typer.Option(False, "--json", help="Print JSON for the agent.")
+
+
+@app.callback()
+def options(plain: bool = typer.Option(False, "--plain", help="No colour and no spinners, for logs.")):
+    terminal.use_plain(plain)
 
 
 @dataclass
@@ -39,11 +41,6 @@ def git(*args):
     if result.returncode:
         raise GiteaError(f"git {args[0]}: {result.stderr.strip()}")
     return result.stdout.strip()
-
-
-def at_terminal():
-    # Both ends: on Windows a null stdin (NUL) passes isatty().
-    return sys.stdin.isatty() and sys.stdout.isatty()
 
 
 def repo_root():
@@ -62,12 +59,6 @@ def current_branch():
     return git("branch", "--show-current")
 
 
-def say(*lines, style=None):
-    console = Console(soft_wrap=True)
-    for line in lines:
-        console.print(line, style=style, markup=False, highlight=False)
-
-
 def emit(data, as_json, render):
     if as_json:
         typer.echo(json.dumps(data, ensure_ascii=False, indent=2))
@@ -76,34 +67,15 @@ def emit(data, as_json, render):
 
 
 def reports_errors(command):
-    """Turn a GiteaError into one `dp:` line and exit 1."""
+    """Turn a GiteaError into one `✖ dp:` line and exit 1."""
     @functools.wraps(command)
     def wrapper(*args, **kwargs):
         try:
             return command(*args, **kwargs)
         except GiteaError as error:
-            typer.echo(f"dp: {error}", err=True)
+            terminal.failed(f"dp: {error}")
             raise typer.Exit(1)
     return wrapper
-
-
-def ticket_line(ticket):
-    return " · ".join([f"#{ticket['number']} {ticket['title']}", *ticket["labels"],
-                       *([ticket["milestone"]] if ticket["milestone"] else [])])
-
-
-def render_board(board):
-    say(f"{board['repo']} · {len(board['pulls'])} PR", style="cyan")
-    for column in board["columns"] + [{"title": "Unsorted", "tickets": board["unsorted"]}]:
-        tickets = column["tickets"]
-        say(f"{column['title'].upper()} ({len(tickets)})", style="cyan")
-        if len(tickets) > FULL_COLUMN:
-            say("  " + " ".join(f"#{t['number']}" for t in tickets))
-        else:
-            say(*(f"  {ticket_line(t)}" for t in tickets))
-    say(*(f"Milestone  {m['title']} · {m['closed']} of {m['open'] + m['closed']} closed"
-          for m in board["milestones"]))
-    say(*(f"PR  #{p['number']} {p['title']} · {p['head']} → {p['base']}" for p in board["pulls"]))
 
 
 @app.command()
@@ -111,7 +83,9 @@ def render_board(board):
 def board(as_json: bool = JSON):
     """The Board: every column and page, open issues off it, open PRs and milestones."""
     gitea = connect()
-    emit(commands.board(gitea.call, gitea.repo), as_json, render_board)
+    with busy("Reading the board", quiet=as_json):
+        listing = commands.board(gitea.call, gitea.repo)
+    emit(listing, as_json, terminal.show_board)
 
 
 @app.command()
@@ -125,8 +99,9 @@ def move(number: int, column: str,
         assignee = assignee or gitea.human()
     else:
         assignee = None
-    moved = commands.move(gitea.call, gitea.repo, number, column, assignee=assignee)
-    emit(moved, as_json, lambda m: say(
+    with busy(f"Moving #{number}", quiet=as_json):
+        moved = commands.move(gitea.call, gitea.repo, number, column, assignee=assignee)
+    emit(moved, as_json, lambda m: done(
         f"#{m['number']} {m['from'] or 'off the Board'} → {m['to']}"
         + (f" · assigned {m['assigned']}" if m["assigned"] else "")))
 
@@ -143,9 +118,10 @@ def pick(number: int = typer.Argument(None, help="The ticket; at a terminal, wit
             raise GiteaError("give a ticket number off a terminal: dp pick N")
         guide.pick(Terminal(), gitea, git)
         return
-    ticket = commands.issue(gitea.call, gitea.repo, number)
-    taken = guide.take(gitea, git, ticket, branch or guide.branch_name(ticket))
-    emit(taken, as_json, lambda t: say(*guide.taken_lines(t)))
+    with busy(f"Taking #{number} in", quiet=as_json):
+        ticket = commands.issue(gitea.call, gitea.repo, number)
+        taken = guide.take(gitea, git, ticket, branch or guide.branch_name(ticket))
+    emit(taken, as_json, lambda t: done(*guide.taken_lines(t)))
 
 
 @app.command()
@@ -158,9 +134,10 @@ def pr(title: str = typer.Option(..., help="The PR title, as a ticket title."),
     """Open a PR from the current branch as the agent."""
     gitea = connect()
     names = [name.strip() for name in labels.split(",") if name.strip()]
-    opened = commands.pr(gitea.call, gitea.repo, current_branch(), base, title,
-                         body_file.read_text(encoding="utf-8"), names)
-    emit(opened, as_json, lambda o: say(f"#{o['number']} {o['url']}"))
+    with busy("Opening the PR", quiet=as_json):
+        opened = commands.pr(gitea.call, gitea.repo, current_branch(), base, title,
+                             body_file.read_text(encoding="utf-8"), names)
+    emit(opened, as_json, lambda o: done(f"#{o['number']} {o['url']}"))
 
 
 @app.command()
@@ -168,8 +145,9 @@ def pr(title: str = typer.Option(..., help="The PR title, as a ticket title."),
 def pointer(number: int, text: str, as_json: bool = JSON):
     """Post a Pointer comment on ticket NUMBER."""
     gitea = connect()
-    posted = commands.pointer(gitea.call, gitea.repo, number, text)
-    emit(posted, as_json, lambda p: say(f"#{p['number']} pointer posted"))
+    with busy(f"Posting on #{number}", quiet=as_json):
+        posted = commands.pointer(gitea.call, gitea.repo, number, text)
+    emit(posted, as_json, lambda p: done(f"#{p['number']} pointer posted"))
 
 
 @app.command(name="guide")

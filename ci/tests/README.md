@@ -1,6 +1,6 @@
 # ci/tests/
 
-**Scope:** tests for the CI scripts in `ci/` and the plugin's `dp` package in `plugins/datumpin/dp/` (installed by `requirements.txt`), run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 172 tests: 163 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
+**Scope:** tests for the CI scripts in `ci/` and the plugin's `dp` package in `plugins/datumpin/dp/` (installed by `requirements.txt`), run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 177 tests: 168 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
 **Status:** current
 **Last reviewed:** 2026-10-21
 **Governed by:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)
@@ -21,7 +21,7 @@
 
 `test_dp_commands.py` runs `dp`'s board, move, pr and pointer against the fake; `test_dp_cli.py` runs the command line through Typer's `CliRunner` (`--json`, `NO_COLOR`, the one-line error); `test_dp_gitea.py` fakes `tea` itself, to check the body goes on stdin and an HTTP error raises.
 
-`test_dp_flows.py` checks the flow map itself (every board column places a ticket on a step its flow lists, every named step exists) and `dp.flows`: the position from the state and the column, and the choices. `test_dp_brief.py` checks the job briefs: a section runs to the next heading outside code, a step carries its `brief` sections or its whole skill, every `brief` section the map names exists, and the review and fix briefs carry the findings. `test_dp_guide.py` walks `dp guide` with the prompts scripted: the pick and its milestone, an agent step's brief and the model handed to Claude, the board correcting the state, a human step, the tag gate, the dispositions and their preselect, the menu order and fork checks, the Tested Pointer, pausing and resuming the ticket flow, a user-invoked skill and Gitea unreachable. `test_dp_terminal.py` renders the coloured look to a string: log lines, the header and rail with only the current step in colour, the Job prompt panel and `NO_COLOR`.
+`test_dp_flows.py` checks the flow map itself (every board column places a ticket on a step its flow lists, every named step exists) and `dp.flows`: the position from the state and the column, and the choices. `test_dp_brief.py` checks the job briefs: a section runs to the next heading outside code, a step carries its `brief` sections or its whole skill, every `brief` section the map names exists, and the review and fix briefs carry the findings. `test_dp_guide.py` walks `dp guide` with the prompts scripted: the pick and its milestone, an agent step's brief and the model handed to Claude, the board correcting the state, a human step, the tag gate, the dispositions and their preselect, the menu order and fork checks, the Tested Pointer, pausing and resuming the ticket flow, a user-invoked skill and Gitea unreachable. `test_dp_terminal.py` renders the coloured look to a string: log lines, the board table and its colours, the header and rail with only the current step in colour, that no other module styles output, the Job prompt panel and `NO_COLOR`.
 
 `test_plugin_skills.py` checks every skill of the plugin: a description of 160 characters or fewer, and every sibling file linked from its `SKILL.md`.
 

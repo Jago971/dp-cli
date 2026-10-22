@@ -83,7 +83,7 @@ def test_a_gitea_error_prints_one_line_and_exits_1(monkeypatch):
     result = run("board")
 
     assert result.exit_code == 1
-    assert result.output.strip() == "dp: Gitea unreachable: connection refused"
+    assert result.output.strip() == "✖ dp: Gitea unreachable: connection refused"
 
 
 @pytest.mark.unit
@@ -136,3 +136,25 @@ def test_pick_without_a_number_off_a_terminal_asks_for_one(gitea):
 
     assert result.exit_code == 1
     assert "dp pick N" in result.output
+
+
+@pytest.mark.unit
+def test_plain_drops_colour_even_when_colour_is_forced(gitea):
+    gitea.add_issue(4, title="Ticket", labels=["STATUS/BLOCKED"])
+    gitea.put("In Progress", 4)
+
+    result = run("--plain", "board", FORCE_COLOR="1")
+
+    assert result.exit_code == 0
+    assert "#4 Ticket · STATUS/BLOCKED" in result.output
+    assert "\x1b[" not in result.output
+
+
+@pytest.mark.unit
+def test_a_write_ends_with_one_tick_line(gitea):
+    gitea.add_issue(4)
+    gitea.put("Backlog", 4)
+
+    result = run("move", "4", "Review")
+
+    assert result.output.strip() == "✔ #4 Backlog → Review"
