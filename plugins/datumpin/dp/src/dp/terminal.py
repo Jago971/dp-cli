@@ -1,31 +1,40 @@
-"""dp guide's look at a terminal: colour where it directs the eye, the rail, the menus and the Job prompt panel.
+"""dp's look: the one module that styles output, with colour only where it directs the eye.
 
-Summary: Terminal, the guide's prompts (guide.Plain) in colour.
-Input:   what dp.guide asks and shows.
-Output:  Rich lines, panels and spinners, and questionary menus. Colour
-         follows NO_COLOR, and a terminal without true colour gets the
-         nearest it has. An agent step starts Claude Code in this terminal on
-         the step's model and effort; without `claude` on the PATH, its Job
-         prompt shows in a panel, copied to the clipboard when the system has
-         a tool for it.
+Summary: say, done and failed lines, busy spinners and the board table for
+         the commands; Terminal, the guide's prompts (guide.Plain), for
+         `dp guide`.
+Input:   what the commands and dp.guide show and ask; `dp --plain`
+         (use_plain) for plain text.
+Output:  Rich lines, tables, panels and spinners, and questionary menus.
+         NO_COLOR, `--plain` and output that is not a terminal give the same
+         text unstyled and without spinners; a terminal without true colour
+         gets the nearest colours it has. An agent step starts Claude Code in
+         this terminal on the step's model and effort; without `claude` on the
+         PATH, its Job prompt shows in a panel, copied to the clipboard when
+         the system has a tool for it.
 """
+import contextlib
+import os
 import re
 import shutil
 import subprocess
+import sys
 
 import questionary
+from prompt_toolkit.output import ColorDepth
 from rich import box
-from rich.console import Console
+from rich.console import Console, Group
 from rich.panel import Panel
+from rich.table import Table
 from rich.text import Text
 
 from dp import guide
 
 # Each colour means one thing, from the DP palette (AHJ instances/dp/branding/
 # theme.css); the rest is the terminal's own text, or its own grey to recede.
-PINK = "#e0197d"  # you are here, act now: the current step, a question, the Job prompt
+PINK = "#e0197d"  # you are here, act now: the current step, a question, the Job prompt, In Progress tickets
 CYAN = "#00b5cc"  # the cursor: the highlighted menu row
-YELLOW = "#f9d800"  # attention: a correction, Gitea unreachable, a gate
+YELLOW = "#f9d800"  # attention: a correction, Gitea unreachable, a gate, a STATUS label
 RED = "#c0392b"  # failure
 MUTED = "bright_black"  # the terminal theme's grey, for what supports the main text
 OUTCOMES = {"FAILED": RED, "BLOCKED": RED, "CHANGES": YELLOW}
@@ -34,6 +43,10 @@ MARKS = {"done": "✓", "current": "●", "next": "○"}
 CLIPBOARDS = (["clip"], ["pbcopy"], ["wl-copy"], ["xclip", "-selection", "clipboard"])
 REF = re.compile(r"\[[^\]]+\]")
 SHORTCUTS = 36  # questionary's limit for number and letter shortcuts
+FULL_COLUMN = 8  # a longer board column lists numbers only, as the formats Board view
+ACTING = "In Progress"  # the board column whose tickets you act on, in pink
+ATTENTION = "STATUS/"  # a label that says why a ticket cannot move, in yellow
+plain = False
 
 MENU = questionary.Style([
     ("qmark", f"fg:{PINK} bold"), ("question", "bold"), ("pointer", f"fg:{CYAN} bold"),
@@ -51,6 +64,92 @@ def log_line(line, colour=""):
     for word, outcome in OUTCOMES.items():
         text.highlight_words([word], f"bold {outcome}")
     return text
+
+
+def use_plain(on):
+    """No colour and no spinners when on: `dp --plain`, for logs."""
+    global plain
+    plain = on
+
+
+def at_terminal():
+    # Both ends: on Windows a null stdin (NUL) passes isatty().
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
+def unstyled():
+    return plain or bool(os.environ.get("NO_COLOR"))
+
+
+def console(stderr=False):
+    # NO_COLOR and --plain drop every style, bold included, as output that is not a terminal does.
+    return Console(highlight=False, soft_wrap=True, stderr=stderr, force_terminal=False if unstyled() else None)
+
+
+def menu_look(style):
+    """A questionary prompt's style and colour depth: none of either when unstyled."""
+    return {"style": None, "color_depth": ColorDepth.DEPTH_1_BIT} if unstyled() else {"style": style}
+
+
+def say(*lines):
+    out = console()
+    for line in lines:
+        out.print(line, markup=False)
+
+
+def done(line):
+    """A finished write: `✔ <what happened>`, as written."""
+    console().print(Text(f"✔ {line}"))
+
+
+def failed(line):
+    """A failure, on stderr: `✖ <what failed>`."""
+    console(stderr=True).print(Text("✖ ", style=f"bold {RED}") + Text(line))
+
+
+def busy(message, quiet=False):
+    """A spinner while Gitea answers; none when quiet (JSON), plain or not at a terminal."""
+    if quiet or plain:
+        return contextlib.nullcontext()
+    return console().status(Text(f"{message}…", style=MUTED), spinner="dots", spinner_style=MUTED)
+
+
+def ticket_text(ticket, column):
+    """A ticket on the board: its number and title, pink when you act on it; its labels and milestone muted,
+    but a STATUS label in yellow."""
+    text = Text(f"#{ticket['number']} {ticket['title']}", style=PINK if column == ACTING else "")
+    for label in ticket["labels"]:
+        text.append(" · ", MUTED).append(label, YELLOW if label.startswith(ATTENTION) else MUTED)
+    if ticket["milestone"]:
+        text.append(" · ", MUTED).append(ticket["milestone"], MUTED)
+    return text
+
+
+def board_view(board):
+    """The Board as a table, one row per column, then its milestones and PRs."""
+    table = Table(box=None, show_header=False, padding=(0, 2, 0, 0))
+    table.add_column(style="bold", no_wrap=True)
+    table.add_column(justify="right", style=MUTED)
+    table.add_column()
+    for column in board["columns"] + [{"title": "Unsorted", "tickets": board["unsorted"]}]:
+        tickets = column["tickets"]
+        if len(tickets) > FULL_COLUMN:
+            cell = Text(" ".join(f"#{t['number']}" for t in tickets),
+                        style=PINK if column["title"] == ACTING else "")
+        else:
+            cell = Text("\n").join(ticket_text(t, column["title"]) for t in tickets)
+        table.add_row(column["title"], str(len(tickets)), cell)
+    lines = [Text(f"{board['repo']} · {len(board['pulls'])} PR", style="bold"), table]
+    lines += [Text.assemble(("Milestone  ", MUTED), m["title"],
+                            (f" · {m['closed']} of {m['open'] + m['closed']} closed", MUTED))
+              for m in board["milestones"]]
+    lines += [Text.assemble(("PR  ", MUTED), f"#{p['number']} {p['title']}", (f" · {p['head']} → {p['base']}", MUTED))
+              for p in board["pulls"]]
+    return Group(*lines)
+
+
+def show_board(board):
+    console().print(board_view(board))
 
 
 def claude_command(prompt, model, effort):
@@ -76,7 +175,7 @@ class Terminal(guide.Plain):
     """The guide's prompts at a terminal; Ctrl-C raises KeyboardInterrupt."""
 
     def __init__(self):
-        self.console = Console(highlight=False, soft_wrap=True)
+        self.console = console()
 
     def say(self, line):
         self.console.print(log_line(line))
@@ -128,7 +227,7 @@ class Terminal(guide.Plain):
             " ", (f"{finding['file']}:{finding['line']}", MUTED), " ", finding["finding"]))
 
     def busy(self, message):
-        return self.console.status(Text(f"{message}…", style=MUTED), spinner="dots", spinner_style=MUTED)
+        return busy(message)
 
     def choose(self, message, options, default=None):
         # Plain titles, so questionary marks the cursor's row in cyan.
@@ -137,12 +236,12 @@ class Terminal(guide.Plain):
         preselected = next((row for row, (_, value) in zip(rows, options)
                             if default is not None and value is default), None)
         index = questionary.select(
-            message, rows, default=preselected, qmark="◆", pointer="❯", style=MENU,
-            use_shortcuts=len(rows) <= SHORTCUTS, instruction="(arrows or a number)").unsafe_ask()
+            message, rows, default=preselected, qmark="◆", pointer="❯", use_shortcuts=len(rows) <= SHORTCUTS,
+            instruction="(arrows or a number)", **menu_look(MENU)).unsafe_ask()
         return options[index][1]
 
     def confirm(self, message):
-        return questionary.confirm(message, qmark="◆", style=GATE).unsafe_ask()
+        return questionary.confirm(message, qmark="◆", **menu_look(GATE)).unsafe_ask()
 
     def text(self, message, default):
-        return questionary.text(message, default=default, qmark="◆", style=MENU).unsafe_ask()
+        return questionary.text(message, default=default, qmark="◆", **menu_look(MENU)).unsafe_ask()

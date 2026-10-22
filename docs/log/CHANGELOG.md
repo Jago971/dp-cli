@@ -4,6 +4,14 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-22 - dp look and feel (plugin 0.8.7)
+
+- `dp board` is a table: pink for the In Progress tickets you act on, yellow for a `STATUS` label, the rest the terminal's own text and grey (#126).
+- Every Gitea call shows a spinner at a terminal; a write ends with one `✔` line, a failure with one `✖ dp:` line on stderr.
+- `dp --plain`, `NO_COLOR` and output that is not a terminal give the same text with no styling and no spinners. `terminal.py` is the one module that styles output; a test keeps it so.
+
+---
+
 ### [CHANGED] 2026-10-22 - Skill trims (plugin 0.8.6)
 
 - Every skill description is 160 characters or fewer (`writing-for-agents`), so the descriptions loaded every turn cost less; 16 were trimmed (#123).
