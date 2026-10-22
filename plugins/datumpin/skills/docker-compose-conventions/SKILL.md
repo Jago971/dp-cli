@@ -1,6 +1,6 @@
 ---
 name: docker-compose-conventions
-description: Dockerfiles and compose files - dev/prod split, multi-stage builds, anonymous volumes, restart policy, non-root users. Nginx frontend images go to frontend.md, cron services to cron.md; a laptop without registry access goes to local-packages.md.
+description: Dockerfiles and compose files - dev/prod split, multi-stage builds, volumes, restart policy, non-root users. Frontend, cron and local packages in siblings.
 ---
 
 # Docker & Compose conventions

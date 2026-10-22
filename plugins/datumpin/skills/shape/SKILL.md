@@ -1,6 +1,6 @@
 ---
 name: shape
-description: Shape - turn an idea, feature request or vague ticket into scoped Gitea tickets, or group features into a milestone. Use when scoping or planning a feature or release, or refining a ticket.
+description: Shape - turn an idea or vague ticket into scoped Gitea tickets, or group features into a milestone. Use when scoping a feature or release, or refining a ticket.
 model: opus
 effort: high
 ---

@@ -33,7 +33,7 @@ repo once it installs the plugin and drops its copy.
 | [api-documentation](api-documentation/SKILL.md) | Documenting or building HTTP APIs (FastAPI/Express/etc.) |
 | [secrets-handling](secrets-handling/SKILL.md) | Adding config, env vars, or credentials anywhere in a project |
 | [docker-compose-conventions](docker-compose-conventions/SKILL.md) | Writing/editing Dockerfiles or docker-compose files |
-| [gitea-workflows](gitea-workflows/SKILL.md) | Writing or editing `.gitea/workflows/` CI pipelines |
+| [gitea-workflows](gitea-workflows/SKILL.md) | Writing or editing `.gitea/workflows/` CI pipelines; images, environments and dependency versions in sibling files |
 | [claude-md-authoring](claude-md-authoring/SKILL.md) | Writing or updating a repo's own `CLAUDE.md` |
 | [fastapi-service-architecture](fastapi-service-architecture/SKILL.md) | Scaffolding or extending a FastAPI service — routers/services/database layering, typed settings, migrations/seeding, config-driven multi-instance deployment |
 | [config-led-deployment](config-led-deployment/SKILL.md) | Standing up a new product instance: the instance folder, root-level env files, the two seeding patterns, ports, networks, generated compose files |
@@ -56,7 +56,7 @@ repo once it installs the plugin and drops its copy.
 | [shape](shape/SKILL.md) | `/datumpin:shape`: turn an idea or vague ticket into scoped Gitea tickets, or a milestone |
 | [align](align/SKILL.md) | `/datumpin:align`: find drift between code, tickets and plans, then fix it (Reset when a repo joins, Review later) |
 | [gitea](gitea/SKILL.md) | Reading or writing Gitea through `tea`: commands, write rules, labels, milestones |
-| [formats](formats/SKILL.md) | The fixed output shapes of workflow steps: log lines, board view, ticket body |
+| [formats](formats/SKILL.md) | The fixed output shapes of workflow steps: log lines and prompts here, the rest in `terminal.md`, `gitea.md` and `git.md` |
 
 ## How to use these in a new project
 

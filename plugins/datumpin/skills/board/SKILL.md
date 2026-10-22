@@ -1,6 +1,6 @@
 ---
 name: board
-description: Board - sync this repo's Gitea tickets, show the kanban, suggest what to work on next. Use at the start of a session, or when asked for the board, the backlog, or what to do next.
+description: Board - sync the Gitea tickets, show the kanban, suggest the next ticket. Use at session start or when asked for the board, backlog or what to do next.
 model: sonnet
 effort: low
 ---
@@ -14,7 +14,7 @@ Gitea holds the board, the repo's project titled `Board`; this flow reads it, sh
 1. **Config.** Read the plugin defaults at `../../defaults/flow.yaml` (relative to this skill's base directory), then the repo's `.claude/flow.yaml` if present; repo keys win.
 2. **Repo.** Resolve the slug from `git remote get-url origin`.
 3. **Outbox.** If `.factory/outbox/` holds drafts from an offline `shape`, list them and push the ones the user accepts, exactly as `shape` step 6 does.
-4. **Sync.** Run `dp board --json` (`gitea`): the board's columns and their tickets, open issues off the board, each open ticket's last comment (`gitea`, Last comment), open PRs, and open milestones with their closed and open counts. If Gitea is unreachable, print `.factory/board.md` with its sync time marked stale, and stop. If the repo has no board, say so and point to `align`.
+4. **Sync.** Run `dp board --json` (`gitea`): the board's columns and their tickets, open issues off the board, each open ticket's last comment (`gitea`, Calling dp), open PRs, and open milestones with their closed and open counts. If Gitea is unreachable, print `.factory/board.md` with its sync time marked stale, and stop. If the repo has no board, say so and point to `align`.
 5. **Sort.** Each ticket sits in its board column. An open issue not on the board (`unsorted`) goes in `UNSORTED`.
 6. **Flag.** Collect: no `TYPE`; no milestone (In Progress onwards; `gitea`, Milestones); any `STATUS/*`; a closed ticket outside Done; an open ticket in Done; an open ticket whose last agent comment is a `Covered`, `Carried forward`, `Obsolete` or `Duplicate` pointer (to close); no `COMPONENT` where the repo declares components.
 7. **Suggest.** Pick `board.suggest` tickets from Backlog, skipping any with a `STATUS` label. Order them, since a release ships one milestone at a time:

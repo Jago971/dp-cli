@@ -1,6 +1,6 @@
 ---
 name: domain-modeling
-description: Build and sharpen a project's domain model. Use when discussing codebase terminology, writing or editing a GLOSSARY.md, or recording a decision in the decision log.
+description: Build a project's domain model. Use when discussing codebase terminology, editing GLOSSARY.md, or recording a decision in the decision log.
 ---
 
 # Domain Modeling

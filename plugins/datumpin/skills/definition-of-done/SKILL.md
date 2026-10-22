@@ -1,6 +1,6 @@
 ---
 name: definition-of-done
-description: Done - the checklist a change passes before it is called finished or opened as a PR. Use when finishing work, before a commit that closes a task, or when asked "is this done".
+description: Done - the checklist a change passes before it is finished or opened as a PR. Use when finishing work, before a closing commit, or asked if it is done.
 ---
 
 # Definition of done

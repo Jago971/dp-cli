@@ -1,6 +1,6 @@
 ---
 name: change-review
-description: Review a diff on two separate axes, Standards and Spec, using parallel subagents. Use when reviewing a branch, a PR or work in progress, or asked to review since a commit.
+description: Review a diff on two axes, Standards and Spec, with parallel subagents. Use when reviewing a branch, a PR, work in progress or changes since a commit.
 ---
 
 # Change review
