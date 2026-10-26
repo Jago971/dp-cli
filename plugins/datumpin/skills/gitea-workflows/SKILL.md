@@ -45,7 +45,7 @@ A PR merges when:
 
 - The tests passed in dev before the push (`testing-conventions`, The local loop), and CI passes (or the README states which checks do not block yet).
 - `change-review` has run on the PR's diff, and a named human has adjudicated each finding.
-- The `definition-of-done` change checklist is ticked, with the evidence in the PR description.
+- The `change-ready` change checklist is ticked, with the evidence in the PR description.
 
 A promotion PR (`prep` → `main`) also runs `security-review`, completes the WIKI review worksheet, and closes on a named person's sign-off. Promotion PRs need the branching process to exist first, and the worksheet is the process until then.
 

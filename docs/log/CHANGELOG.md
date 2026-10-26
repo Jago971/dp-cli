@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-26 - `definition-of-done` renamed `change-ready` (plugin 0.8.8)
+
+- The pre-PR checklist no longer shares a name with the DoD board column (#60). Skills, flows and the skills README use the new name.
+
 ### [CHANGED] 2026-10-22 - dp look and feel (plugin 0.8.7)
 
 - `dp board` is a table: pink for the In Progress tickets you act on, yellow for a `STATUS` label, the rest the terminal's own text and grey (#126).

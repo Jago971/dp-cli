@@ -82,7 +82,7 @@ steps:
     does: Build a red feedback loop for a hard bug
     next: [build]
   check:
-    skill: definition-of-done
+    skill: change-ready
     env: dev
     does: Tick the change checklist, with the tests passing locally
     next: [commit]
@@ -122,12 +122,12 @@ steps:
     next: [pick]
     fork: {every ticket in the milestone is tested: {step: gate, when: milestone_tested}, carry on: board}
   gate:
-    skill: definition-of-done
+    skill: change-ready
     env: prep
     does: Move the milestone's tickets to DoD
     next: [review]
   release-pr:
-    skill: definition-of-done
+    skill: change-ready
     env: ci
     does: Open the prep -> main PR with the DoD worksheet
     next: [sign-off]

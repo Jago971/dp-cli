@@ -37,7 +37,7 @@ A change can pass one axis and fail the other, so the report keeps them separate
 
 ## Security
 
-At a promotion PR (dev → prep → prod), also call the `security-review` skill on the same diff. Its findings go in a third section, `## Security`, and are adjudicated the same way (see `definition-of-done`).
+At a promotion PR (dev → prep → prod), also call the `security-review` skill on the same diff. Its findings go in a third section, `## Security`, and are adjudicated the same way (see `change-ready`).
 
 ## Done when
 
