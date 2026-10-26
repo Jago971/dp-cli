@@ -127,7 +127,20 @@ def test_pick_takes_a_ticket_in_on_its_branch(gitea, monkeypatch):
     assert result.exit_code == 0
     taken = json.loads(result.output)
     assert (taken["to"], taken["assigned"], taken["branch"]) == ("In Progress", "MattM", "fix/4-fix-the-thing")
-    assert branched == [("switch", "-c", "fix/4-fix-the-thing", "prep")]
+    assert branched == [("switch", "--create=fix/4-fix-the-thing", "prep")]
+
+
+@pytest.mark.unit
+def test_pick_passes_a_leading_dash_branch_as_a_value_not_an_option(gitea, monkeypatch):
+    branched = []
+    monkeypatch.setattr(cli, "git", lambda *args: branched.append(args) or "")
+    gitea.add_issue(4, title="Fix the thing", labels=["TYPE/BUG"], milestone="v1")
+    gitea.put("Backlog", 4)
+
+    result = run("pick", "4", "--branch=-x", "--json")
+
+    assert result.exit_code == 0
+    assert branched == [("switch", "--create=-x", "prep")]
 
 
 @pytest.mark.unit

@@ -19,6 +19,7 @@ import re
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 import questionary
 from prompt_toolkit.output import ColorDepth
@@ -153,9 +154,10 @@ def show_board(board):
 
 
 def claude_command(prompt, model, effort):
-    """The command that starts Claude Code on the prompt, or None without `claude` on the PATH."""
+    """The command that starts Claude Code on the prompt, or None without `claude` on the PATH or when it
+    resolves inside the current repo (Windows searches the cwd first, so a planted claude.cmd would run)."""
     claude = shutil.which("claude")
-    if not claude:
+    if not claude or Path.cwd().resolve() in Path(claude).resolve().parents:
         return None
     return [claude, *(["--model", model] if model else []), *(["--effort", effort] if effort else []), prompt]
 

@@ -33,7 +33,7 @@ def agent_login(project_dir):
     flow = os.path.join(project_dir, ".claude", "flow.yaml")
     if os.path.exists(flow):
         match = re.search(r"^\s*agent_login:\s*(\S+)", open(flow, encoding="utf-8").read(), re.M)
-        if match:
+        if match and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", match.group(1)):  # same rule as dp.gitea
             return match.group(1)
     return "squire"
 
