@@ -31,13 +31,17 @@ BASE = "prep"
 PROMOTION = "origin/main...prep"  # what a release promotes; the release flow runs on prep, so BASE is empty there
 BRANCH_TYPES = {"TYPE/FEATURE": "feat", "TYPE/BUG": "fix", "TYPE/CHORE": "chore", "TYPE/DOCUMENTATION": "docs"}
 SLUG_WORDS = 4
-# The person's answers; the fix step turns them into the dispositions `formats` (Pull request) lists.
-DISPOSITIONS = {"Fix": "fixed in the fix step", "Dismiss": "with a reason",
-                "Escalate": "to someone", "Defer": "to a new Triage ticket"}
+# The person's answers, each with its effect; what the person chooses is recorded in the wording `formats`
+# (Pull request) lists, not in these menu words.
+DISPOSITIONS = {"Fix": "goes to the fix step", "Dismiss": "asks a reason, records it",
+                "Escalate": "asks to whom, records it", "Defer": "opens a new Triage ticket"}
+NEXT_STEP = "Next: choose the next step in dp guide"  # the closing line of a step the person finishes
 TESTED = "Tested by hand"  # the Event of the Pointer leaving `test` posts; milestone_tested looks for it
 BEFORE_TESTING = ("Triage", "Backlog", "In Progress", "Review")
 SEPARATOR_VALUE = "separator"
 SEPARATOR = ("─" * 11, SEPARATOR_VALUE)
+STOP = f"{'stop':<11} saves the position and exits"
+BACK = f"{'back':<11} returns to the guide"
 FLOWS = (f"{'flows…':<11} Start or switch to any flow", "flows")
 
 
@@ -60,6 +64,7 @@ class Plain:
     def job(self, prompt, model, effort):
         """Hand an agent step to Claude: here, the Job prompt to paste; a terminal starts a session."""
         self.say(prompt)
+        self.say("Next: paste it into a session, then /exit and run dp guide")
 
     def outro(self, line):
         """The walk's last line."""
@@ -218,7 +223,7 @@ def menu(offered, position):
     options = [(label(c, position), c) for c in offered if c["kind"] != "fork"]
     if position and offered[0]["kind"] != "flow":
         options += [SEPARATOR, *((label(c, position), c) for c in offered if c["kind"] == "fork"), FLOWS]
-    return options + [("stop", None)]
+    return options + [(STOP, None)]
 
 
 def guide_prompt(shown):
@@ -268,7 +273,7 @@ def pick(prompts, gitea, git):
         prompts.note("[ticket] Backlog is empty · shape a ticket first")
         return None
     chosen = prompts.choose("Pick a ticket", [(f"#{t['number']} {t['title']}", t) for t in backlog]
-                            + [("back", None)])
+                            + [(BACK, None)])
     if chosen is None:
         return None
     branch = prompts.text("Branch", branch_name(chosen))
@@ -276,6 +281,7 @@ def pick(prompts, gitea, git):
         taken = take(gitea, git, chosen, branch)
     for line in taken_lines(taken):
         prompts.say(line)
+    prompts.say(NEXT_STEP)
     return chosen["number"]
 
 
@@ -353,10 +359,13 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
         if ticket is None:
             return None
     elif skill == "human":
-        if not prompts.confirm(f"{flow_map['steps'][step]['does']}. Done?"):
+        does = flow_map["steps"][step]["does"]
+        if not prompts.confirm(f"{does}. Done?"):
             return None
+        prompts.say(NEXT_STEP)
     elif brief.user_invoked(skill):
         prompts.say(f"Type /datumpin:{skill} in the session you worked in.")
+        prompts.say("Next: type it there, then run dp guide")
     else:
         # A tag follows the release PR on main, whatever the state file says (guide skill).
         if step == "tag" and not prompts.confirm("Is the release PR merged on main?"):
@@ -368,6 +377,7 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
             raise GiteaError(f"empty diff {PROMOTION}: nothing to review, no findings written")
         path = brief.write(root, work)
         model = brief.skill_header(skill)
+        prompts.say(f"{ref(flow, ticket)} Claude · {work.does} · /exit returns to the guide")
         prompts.job(brief.prompt(work, path.relative_to(root)), model.get("model"), model.get("effort"))
     return {"flow": flow, "step": step, "ticket": ticket}
 
@@ -375,7 +385,7 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
 def choose_flow(flow_map, paused, prompts):
     resume = [(f"{'resume':<11} #{paused['ticket']} at {paused['step']}", "resume")] if paused else []
     return prompts.choose("Flow?", resume + [(label(c, None), c) for c in flows.flow_starts(flow_map)]
-                          + [("back", None)])
+                          + [(BACK, None)])
 
 
 def may_leave(position, here, prompts, gitea):

@@ -87,6 +87,62 @@ def test_an_agent_step_writes_its_brief_and_prints_the_prompt(tmp_path, gitea):
 
 
 @pytest.mark.unit
+def test_an_agent_step_prints_a_banner_before_and_a_next_line_after(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "pick", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("In Progress", 4)
+    script = Script("check", "stop")
+
+    walk(tmp_path, script, gitea)
+
+    banner = next(line for line in script.said if "/exit returns to the guide" in line)
+    assert banner.startswith("[ticket #4] Claude · ")
+    assert script.said.index(banner) < script.said.index(
+        "Step check of #4: read .factory/jobs/4/check.md and do it.")
+    assert script.said[script.said.index("Step check of #4: read .factory/jobs/4/check.md and do it.") + 1] \
+        == "Next: paste it into a session, then /exit and run dp guide"
+
+
+@pytest.mark.unit
+def test_a_human_step_says_what_to_do_next(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "pr", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Review", 4)
+    script = Script("merge", True, "stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert guide.NEXT_STEP in script.said
+
+
+@pytest.mark.unit
+def test_each_disposition_shows_its_effect(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "review", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("In Progress", 4)
+    findings = tmp_path / ".factory" / "jobs" / "4" / "findings.json"
+    findings.parent.mkdir(parents=True)
+    findings.write_text(json.dumps([
+        {"id": "S1", "file": "a.py", "line": 3, "severity": "low", "finding": "Too long"}]))
+    script = Script("Defer", "fix", "stop")
+
+    walk(tmp_path, script, gitea)
+
+    labels = script.menus[0][0]
+    assert "Defer     opens a new Triage ticket" in labels
+    assert "Fix       goes to the fix step" in labels
+
+
+@pytest.mark.unit
+def test_stop_shows_its_effect(tmp_path, gitea):
+    script = Script("stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert "stop        saves the position and exits" in script.menus[0][0]
+
+
+@pytest.mark.unit
 def test_the_board_corrects_the_state_with_a_log_line(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "pick", "ticket": 4})
     gitea.add_issue(4)

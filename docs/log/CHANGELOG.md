@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-26 - dp guide banner, Next lines, option effects (plugin 0.8.10)
+
+- Before `dp guide` hands a step to Claude it prints one banner: what Claude will do, and that `/exit` returns to the guide (#145).
+- Each Claude and human step ends with a `Next:` line saying what to do then.
+- Every disposition and the `stop` and `back` options show their effect, such as `Defer     opens a new Triage ticket`.
+
 ### [CHANGED] 2026-10-26 - Release review diffs main (plugin 0.8.9)
 
 - In the release flow, `dp guide` briefs carry the diff stat of `origin/main...prep`, not `prep` against itself (#144).
