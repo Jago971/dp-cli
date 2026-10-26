@@ -75,7 +75,7 @@ def test_agent_login_reads_the_repo_flow_config(tmp_path):
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("value", ["--insecure", "-x", "a;b", "bad'name"])
+@pytest.mark.parametrize("value", ["--insecure", "-x", "a;b", "bad'name", '"bot"', "'bot'"])
 def test_agent_login_refuses_a_value_tea_could_read_as_an_option(tmp_path, value):
     (tmp_path / ".claude").mkdir()
     (tmp_path / ".claude" / "flow.yaml").write_text(f"gitea:\n  agent_login: {value}\n", encoding="utf-8")
