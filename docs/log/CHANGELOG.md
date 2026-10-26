@@ -4,6 +4,11 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-26 - Release review diffs main (plugin 0.8.9)
+
+- In the release flow, `dp guide` briefs carry the diff stat of `origin/main...prep`, not `prep` against itself (#144).
+- A release `review` with an empty diff exits non-zero with an error and writes no brief or findings file; a failed `git diff` is reported as itself, not as an empty diff.
+
 ### [CHANGED] 2026-10-26 - Roadmap aligned to v0.8.0
 
 - The roadmap's milestone table lists v0.9.0 as open and v0.5.0 to v0.8.0 as released; the runner and TLS items say they are parked (#70, #15). `runner.md` notes the missing LibreOffice.

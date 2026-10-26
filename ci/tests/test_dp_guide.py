@@ -320,3 +320,58 @@ def test_the_end_of_a_flow_lists_the_flows_once(tmp_path):
 
     labels = [label.split()[0] for label in script.menus[0][0]]
     assert labels == ["ticket", "release", "align", "deploy", "session", "stop"]
+
+
+class Promotion(Git):
+    """Git for a release: the stat of the promotion diff, or none."""
+
+    def __init__(self, stat):
+        super().__init__()
+        self.stat = stat
+
+    def __call__(self, *args):
+        self.calls.append(args)
+        return self.stat if args[:2] == ("diff", "--stat") and args[-1] == "origin/main...prep" else ""
+
+
+@pytest.mark.unit
+def test_a_release_brief_carries_the_promotion_diff(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "release", "step": "gate", "ticket": None})
+
+    walk(tmp_path, Script("review", "stop"), gitea, Promotion(" b.py | 9 +"))
+
+    text = (tmp_path / ".factory" / "jobs" / "release" / "review.md").read_text(encoding="utf-8")
+    assert "b.py | 9 +" in text
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("step", ["fix", "release-pr"])
+def test_the_later_release_briefs_carry_the_promotion_diff(tmp_path, gitea, step):
+    guide.write_state(tmp_path, {"flow": "release", "step": "review", "ticket": None})
+
+    walk(tmp_path, Script(step, "stop"), gitea, Promotion(" b.py | 9 +"))
+
+    text = (tmp_path / ".factory" / "jobs" / "release" / f"{step}.md").read_text(encoding="utf-8")
+    assert "b.py | 9 +" in text
+
+
+@pytest.mark.unit
+def test_an_empty_promotion_diff_fails_the_review(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "release", "step": "gate", "ticket": None})
+
+    with pytest.raises(GiteaError, match="empty diff origin/main...prep"):
+        walk(tmp_path, Script("review", "stop"), gitea, Promotion(""))
+
+    assert not (tmp_path / ".factory" / "jobs" / "release").exists()
+    assert saved(tmp_path)["step"] == "gate"
+
+
+@pytest.mark.unit
+def test_a_git_error_on_the_promotion_diff_is_not_an_empty_diff(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "release", "step": "gate", "ticket": None})
+
+    def no_main(*args):
+        raise GiteaError("git diff: unknown revision origin/main")
+
+    with pytest.raises(GiteaError, match="unknown revision"):
+        walk(tmp_path, Script("review", "stop"), gitea, no_main)
