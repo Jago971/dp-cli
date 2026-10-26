@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-26 - Roadmap aligned to v0.8.0
+
+- The roadmap's milestone table lists v0.9.0 as open and v0.5.0 to v0.8.0 as released; the runner and TLS items say they are parked (#70, #15). `runner.md` notes the missing LibreOffice.
+
 ### [CHANGED] 2026-10-26 - `definition-of-done` renamed `change-ready` (plugin 0.8.8)
 
 - The pre-PR checklist no longer shares a name with the DoD board column (#60). Skills, flows and the skills README use the new name.
