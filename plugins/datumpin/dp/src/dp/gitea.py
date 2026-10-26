@@ -15,6 +15,7 @@ import re
 import subprocess
 from pathlib import Path
 
+LOGIN_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")  # no leading dash: tea would read it as an option
 AGENT_LOGIN = "squire"  # the plugin default, gitea.agent_login in defaults/flow.yaml
 TIMEOUT = 30  # seconds per call
 STATUS = re.compile(r"^HTTP/\S+ (\d{3})", re.M)
@@ -64,6 +65,8 @@ def agent_login(root):
     if flow.is_file():
         match = re.search(r"^\s*agent_login:\s*(\S+)", flow.read_text(encoding="utf-8"), re.M)
         if match:
+            if not LOGIN_NAME.fullmatch(match.group(1)):
+                raise GiteaError(f"agent_login {match.group(1)!r} in {flow} is not a login name")
             return match.group(1)
     return AGENT_LOGIN
 

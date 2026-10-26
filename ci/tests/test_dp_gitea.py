@@ -75,6 +75,16 @@ def test_agent_login_reads_the_repo_flow_config(tmp_path):
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize("value", ["--insecure", "-x", "a;b", "bad'name"])
+def test_agent_login_refuses_a_value_tea_could_read_as_an_option(tmp_path, value):
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude" / "flow.yaml").write_text(f"gitea:\n  agent_login: {value}\n", encoding="utf-8")
+
+    with pytest.raises(GiteaError, match="agent_login"):
+        gitea.agent_login(tmp_path)
+
+
+@pytest.mark.unit
 def test_repo_slug_is_the_remote_path_without_git():
     assert gitea.repo_slug("ssh://git@host:2222/Datumpin/BDS.git") == "Datumpin/BDS"
     assert gitea.repo_slug("http://host:3393/Datumpin/WIKI") == "Datumpin/WIKI"

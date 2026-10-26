@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-26 - dp input hardening (plugin 0.8.11)
+
+- `agent_login` from a repo's `flow.yaml` must be a plain login name (no leading dash, no shell characters); `dp` refuses anything else before it reaches `tea --login`, and the status hook falls back to `squire` (X1, #143).
+- `dp pick --branch` and the guide's pick pass `--create=<branch>` to `git switch`, so a leading-dash branch is a value, not an option (X2).
+- `dp guide` does not start a `claude` that resolves inside the current repo, so a planted `claude.cmd` is not run on Windows (X3).
+
 ### [CHANGED] 2026-10-26 - dp guide banner, Next lines, option effects (plugin 0.8.10)
 
 - Before `dp guide` hands a step to Claude it prints one banner: what Claude will do, and that `/exit` returns to the guide (#145).

@@ -80,6 +80,14 @@ def test_claude_starts_on_the_steps_model_and_effort(monkeypatch):
 
 
 @pytest.mark.unit
+def test_claude_inside_the_repo_is_not_run(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(terminal.shutil, "which", lambda name: str(tmp_path / "claude.cmd"))
+
+    assert terminal.claude_command("Step x", None, None) is None
+
+
+@pytest.mark.unit
 def test_without_claude_the_panel_names_the_model_to_use(screen):
     screen.job("Step shape of #4: read .factory/jobs/4/shape.md and do it.", "opus", "high")
 

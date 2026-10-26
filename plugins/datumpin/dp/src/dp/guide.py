@@ -250,7 +250,7 @@ def take(gitea, git, ticket, branch):
     none, and branch from prep; what happened, as `dp pick --json` prints it."""
     moved = commands.move(gitea.call, gitea.repo, ticket["number"], "In Progress", assignee=gitea.human())
     joined = None if ticket["milestone"] else commands.join_earliest_milestone(gitea.call, gitea.repo, ticket["number"])
-    git("switch", "-c", branch, BASE)
+    git("switch", f"--create={branch}", BASE)  # one argument, so a leading-dash branch is not an option
     return {**moved, "milestone": joined or ticket["milestone"], "joined": bool(joined), "branch": branch}
 
 

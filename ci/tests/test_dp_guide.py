@@ -68,7 +68,7 @@ def test_pick_moves_the_ticket_and_branches_from_prep(tmp_path, gitea):
 
     assert gitea.column_of(4) == "In Progress"
     assert not [w for w in gitea.writes if w[0] == "milestone"]
-    assert git.calls == [("switch", "-c", "fix/4-fix-the-thing", "prep")]
+    assert git.calls == [("switch", "--create=fix/4-fix-the-thing", "prep")]
     assert (saved(tmp_path)["step"], saved(tmp_path)["ticket"]) == ("pick", 4)
 
 
