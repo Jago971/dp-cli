@@ -120,7 +120,7 @@ def render(job, findings, findings_path):
     if ticket:
         comments = "\n\n".join(f"**{c['author']}:** {c['text'].strip()}" for c in ticket["comments"])
         parts += ["## Ticket", ticket["body"].strip() or "(no body)", "## Comments", comments or "(none)"]
-    parts += ["## Diff stat", f"```\n{job.diffstat.strip() or '(no changes against prep)'}\n```"]
+    parts += ["## Diff stat", f"```\n{job.diffstat.strip() or '(no changes)'}\n```"]
     if job.step == "review":
         parts += ["## Findings", ASK_FINDINGS.format(path=findings_path)]
     elif findings:

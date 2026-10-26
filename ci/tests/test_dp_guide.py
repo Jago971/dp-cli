@@ -320,3 +320,37 @@ def test_the_end_of_a_flow_lists_the_flows_once(tmp_path):
 
     labels = [label.split()[0] for label in script.menus[0][0]]
     assert labels == ["ticket", "release", "align", "deploy", "session", "stop"]
+
+
+class Promotion(Git):
+    """Git for a release: the stat of the promotion diff, or none."""
+
+    def __init__(self, stat):
+        super().__init__()
+        self.stat = stat
+
+    def __call__(self, *args):
+        self.calls.append(args)
+        return self.stat if args[:2] == ("diff", "--stat") and args[-1] == "origin/main...prep" else ""
+
+
+@pytest.mark.unit
+def test_a_release_brief_carries_the_promotion_diff(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "release", "step": "gate", "ticket": None})
+
+    walk(tmp_path, Script("review", "stop"), gitea, Promotion(" b.py | 9 +"))
+
+    text = (tmp_path / ".factory" / "jobs" / "release" / "review.md").read_text(encoding="utf-8")
+    assert "b.py | 9 +" in text
+
+
+@pytest.mark.unit
+def test_an_empty_promotion_diff_stops_the_review(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "release", "step": "gate", "ticket": None})
+    script = Script("review", "stop")
+
+    walk(tmp_path, script, gitea, Promotion(""))
+
+    assert any("FAILED" in line and "origin/main...prep" in line for line in script.said)
+    assert not (tmp_path / ".factory" / "jobs" / "release").exists()
+    assert saved(tmp_path)["step"] == "gate"

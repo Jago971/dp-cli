@@ -28,6 +28,7 @@ from dp.gitea import GiteaError
 
 STATE = Path(".factory") / "guide.yaml"
 BASE = "prep"
+PROMOTION = "origin/main...prep"  # what a release promotes; the release flow runs on prep, so BASE is empty there
 BRANCH_TYPES = {"TYPE/FEATURE": "feat", "TYPE/BUG": "fix", "TYPE/CHORE": "chore", "TYPE/DOCUMENTATION": "docs"}
 SLUG_WORDS = 4
 # The person's answers; the fix step turns them into the dispositions `formats` (Pull request) lists.
@@ -331,7 +332,10 @@ def job(flow_map, flow, step, ticket, gitea, git, prompts):
             details = {"number": ticket, "title": "", "body": "(Gitea was unreachable: read the ticket.)",
                        "comments": []}
     try:
-        diffstat = git("diff", "--stat", "--merge-base", BASE)  # the branch's work, uncommitted included
+        if flow == "release":
+            diffstat = git("diff", "--stat", PROMOTION)
+        else:
+            diffstat = git("diff", "--stat", "--merge-base", BASE)  # the branch's work, uncommitted included
     except GiteaError:
         diffstat = ""
     defined = flow_map["steps"][step]
@@ -360,6 +364,9 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
         if step != "review":
             adjudicate(root, flow, ticket, prompts)  # findings a resumed walk passed by undecided
         work = job(flow_map, flow, step, ticket, gitea, git, prompts)
+        if flow == "release" and step == "review" and not work.diffstat.strip():
+            prompts.note(f"[release] FAILED · empty diff {PROMOTION} · nothing to review, no findings written")
+            return None
         path = brief.write(root, work)
         model = brief.skill_header(skill)
         prompts.job(brief.prompt(work, path.relative_to(root)), model.get("model"), model.get("effort"))
