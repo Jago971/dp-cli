@@ -1,20 +1,20 @@
 ---
-name: definition-of-done
-description: Done - the checklist a change passes before it is finished or opened as a PR. Use when finishing work, before a closing commit, or asked if it is done.
+name: change-ready
+description: Change ready - the checklist a change passes before it is opened as a PR. Use when finishing work, before a closing commit, or asked if it is ready.
 ---
 
-# Definition of done
+# Change ready
 
 Output follows `formats`, including its Quiet steps rule.
 
-A change is done when every applicable item below is checked with evidence (a command's output, a file path). An item that does not apply is marked n/a with a reason.
+A change is ready when every applicable item below is checked with evidence (a command's output, a file path). An item that does not apply is marked n/a with a reason.
 
 Three levels use the same idea:
 
 | Level | Checked by | Where |
 |---|---|---|
 | Step done | the agent, at the end of each skill step | the "Done when" of each skill |
-| **Change done** | the engineer, then `change-review` | this skill |
+| **Change ready** | the engineer, then `change-review` | this skill |
 | Promotion done (dev → prep → prod, `gitea-workflows` Environments) | engineer, reviewer, security, with sign-off | the worksheet in WIKI `business_processes/reviews/templates/software_lifecycle_review_checklist.md` |
 
 ## Change checklist

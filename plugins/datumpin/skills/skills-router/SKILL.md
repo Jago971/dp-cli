@@ -21,7 +21,7 @@ Names the skill to reach for and the order a change usually moves through. It po
 | 4 | Building | `tdd`, with `testing-conventions`, and the area skill below |
 | 5 | Something is broken | `diagnosing-bugs` |
 | 6 | Reviewing the diff | `change-review` |
-| 7 | Is it finished | `definition-of-done` |
+| 7 | Is it ready | `change-ready` |
 | 8 | CI, branches, PRs | `gitea-workflows` |
 | 9 | A skill changed | Bump the plugin version (plugin README, Releasing a change); `writing-for-agents` |
 | 10 | End of a session | `handoff`, then `retro` (both user-invoked) |
