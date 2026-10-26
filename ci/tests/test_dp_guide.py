@@ -112,7 +112,7 @@ def test_a_human_step_says_what_to_do_next(tmp_path, gitea):
 
     walk(tmp_path, script, gitea)
 
-    assert any(line.startswith("Next: ") and "Done?" in line for line in script.said)
+    assert guide.NEXT_STEP in script.said
 
 
 @pytest.mark.unit

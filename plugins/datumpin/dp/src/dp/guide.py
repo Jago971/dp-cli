@@ -31,10 +31,11 @@ BASE = "prep"
 PROMOTION = "origin/main...prep"  # what a release promotes; the release flow runs on prep, so BASE is empty there
 BRANCH_TYPES = {"TYPE/FEATURE": "feat", "TYPE/BUG": "fix", "TYPE/CHORE": "chore", "TYPE/DOCUMENTATION": "docs"}
 SLUG_WORDS = 4
-# The person's answers, each with its effect; the fix step turns them into the dispositions `formats`
-# (Pull request) lists.
+# The person's answers, each with its effect; what the person chooses is recorded in the wording `formats`
+# (Pull request) lists, not in these menu words.
 DISPOSITIONS = {"Fix": "goes to the fix step", "Dismiss": "asks a reason, records it",
                 "Escalate": "asks to whom, records it", "Defer": "opens a new Triage ticket"}
+NEXT_STEP = "Next: choose the next step in dp guide"  # the closing line of a step the person finishes
 TESTED = "Tested by hand"  # the Event of the Pointer leaving `test` posts; milestone_tested looks for it
 BEFORE_TESTING = ("Triage", "Backlog", "In Progress", "Review")
 SEPARATOR_VALUE = "separator"
@@ -280,7 +281,7 @@ def pick(prompts, gitea, git):
         taken = take(gitea, git, chosen, branch)
     for line in taken_lines(taken):
         prompts.say(line)
-    prompts.say("Next: choose the next step")
+    prompts.say(NEXT_STEP)
     return chosen["number"]
 
 
@@ -359,9 +360,9 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
             return None
     elif skill == "human":
         does = flow_map["steps"][step]["does"]
-        prompts.say(f"Next: {does}, then answer yes to Done?")
         if not prompts.confirm(f"{does}. Done?"):
             return None
+        prompts.say(NEXT_STEP)
     elif brief.user_invoked(skill):
         prompts.say(f"Type /datumpin:{skill} in the session you worked in.")
         prompts.say("Next: type it there, then run dp guide")
