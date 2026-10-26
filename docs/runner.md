@@ -66,6 +66,10 @@ The registry is plain HTTP on port 3393, so Docker on Hammond lists it as an ins
 
 Changing it needs sudo and a Docker restart, which briefly stops every container on Hammond; all of them restart on their own (`always` or `unless-stopped`). Serving Gitea over TLS removes this setting (DEVKIT#15).
 
+## Known limits
+
+The runner image has no LibreOffice, so a PDF test that needs it skips in `python-tests` (AHJ). Add it to the image if a repo needs that test to run in CI.
+
 ## History
 
 - 2026-10-20: `gitea/act_runner:latest` (v0.6.1) replaced by `gitea/runner:5` (v5.1.1), same registration (DEVKIT#7).
