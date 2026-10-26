@@ -4,6 +4,11 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-26 - Decision log: a ticket is done when it is tested
+
+- `docs/plan/DECISIONS.md` is the decision log. Its first entry: a ticket closes when it leaves `test` with `Tested OK?` yes, and reopens to Backlog on a defect, so the milestone bar counts tested work (#118).
+- The Testing column stays. The release gate runs once per milestone, with one `TYPE/DoD` ticket carrying the worksheet. The skills and board-sync follow in #59 and #61.
+
 ### [CHANGED] 2026-10-26 - dp input hardening (plugin 0.8.11)
 
 - `agent_login` from a repo's `flow.yaml` must be a plain login name (no leading dash, no shell characters); `dp` refuses anything else before it reaches `tea --login`, and the status hook falls back to `squire` (X1, #143).

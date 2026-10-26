@@ -8,6 +8,7 @@
 
 - [QUICKSTART.md](QUICKSTART.md): set up, use the workflow, release, get unstuck. Start here.
 - [plan/ROADMAP.md](plan/ROADMAP.md): where DEVKIT is heading, its milestones and standing decisions.
+- [plan/DECISIONS.md](plan/DECISIONS.md): the decision log, newest at the bottom.
 - [log/CHANGELOG.md](log/CHANGELOG.md): what changed, newest first.
 - [runner.md](runner.md): the Gitea Actions runner on Hammond.
 - [../ci/master/README.md](../ci/master/README.md): the approved dependency versions.
