@@ -7,7 +7,7 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 ### [CHANGED] 2026-10-26 - Release review diffs main (plugin 0.8.9)
 
 - In the release flow, `dp guide` briefs carry the diff stat of `origin/main...prep`, not `prep` against itself (#144).
-- A release `review` with an empty diff stops with a `FAILED` line and writes no brief or findings file.
+- A release `review` with an empty diff exits non-zero with an error and writes no brief or findings file; a failed `git diff` is reported as itself, not as an empty diff.
 
 ### [CHANGED] 2026-10-26 - Roadmap aligned to v0.8.0
 

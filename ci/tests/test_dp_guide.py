@@ -345,12 +345,33 @@ def test_a_release_brief_carries_the_promotion_diff(tmp_path, gitea):
 
 
 @pytest.mark.unit
-def test_an_empty_promotion_diff_stops_the_review(tmp_path, gitea):
+@pytest.mark.parametrize("step", ["fix", "release-pr"])
+def test_the_later_release_briefs_carry_the_promotion_diff(tmp_path, gitea, step):
+    guide.write_state(tmp_path, {"flow": "release", "step": "review", "ticket": None})
+
+    walk(tmp_path, Script(step, "stop"), gitea, Promotion(" b.py | 9 +"))
+
+    text = (tmp_path / ".factory" / "jobs" / "release" / f"{step}.md").read_text(encoding="utf-8")
+    assert "b.py | 9 +" in text
+
+
+@pytest.mark.unit
+def test_an_empty_promotion_diff_fails_the_review(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "release", "step": "gate", "ticket": None})
-    script = Script("review", "stop")
 
-    walk(tmp_path, script, gitea, Promotion(""))
+    with pytest.raises(GiteaError, match="empty diff origin/main...prep"):
+        walk(tmp_path, Script("review", "stop"), gitea, Promotion(""))
 
-    assert any("FAILED" in line and "origin/main...prep" in line for line in script.said)
     assert not (tmp_path / ".factory" / "jobs" / "release").exists()
     assert saved(tmp_path)["step"] == "gate"
+
+
+@pytest.mark.unit
+def test_a_git_error_on_the_promotion_diff_is_not_an_empty_diff(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "release", "step": "gate", "ticket": None})
+
+    def no_main(*args):
+        raise GiteaError("git diff: unknown revision origin/main")
+
+    with pytest.raises(GiteaError, match="unknown revision"):
+        walk(tmp_path, Script("review", "stop"), gitea, no_main)
