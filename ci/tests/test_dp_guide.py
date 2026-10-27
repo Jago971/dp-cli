@@ -376,7 +376,7 @@ def test_the_menu_puts_this_flow_first_then_the_forks_that_hold(tmp_path, gitea)
     walk(tmp_path, script, gitea)
 
     labels = [label.split()[0] for label in script.menus[0][0]]
-    assert labels == ["pick", "───────────", "board", "flows…", "stop"]  # no gate: #5 is not tested
+    assert labels == ["finish", "defect", "───────────", "board", "flows…", "stop"]  # no gate: #5 is not tested
 
 
 @pytest.mark.unit
@@ -400,12 +400,54 @@ def test_leaving_test_posts_a_pointer_tested(tmp_path, gitea):
     gitea.add_issue(4)
     gitea.put("Testing", 4)
 
-    walk(tmp_path, Script("pick", True, "laptop, names end -dev", "stop"), gitea)
+    walk(tmp_path, Script("finish", "laptop, names end -dev", "stop"), gitea)
 
     posted = [w for w in gitea.writes if w[0] == "comment"]
     assert len(posted) == 1
     assert posted[0][2].startswith("Tested by hand, ")
     assert posted[0][2].endswith(". Done: laptop, names end -dev. → #4")
+
+
+@pytest.mark.unit
+def test_finish_posts_the_pointer_closes_the_ticket_and_offers_pick_or_board(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+    script = Script("finish", "laptop", "stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert [w[0] for w in gitea.writes if w[0] in ("comment", "close")] == ["comment", "close"]
+    assert gitea.issues[4]["state"] == "closed"
+    assert gitea.column_of(4) == "DoD"
+    assert "[ticket #4] DONE · closed, in DoD" in script.said
+    assert [label.split()[0] for label in script.menus[1][0]] == ["pick", "───────────", "board", "flows…", "stop"]
+
+
+@pytest.mark.unit
+def test_a_defect_reopens_the_ticket_to_backlog_with_a_progress_comment(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+
+    walk(tmp_path, Script("defect", "login fails", "stop"), gitea)  # no Tested OK? answer: a defect is not tested
+
+    comment = next(w for w in gitea.writes if w[0] == "comment")
+    assert comment[2].endswith(". Landed: merged to prep. Left: login fails. → Backlog")
+    assert gitea.column_of(4) == "Backlog"
+    assert gitea.issues[4]["state"] == "open"
+
+
+@pytest.mark.unit
+def test_an_untested_change_is_not_finished(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+
+    walk(tmp_path, Script("board", False, "stop"), gitea)
+
+    assert gitea.issues[4]["state"] == "open"
+    assert saved(tmp_path)["step"] == "test"
 
 
 @pytest.mark.unit
@@ -426,7 +468,7 @@ def test_an_untested_change_stays_at_test(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
     gitea.add_issue(4)
     gitea.put("Testing", 4)
-    script = Script("pick", False, "stop")
+    script = Script("board", False, "stop")
 
     walk(tmp_path, script, gitea)
 
@@ -532,3 +574,15 @@ def test_a_git_error_on_the_promotion_diff_is_not_an_empty_diff(tmp_path, gitea)
 
     with pytest.raises(GiteaError, match="unknown revision"):
         walk(tmp_path, Script("review", "stop"), gitea, no_main)
+
+
+@pytest.mark.unit
+def test_finish_asks_the_evidence_once_and_no_tested_confirm(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+    script = Script("finish", "laptop", "stop")  # a confirm prompt would consume "laptop" and fail
+
+    walk(tmp_path, script, gitea)
+
+    assert gitea.issues[4]["state"] == "closed"

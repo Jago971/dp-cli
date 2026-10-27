@@ -80,6 +80,10 @@ class FakeGitea:
                 self.writes.append(("milestone", number, body["milestone"]))
                 title = next(m["title"] for m in self.milestones if m["id"] == body["milestone"])
                 self.issues[number]["milestone"] = {"title": title}
+            if "state" in body:
+                if body["state"] == "closed":
+                    self.writes.append(("close", number))
+                self.issues[number]["state"] = body["state"]
             if "assignees" in body:
                 self.writes.append(("assign", number, body["assignees"]))
                 self.issues[number]["assignees"] = [{"login": login} for login in body["assignees"]]

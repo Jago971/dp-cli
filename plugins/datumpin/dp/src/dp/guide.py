@@ -37,6 +37,7 @@ DISPOSITIONS = {"Fix": "goes to the fix step", "Dismiss": "asks a reason, record
                 "Escalate": "asks to whom, records it", "Defer": "opens a new Triage ticket"}
 NEXT_STEP = "Next: choose the next step in dp guide"  # the closing line of a step the person finishes
 LEAVING_TEST = 'Test it by hand where it runs; leaving this step asks "Tested OK?" and records it'
+TESTED_DEFECT = "Defect at test"
 TESTED = "Tested by hand"  # the Event of the Pointer leaving `test` posts; milestone_tested looks for it
 BEFORE_TESTING = ("Triage", "Backlog", "In Progress", "Review")
 SEPARATOR_VALUE = "separator"
@@ -319,10 +320,13 @@ def recorded(root, flow, ticket, prompts):
                 prompts.say(f"{ref(flow, ticket)} {finding['id']} {finding['disposition']}")
 
 
-def leave_test(position, prompts, gitea, env):
-    """Leaving `test` records the hand test as a Pointer on the ticket; False to stay at `test`."""
+def leave_test(position, prompts, gitea, env, tested=False):
+    """Leaving `test` records the hand test as a Pointer on the ticket; False to stay at `test`.
+
+    Input: `tested` when the person chose `finish`, which is the answer to "Tested OK?".
+    """
     ticket = position["ticket"]
-    if not prompts.confirm("Tested OK?"):
+    if not tested and not prompts.confirm("Tested OK?"):
         prompts.note(f"[ticket #{ticket}] not tested · staying at test")
         return False
     where = prompts.text("Where, and what you checked", env).strip().rstrip(".") or env
@@ -396,6 +400,22 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
         ticket = pick(prompts, gitea, git)
         if ticket is None:
             return None
+    elif step == "finish":
+        try:
+            commands.finish(gitea.call, gitea.repo, ticket)  # the Pointer was posted on leaving `test`
+        except GiteaError:
+            prompts.note(f"{ref(flow, ticket)} FAILED · Gitea unreachable · staying at test")
+            return None
+        prompts.say(f"{ref(flow, ticket)} DONE · closed, in DoD")
+    elif step == "defect":
+        found = prompts.text("What failed", "").strip().rstrip(".") or "a defect at test"
+        text = f"{TESTED_DEFECT}, {datetime.now():%Y-%m-%d}. Landed: merged to prep. Left: {found}. → Backlog"
+        try:
+            commands.reopen(gitea.call, gitea.repo, ticket, text)
+        except GiteaError:
+            prompts.note(f"{ref(flow, ticket)} FAILED · Gitea unreachable · staying at test")
+            return None
+        prompts.say(f"{ref(flow, ticket)} reopened · Backlog · {found}")
     elif skill == "human":
         does = flow_map["steps"][step]["does"]
         if step == "test":
@@ -430,10 +450,10 @@ def choose_flow(flow_map, paused, prompts):
                           + [(BACK, None)])
 
 
-def may_leave(position, here, prompts, gitea):
-    """Leaving a step: `test` needs its Tested Pointer first; False to stay."""
-    if position and position["step"] == "test" and position["ticket"]:
-        return leave_test(position, prompts, gitea, here["env"])
+def may_leave(position, here, choice, prompts, gitea):
+    """Leaving a step: `test` needs its Tested Pointer first, unless a defect reopens it; False to stay."""
+    if position and position["step"] == "test" and position["ticket"] and choice["step"] != "defect":
+        return leave_test(position, prompts, gitea, here["env"], tested=choice["step"] == "finish")
     return True
 
 
@@ -470,7 +490,7 @@ def walk(root, prompts, gitea, git):
                 position, paused = locate(flow_map, paused, gitea, prompts), None
             if not isinstance(choice, dict):
                 continue
-        if not may_leave(position, here, prompts, gitea):
+        if not may_leave(position, here, choice, prompts, gitea):
             continue
         reached = run(root, flow_map, position, choice, prompts, gitea, git)
         if reached:
