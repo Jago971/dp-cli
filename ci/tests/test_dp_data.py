@@ -1,4 +1,7 @@
 """Unit tier: dp.data, which finds the flow map and skills packaged or in a source checkout."""
+import tomllib
+from pathlib import Path
+
 import pytest
 
 import dp
@@ -25,3 +28,11 @@ def test_an_installed_dp_never_reads_a_folder_beside_site_packages(tmp_path, mon
     monkeypatch.setattr(dp, "files", lambda name: package)
     monkeypatch.setattr(dp, "__file__", str(package / "__init__.py"))
     assert dp.data("flows.yaml") == package / "data" / "flows.yaml"
+
+
+@pytest.mark.unit
+def test_requirements_carry_dps_pins():
+    pyproject = Path(dp.__file__).parents[2] / "pyproject.toml"
+    pins = tomllib.loads(pyproject.read_text())["project"]["dependencies"]
+    lines = (Path(__file__).parent / "requirements.txt").read_text().splitlines()
+    assert set(pins) <= set(lines)
