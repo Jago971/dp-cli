@@ -262,7 +262,8 @@ def settle_branch(prompts, git, branch):
     Output: `create` False when the person switches to the old branch."""
     while has_branch(git, branch):
         options = [("Switch    to the existing branch", "switch")]
-        if has_branch(git, branch, merged=True):
+        # git refuses to delete the checked-out branch
+        if has_branch(git, branch, merged=True) and git("branch", "--show-current").strip() != branch:
             options.append(("Delete    it, merged into prep, and start a new one", "delete"))
         options.append(("Name      a new branch", "name"))
         answer = prompts.choose(f"Branch {branch} exists", options)
@@ -281,7 +282,10 @@ def take(gitea, git, ticket, branch, create=True):
     moved = commands.move(gitea.call, gitea.repo, ticket["number"], "In Progress", assignee=gitea.human())
     joined = None if ticket["milestone"] else commands.join_earliest_milestone(gitea.call, gitea.repo, ticket["number"])
     # one argument, so a leading-dash branch is not an option
-    git("switch", f"--create={branch}", BASE) if create else git("switch", branch)
+    if create:
+        git("switch", f"--create={branch}", BASE)
+    else:
+        git("switch", branch)
     return {**moved, "milestone": joined or ticket["milestone"], "joined": bool(joined), "branch": branch}
 
 

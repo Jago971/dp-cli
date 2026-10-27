@@ -129,6 +129,22 @@ def test_an_unmerged_branch_is_not_offered_for_deletion(tmp_path, gitea):
     assert not [label for label in script.menus[1][0] if label.startswith("Delete")]
 
 
+class CheckedOut(OldBranch):
+    def __call__(self, *args):
+        result = super().__call__(*args)
+        return "fix/4-old\n" if args[:2] == ("branch", "--show-current") else result
+
+
+@pytest.mark.unit
+def test_the_checked_out_branch_is_not_offered_for_deletion(tmp_path, gitea):
+    backlog_four(gitea)
+    script = Script("ticket", "#4", "fix/4-old", "Switch", "stop")
+
+    walk(tmp_path, script, gitea, CheckedOut(merged=True))
+
+    assert not [label for label in script.menus[1][0] if label.startswith("Delete")]
+
+
 @pytest.mark.unit
 def test_a_pick_over_an_old_branch_can_name_a_new_one(tmp_path, gitea):
     backlog_four(gitea)
