@@ -421,6 +421,17 @@ def test_a_ticket_with_a_pointer_is_not_asked_tested_ok_again(tmp_path, gitea):
 
 
 @pytest.mark.unit
+def test_a_defect_after_the_pointer_asks_tested_ok_again(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4, comments=[pointer_tested(4), ("Squire", "Defect at test, 2026-10-23. Left: x. → Backlog")])
+    gitea.put("Testing", 4)
+
+    walk(tmp_path, Script("board", True, "laptop", "stop"), gitea)
+
+    assert len([w for w in gitea.writes if w[0] == "comment"]) == 1
+
+
+@pytest.mark.unit
 def test_back_at_the_picker_after_a_posted_pointer_does_not_ask_again(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
     gitea.add_issue(4)

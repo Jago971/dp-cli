@@ -161,8 +161,10 @@ def unscoped(gitea, ticket):
 
 
 def tested(gitea, ticket):
-    """True when the ticket carries a Tested Pointer."""
-    return any(c["text"].startswith(f"{TESTED}, ") for c in commands.issue(gitea.call, gitea.repo, ticket)["comments"])
+    """True when the ticket's latest test verdict is a Tested Pointer, so a defect since then means a retest."""
+    verdicts = [c["text"] for c in commands.issue(gitea.call, gitea.repo, ticket)["comments"]
+                if c["text"].startswith((f"{TESTED}, ", f"{TESTED_DEFECT}, "))]
+    return bool(verdicts) and verdicts[-1].startswith(f"{TESTED}, ")
 
 
 def milestone_tested(gitea, ticket):
@@ -330,7 +332,7 @@ def leave_test(position, prompts, gitea, env, answered=False):
         if tested(gitea, ticket):  # a cancelled pick left us at `test` after the Pointer posted
             return True
     except GiteaError:
-        pass  # unreachable: ask as before
+        prompts.note(f"[ticket #{ticket}] Gitea unreachable · cannot check for a Pointer · asking")
     if not answered and not prompts.confirm("Tested OK?"):
         prompts.note(f"[ticket #{ticket}] not tested · staying at test")
         return False
