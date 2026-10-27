@@ -1,6 +1,7 @@
 """Unit tier: dp guide's walk (dp.guide), with Gitea in memory and the prompts scripted."""
 import json
 from types import SimpleNamespace
+from unittest import mock
 
 import pytest
 
@@ -436,6 +437,44 @@ def test_a_defect_reopens_the_ticket_to_backlog_with_a_progress_comment(tmp_path
     assert comment[2].endswith(". Landed: merged to prep. Left: login fails. → Backlog")
     assert gitea.column_of(4) == "Backlog"
     assert gitea.issues[4]["state"] == "open"
+
+
+@pytest.mark.unit
+def test_finish_prints_the_column_the_ticket_is_in(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.lands_in = "Done"  # something moved the card on, as board-sync did
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+    script = Script("finish", "laptop", "stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert "[ticket #4] DONE · closed, in Done" in script.said
+
+
+@pytest.mark.unit
+def test_finish_prints_dod_when_the_card_stays_there(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+    script = Script("finish", "laptop", "stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert "[ticket #4] DONE · closed, in DoD" in script.said
+
+
+@pytest.mark.unit
+def test_finish_prints_no_column_when_the_card_is_off_the_board(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+    script = Script("finish", "laptop", "stop")
+
+    with mock.patch.object(guide.commands, "finish", return_value=None):
+        walk(tmp_path, script, gitea)
+
+    assert "[ticket #4] DONE · closed, in no column" in script.said
 
 
 @pytest.mark.unit

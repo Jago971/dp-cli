@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-27 - Closed tickets wait in DoD (plugin 0.8.15)
+
+- board-sync moves a closed issue to DoD, forward only, not to Done; it had overridden `finish`'s move. The release merge moves it to Done (#61).
+- `finish` reads the ticket's column back and prints it (#183).
+- The gitea skill says a ticket retired as obsolete or duplicate is moved to Done by hand (#183).
+
 ### [CHANGED] 2026-10-27 - dp tests run from the source tree (plugin 0.8.14)
 
 - `dp.data` falls back to `../flows.yaml` and `../skills` when `dp/data` is absent, in a source checkout only.

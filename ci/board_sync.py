@@ -7,7 +7,7 @@ anyone dragging cards:
     pull request opened or reopened -> each ticket it names: Review
     pull request merged into prep   -> each ticket it names: Testing
     issue opened                    -> Triage, when not on the Board yet
-    issue closed                    -> Done
+    issue closed                    -> DoD, where it waits for the gate (#61 moves it to Done)
     issue reopened                  -> Backlog
 
 A pull request names a ticket with "Refs #N" (the formats skill) or through
@@ -110,7 +110,7 @@ def main():
             move(repo, number, target, forward_only=True)
     elif "issue" in event and not event["issue"].get("pull_request"):
         # forward_only on opened: shape may already have placed the ticket further on
-        target, forward_only = {"opened": ("Triage", True), "closed": ("Done", False),
+        target, forward_only = {"opened": ("Triage", True), "closed": ("DoD", True),
                                 "reopened": ("Backlog", False)}.get(action, (None, False))
         if target:
             move(repo, event["issue"]["number"], target, forward_only)

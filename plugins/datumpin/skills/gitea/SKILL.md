@@ -62,9 +62,9 @@ Each repo has one Gitea project titled `Board`. Its column is the single record 
 | Review | PR open |
 | Testing | Merged to `prep`, being tested by hand on prep (Hammond) |
 | DoD | Feature DoD signed, ready for release |
-| Done | Closed: shipped on `main` in a tagged release, or no longer needed |
+| Done | Closed: shipped on `main` in a tagged release, or retired by hand as no longer needed |
 
-An open ticket not on the board is unsorted. A ticket moves to Done when it is closed. Any move by hand or by the agent to an earlier column posts a Progress comment (`formats`) saying what landed and what is left; board-sync's reopen → Backlog needs none, as the reopen is its own record.
+An open ticket not on the board is unsorted. A closed ticket moves to DoD and waits there for the gate; the release merge moves it to Done. A ticket closed as obsolete or duplicate never passes the gate: move it to Done by hand after the close. Any move by hand or by the agent to an earlier column posts a Progress comment (`formats`) saying what landed and what is left; board-sync's reopen → Backlog needs none, as the reopen is its own record.
 
 ## Milestones
 

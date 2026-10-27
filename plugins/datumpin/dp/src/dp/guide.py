@@ -402,11 +402,11 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
             return None
     elif step == "finish":
         try:
-            commands.finish(gitea.call, gitea.repo, ticket)  # the Pointer was posted on leaving `test`
+            column = commands.finish(gitea.call, gitea.repo, ticket)  # the Pointer was posted on leaving `test`
         except GiteaError:
             prompts.note(f"{ref(flow, ticket)} FAILED · Gitea unreachable · staying at test")
             return None
-        prompts.say(f"{ref(flow, ticket)} DONE · closed, in DoD")
+        prompts.say(f"{ref(flow, ticket)} DONE · closed, in {column or 'no column'}")
     elif step == "defect":
         found = prompts.text("What failed", "").strip().rstrip(".") or "a defect at test"
         text = f"{TESTED_DEFECT}, {datetime.now():%Y-%m-%d}. Landed: merged to prep. Left: {found}. → Backlog"
