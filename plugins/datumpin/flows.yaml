@@ -123,13 +123,13 @@ steps:
     next: [finish, defect]
     fork: {every ticket in the milestone is tested: {step: gate, when: milestone_tested}, carry on: board}
   finish:
-    skill: agent
+    skill: board
     env: prep
     does: Tested OK? Records the Tested Pointer and closes the ticket
     next: [pick]
     fork: {carry on: board}
   defect:
-    skill: agent
+    skill: board
     env: prep
     does: A defect at test; reopens the ticket to Backlog
     next: [pick]
