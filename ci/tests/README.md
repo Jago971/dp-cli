@@ -1,6 +1,6 @@
 # ci/tests/
 
-**Scope:** tests for the CI scripts in `ci/` and the plugin's `dp` package in `plugins/datumpin/dp/` (run from the source tree: `pytest.ini` puts it on the path, and `conftest.py` fails if an installed copy shadows it), run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). 216 tests: 207 `unit`, 9 `integration` (need a Docker daemon; skipped without one).
+**Scope:** tests for the CI scripts in `ci/` and the plugin's `dp` package in `plugins/datumpin/dp/` (run from the source tree: `pytest.ini` puts it on the path, and `conftest.py` fails if an installed copy shadows it), run by DEVKIT's `ci.yml` through the shared `python-tests` workflow (`working-directory: ci/tests`). Tests are `unit` or `integration` (the latter need a Docker daemon; skipped without one).
 **Status:** current
 **Last reviewed:** 2026-10-27
 **Governed by:** [docs/QUICKSTART.md](../../docs/QUICKSTART.md)
