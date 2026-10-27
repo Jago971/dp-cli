@@ -370,14 +370,23 @@ def job(flow_map, flow, step, ticket, gitea, git, prompts):
                      column=column, diffstat=diffstat, skills=brief.skill_text(defined))
 
 
-def merge_state(gitea, git):
-    """The current branch's PR as (number, "merged" | "open" | "closed"), or None when it has none or git or Gitea cannot say."""
+def merge_state(gitea, git, ticket):
+    """The ticket's PR as (number, "merged" | "open" | "closed"), or None when it has none or Gitea cannot say.
+
+    The newest PR whose body has `Refs #N`; else the current branch's PR. Gitea reads a merged PR's head as
+    `refs/pull/N/head`, so the head name alone cannot find it."""
     try:
-        branch = git("branch", "--show-current").strip()
         pulls = commands.paged(gitea.call, f"repos/{gitea.repo}/pulls?state=all")
-    except GiteaError:  # `git` raises GiteaError too, so a failing git falls back to asking
+    except GiteaError:
         return None
-    pull = next((p for p in pulls if p["head"]["ref"] == branch), None)
+    refs = re.compile(rf"\bRefs #{ticket}\b")
+    pull = max((p for p in pulls if refs.search(p.get("body") or "")), key=lambda p: p["number"], default=None)
+    if not pull:
+        try:
+            branch = git("branch", "--show-current").strip()
+        except GiteaError:  # a failing git falls back to asking
+            return None
+        pull = next((p for p in pulls if p["head"]["ref"] == branch), None)
     if not pull:
         return None
     state = "merged" if pull["merged"] else pull.get("state", "open")
@@ -386,7 +395,7 @@ def merge_state(gitea, git):
 
 def confirm_done(step, does, ticket, prompts, gitea, git):
     """True when a person's step is done: `merge` reads the PR's state, any other step asks."""
-    pull = merge_state(gitea, git) if step == "merge" else None
+    pull = merge_state(gitea, git, ticket) if step == "merge" else None
     if pull and pull[1] == "merged":
         return True
     if pull and pull[1] == "closed":

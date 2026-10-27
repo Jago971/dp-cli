@@ -141,6 +141,38 @@ def test_a_merged_pr_skips_the_done_question_at_merge(tmp_path, gitea):
 
 
 @pytest.mark.unit
+def test_a_merged_pr_found_by_refs_skips_done_whatever_its_head_reads(tmp_path, gitea):
+    at_merge(tmp_path, gitea)
+    gitea.pulls.append({"number": 9, "head": {"ref": "refs/pull/9/head"}, "merged": True, "body": "Refs #4"})
+
+    walk(tmp_path, Script("merge", "stop"), gitea, Git())  # git reads no branch; merge must not ask
+
+    assert saved(tmp_path)["step"] == "merge"
+
+
+@pytest.mark.unit
+def test_the_newest_pr_that_refs_the_ticket_decides_at_merge(tmp_path, gitea):
+    at_merge(tmp_path, gitea)
+    gitea.pulls.append({"number": 8, "head": {"ref": "feat/4-a-change"}, "merged": False, "state": "closed",
+                        "body": "Refs #4"})
+    gitea.pulls.append({"number": 9, "head": {"ref": "refs/pull/9/head"}, "merged": True, "body": "Refs #4"})
+
+    walk(tmp_path, Script("merge", "stop"), gitea, Git())
+
+    assert saved(tmp_path)["step"] == "merge"
+
+
+@pytest.mark.unit
+def test_a_pr_with_no_refs_line_falls_back_to_the_branch_name(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=True)
+    gitea.pulls.append({"number": 10, "head": {"ref": "other"}, "merged": False, "body": "Refs #5"})
+
+    walk(tmp_path, Script("merge", "stop"), gitea, OnBranch())  # branch PR #9 is merged: no question
+
+    assert saved(tmp_path)["step"] == "merge"
+
+
+@pytest.mark.unit
 def test_an_open_pr_keeps_the_walk_at_merge_and_says_so(tmp_path, gitea):
     at_merge(tmp_path, gitea, merged=False)
     script = Script("merge", "stop")

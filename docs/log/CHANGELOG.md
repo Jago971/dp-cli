@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-27 - Guide recognises a merged PR (plugin 0.8.17)
+
+- At `merge`, `dp guide` finds the ticket's newest PR by `Refs #N` in its body, then falls back to the branch name. A merged PR skips `Done?` even when Gitea reads its head as `refs/pull/N/head` (#189).
+
 ### [CHANGED] 2026-10-27 - A cancelled pick does not re-ask Tested OK (plugin 0.8.16)
 
 - Leaving `test` skips `Tested OK?` when the ticket already has a Tested Pointer, so `back` at the picker no longer posts a second one (#162).
