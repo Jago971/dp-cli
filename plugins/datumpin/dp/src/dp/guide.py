@@ -320,10 +320,13 @@ def recorded(root, flow, ticket, prompts):
                 prompts.say(f"{ref(flow, ticket)} {finding['id']} {finding['disposition']}")
 
 
-def leave_test(position, prompts, gitea, env):
-    """Leaving `test` records the hand test as a Pointer on the ticket; False to stay at `test`."""
+def leave_test(position, prompts, gitea, env, tested=False):
+    """Leaving `test` records the hand test as a Pointer on the ticket; False to stay at `test`.
+
+    Input: `tested` when the person chose `finish`, which is the answer to "Tested OK?".
+    """
     ticket = position["ticket"]
-    if not prompts.confirm("Tested OK?"):
+    if not tested and not prompts.confirm("Tested OK?"):
         prompts.note(f"[ticket #{ticket}] not tested · staying at test")
         return False
     where = prompts.text("Where, and what you checked", env).strip().rstrip(".") or env
@@ -398,12 +401,20 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
         if ticket is None:
             return None
     elif step == "finish":
-        commands.finish(gitea.call, gitea.repo, ticket)  # the Pointer was posted on leaving `test`
+        try:
+            commands.finish(gitea.call, gitea.repo, ticket)  # the Pointer was posted on leaving `test`
+        except GiteaError:
+            prompts.note(f"{ref(flow, ticket)} FAILED · Gitea unreachable · staying at test")
+            return None
         prompts.say(f"{ref(flow, ticket)} DONE · closed, in DoD")
     elif step == "defect":
         found = prompts.text("What failed", "").strip().rstrip(".") or "a defect at test"
         text = f"{TESTED_DEFECT}, {datetime.now():%Y-%m-%d}. Landed: merged to prep. Left: {found}. → Backlog"
-        commands.reopen(gitea.call, gitea.repo, ticket, text)
+        try:
+            commands.reopen(gitea.call, gitea.repo, ticket, text)
+        except GiteaError:
+            prompts.note(f"{ref(flow, ticket)} FAILED · Gitea unreachable · staying at test")
+            return None
         prompts.say(f"{ref(flow, ticket)} reopened · Backlog · {found}")
     elif skill == "human":
         does = flow_map["steps"][step]["does"]
@@ -442,7 +453,7 @@ def choose_flow(flow_map, paused, prompts):
 def may_leave(position, here, choice, prompts, gitea):
     """Leaving a step: `test` needs its Tested Pointer first, unless a defect reopens it; False to stay."""
     if position and position["step"] == "test" and position["ticket"] and choice["step"] != "defect":
-        return leave_test(position, prompts, gitea, here["env"])
+        return leave_test(position, prompts, gitea, here["env"], tested=choice["step"] == "finish")
     return True
 
 

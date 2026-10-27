@@ -6,7 +6,7 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ### [CHANGED] 2026-10-27 - finish a ticket at test (plugin 0.8.13)
 
-- `test` offers `finish`: it asks `Tested OK?`, posts the Tested Pointer, closes the ticket, moves it to DoD and prints `DONE`. Only then does the menu offer `pick` or `board` (#167).
+- `test` offers `finish`: choosing it is the `Tested OK?` answer; it asks the evidence once, posts the Tested Pointer, closes the ticket, moves it to DoD and prints `DONE`. Only then does the menu offer `pick` or `board` (#167).
 - `test` also offers `defect`: it reopens the ticket to Backlog with a Progress comment.
 - The home menu after `finish` waits for #170.
 

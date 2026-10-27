@@ -400,7 +400,7 @@ def test_leaving_test_posts_a_pointer_tested(tmp_path, gitea):
     gitea.add_issue(4)
     gitea.put("Testing", 4)
 
-    walk(tmp_path, Script("finish", True, "laptop, names end -dev", "stop"), gitea)
+    walk(tmp_path, Script("finish", "laptop, names end -dev", "stop"), gitea)
 
     posted = [w for w in gitea.writes if w[0] == "comment"]
     assert len(posted) == 1
@@ -413,7 +413,7 @@ def test_finish_posts_the_pointer_closes_the_ticket_and_offers_pick_or_board(tmp
     guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
     gitea.add_issue(4)
     gitea.put("Testing", 4)
-    script = Script("finish", True, "laptop", "stop")
+    script = Script("finish", "laptop", "stop")
 
     walk(tmp_path, script, gitea)
 
@@ -444,7 +444,7 @@ def test_an_untested_change_is_not_finished(tmp_path, gitea):
     gitea.add_issue(4)
     gitea.put("Testing", 4)
 
-    walk(tmp_path, Script("finish", False, "stop"), gitea)
+    walk(tmp_path, Script("board", False, "stop"), gitea)
 
     assert gitea.issues[4]["state"] == "open"
     assert saved(tmp_path)["step"] == "test"
@@ -468,7 +468,7 @@ def test_an_untested_change_stays_at_test(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
     gitea.add_issue(4)
     gitea.put("Testing", 4)
-    script = Script("finish", False, "stop")
+    script = Script("board", False, "stop")
 
     walk(tmp_path, script, gitea)
 
@@ -574,3 +574,15 @@ def test_a_git_error_on_the_promotion_diff_is_not_an_empty_diff(tmp_path, gitea)
 
     with pytest.raises(GiteaError, match="unknown revision"):
         walk(tmp_path, Script("review", "stop"), gitea, no_main)
+
+
+@pytest.mark.unit
+def test_finish_asks_the_evidence_once_and_no_tested_confirm(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+    script = Script("finish", "laptop", "stop")  # a confirm prompt would consume "laptop" and fail
+
+    walk(tmp_path, script, gitea)
+
+    assert gitea.issues[4]["state"] == "closed"

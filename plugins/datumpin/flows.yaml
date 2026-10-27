@@ -9,7 +9,8 @@
 # Per step:
 #   skill     the skill that runs the step. Two have no skill file: `agent`,
 #             a step the agent does directly in its `formats` shape (a commit,
-#             a tag), and `human`, a person's action the guide waits for.
+#             a tag; `dp guide` runs `finish` and `defect` itself, with no
+#             agent), and `human`, a person's action the guide waits for.
 #   env       where the step runs (gitea-workflows, Environments), so the
 #             guide can say whether it touches the laptop, CI or a server
 #   does      the choice line the guide prints
