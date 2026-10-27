@@ -4,6 +4,11 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-27 - dp tests run from the source tree (plugin 0.8.14)
+
+- `dp.data` falls back to `../flows.yaml` and `../skills` when `dp/data` is absent, in a source checkout only.
+- `ci/tests` puts dp on the path from source; `conftest.py` fails if an installed copy shadows it. `requirements.txt` lists dp's pins, so it installs on Windows (#159).
+
 ### [CHANGED] 2026-10-27 - Master pyyaml pin is 6.0.3
 
 - `ci/master/requirements.txt` pins `pyyaml==6.0.3`: 6.0 has no wheel for Python 3.12 or later. `dp` conforms, so its deviation note is gone. A repo pinning 6.0 shows DRIFT and follows (#130).
