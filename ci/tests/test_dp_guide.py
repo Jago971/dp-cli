@@ -410,6 +410,31 @@ def test_leaving_test_posts_a_pointer_tested(tmp_path, gitea):
 
 
 @pytest.mark.unit
+def test_a_ticket_with_a_pointer_is_not_asked_tested_ok_again(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4, comments=[pointer_tested(4)])
+    gitea.put("Testing", 4)
+
+    walk(tmp_path, Script("board", "stop"), gitea)  # no confirm answer: asking would fail
+
+    assert [w for w in gitea.writes if w[0] == "comment"] == []
+
+
+@pytest.mark.unit
+def test_back_at_the_picker_after_a_posted_pointer_does_not_ask_again(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.add_issue(6)
+    gitea.put("Testing", 4)
+    gitea.put("Backlog", 6)
+
+    walk(tmp_path, Script("flows…", "ticket", True, "laptop", "back", "stop"), gitea)
+    walk(tmp_path, Script("board", "stop"), gitea)  # no confirm answer: asking would fail
+
+    assert len([w for w in gitea.writes if w[0] == "comment"]) == 1
+
+
+@pytest.mark.unit
 def test_finish_posts_the_pointer_closes_the_ticket_and_offers_pick_or_board(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
     gitea.add_issue(4)
@@ -521,7 +546,7 @@ def test_leaving_the_ticket_flow_pauses_it_and_flows_resumes_it(tmp_path, gitea)
     guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
     gitea.add_issue(4, comments=[pointer_tested(4)])
     gitea.put("Testing", 4)
-    script = Script("flows…", "align", True, None, "stop")
+    script = Script("flows…", "align", "stop")  # the Pointer is already posted: no "Tested OK?"
 
     walk(tmp_path, script, gitea)
 
