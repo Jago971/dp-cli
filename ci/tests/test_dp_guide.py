@@ -151,6 +151,32 @@ def test_an_open_pr_keeps_the_walk_at_merge_and_says_so(tmp_path, gitea):
 
 
 @pytest.mark.unit
+def test_a_closed_unmerged_pr_is_not_told_to_merge(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=False)
+    gitea.pulls[0]["state"] = "closed"
+    script = Script("merge", "stop")
+
+    walk(tmp_path, script, gitea, OnBranch())
+
+    assert saved(tmp_path)["step"] == "pr"
+    assert "[ticket #4] PR #9 is closed, not merged · reopen it or open a new one, then run dp guide" in script.said
+
+
+class FailingGit(Git):
+    def __call__(self, *args):
+        raise GiteaError("git branch: not a git repository")
+
+
+@pytest.mark.unit
+def test_a_failing_git_at_merge_falls_back_to_asking_done(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=True)
+
+    walk(tmp_path, Script("merge", True, "stop"), gitea, FailingGit())
+
+    assert saved(tmp_path)["step"] == "merge"
+
+
+@pytest.mark.unit
 def test_without_a_pr_merge_asks_done_as_before(tmp_path, gitea):
     at_merge(tmp_path, gitea)
 

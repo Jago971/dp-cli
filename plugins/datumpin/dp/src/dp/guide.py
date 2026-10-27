@@ -360,21 +360,27 @@ def job(flow_map, flow, step, ticket, gitea, git, prompts):
 
 
 def merge_state(gitea, git):
-    """The current branch's PR as (number, merged), or None when it has none or Gitea cannot say."""
+    """The current branch's PR as (number, "merged" | "open" | "closed"), or None when it has none or git or Gitea cannot say."""
     try:
         branch = git("branch", "--show-current").strip()
         pulls = commands.paged(gitea.call, f"repos/{gitea.repo}/pulls?state=all")
-    except GiteaError:
+    except GiteaError:  # `git` raises GiteaError too, so a failing git falls back to asking
         return None
     pull = next((p for p in pulls if p["head"]["ref"] == branch), None)
-    return pull and (pull["number"], pull["merged"])
+    if not pull:
+        return None
+    state = "merged" if pull["merged"] else pull.get("state", "open")
+    return pull["number"], state
 
 
 def confirm_done(step, does, ticket, prompts, gitea, git):
     """True when a person's step is done: `merge` reads the PR's state, any other step asks."""
     pull = merge_state(gitea, git) if step == "merge" else None
-    if pull and pull[1]:
+    if pull and pull[1] == "merged":
         return True
+    if pull and pull[1] == "closed":
+        prompts.note(f"{ref('ticket', ticket)} PR #{pull[0]} is closed, not merged · reopen it or open a new one, then run dp guide")
+        return False
     if pull:
         prompts.note(f"{ref('ticket', ticket)} PR #{pull[0]} is not merged · merge it, then run dp guide")
         return False
