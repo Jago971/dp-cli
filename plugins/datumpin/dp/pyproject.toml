@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 name = "datumpin-dp"
 description = "dp: the datumpin plugin's command line for the flows, repeated Gitea work and token reports"
 requires-python = ">=3.11"
-# pyyaml 6.0.3, not the master's 6.0: 6.0 has no wheel for Python 3.12 or later.
 dependencies = [
     "typer==0.27.3",
     "rich==15.0.0",

@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-27 - Master pyyaml pin is 6.0.3
+
+- `ci/master/requirements.txt` pins `pyyaml==6.0.3`: 6.0 has no wheel for Python 3.12 or later. `dp` conforms, so its deviation note is gone. A repo pinning 6.0 shows DRIFT and follows (#130).
+
 ### [CHANGED] 2026-10-27 - finish a ticket at test (plugin 0.8.13)
 
 - `test` offers `finish`: choosing it is the `Tested OK?` answer; it asks the evidence once, posts the Tested Pointer, closes the ticket, moves it to DoD and prints `DONE`. Only then does the menu offer `pick` or `board` (#167).
@@ -91,7 +95,6 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 - `flows.yaml` gains `columns` (where a board column places a ticket, moved from the `guide` skill) and per-step `brief` sections; `dp` ships with the map and the skills. The `guide` skill finds its position through `dp guide --json`.
 - `dp tokens` books turns to the step the last Job prompt names. `formats` gains the Job prompt.
 - At a terminal, `dp guide` uses the DP palette (`dp/terminal.py`): a rail of the flow's path, a spinner on Gitea reads, number shortcuts, and the Job prompt in a panel copied to the clipboard.
-- `dp` pins `pyyaml==6.0.3`, not the master's 6.0, which has no wheel for Python 3.12 or later.
 
 ---
 
