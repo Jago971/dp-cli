@@ -151,6 +151,16 @@ def test_a_merged_pr_found_by_refs_skips_done_whatever_its_head_reads(tmp_path, 
 
 
 @pytest.mark.unit
+def test_a_pr_naming_the_ticket_second_on_its_refs_line_is_found(tmp_path, gitea):
+    at_merge(tmp_path, gitea)
+    gitea.pulls.append({"number": 9, "head": {"ref": "refs/pull/9/head"}, "merged": True, "body": "Refs #5 · #4"})
+
+    walk(tmp_path, Script("merge", "stop"), gitea, Git())
+
+    assert saved(tmp_path)["step"] == "merge"
+
+
+@pytest.mark.unit
 def test_the_newest_pr_that_refs_the_ticket_decides_at_merge(tmp_path, gitea):
     at_merge(tmp_path, gitea)
     gitea.pulls.append({"number": 8, "head": {"ref": "feat/4-a-change"}, "merged": False, "state": "closed",

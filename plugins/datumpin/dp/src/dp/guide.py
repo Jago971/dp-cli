@@ -379,7 +379,7 @@ def merge_state(gitea, git, ticket):
         pulls = commands.paged(gitea.call, f"repos/{gitea.repo}/pulls?state=all")
     except GiteaError:
         return None
-    refs = re.compile(rf"\bRefs #{ticket}\b")
+    refs = re.compile(rf"\bRefs\b[^\n]*#{ticket}\b")  # the Refs line can list several tickets
     pull = max((p for p in pulls if refs.search(p.get("body") or "")), key=lambda p: p["number"], default=None)
     if not pull:
         try:
