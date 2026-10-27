@@ -6,14 +6,15 @@ Input:   flows.yaml, packaged with dp from the plugin; a state as
          {flow, step, ticket}.
 Output:  plain dicts, as `dp guide --json` prints them.
 """
-from importlib.resources import files
 
 import yaml
+
+from dp import data
 
 
 def load():
     """The flow map that shipped with this dp."""
-    return yaml.safe_load((files("dp") / "data" / "flows.yaml").read_text(encoding="utf-8"))
+    return yaml.safe_load(data("flows.yaml").read_text(encoding="utf-8"))
 
 
 def known(flow_map, state):

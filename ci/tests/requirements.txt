@@ -1,2 +1,6 @@
 pytest==9.0.3
-../../plugins/datumpin/dp
+# dp's own pins (plugins/datumpin/dp/pyproject.toml): dp itself runs from the source tree, via pytest.ini.
+typer==0.27.3
+rich==15.0.0
+pyyaml==6.0.3
+questionary==2.1.1
