@@ -1,6 +1,7 @@
 name: Board
 # Moves DEVKIT's tickets across its Board as pull requests progress. Calls
-# board-sync from this checkout; other repos call it @main.
+# board-sync from this checkout and has it fetch board_sync.py at this commit;
+# other repos call it @main and get the script from main.
 on:
   pull_request:
     types: [opened, reopened, ready_for_review, closed]
@@ -10,4 +11,6 @@ on:
 jobs:
   board:
     uses: ./.gitea/workflows/board-sync.yml
+    with:
+      ref: ${{ github.sha }}
     secrets: inherit

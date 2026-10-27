@@ -15,9 +15,16 @@ name: Board sync
 #       uses: Datumpin/DEVKIT/.gitea/workflows/board-sync.yml@main
 #       secrets: inherit
 #
+# board_sync.py comes from DEVKIT at `ref`, default main. DEVKIT's own board.yml
+# passes its commit, so a PR's change to the script is the one that runs.
+#
 # BOARD_TOKEN is the org secret for the bot account that writes to the Board.
 on:
   workflow_call:
+    inputs:
+      ref:
+        type: string
+        default: main
     secrets:
       BOARD_TOKEN:
         required: true
@@ -27,11 +34,11 @@ jobs:
     name: board sync
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch board_sync.py from DEVKIT main
+      - name: Fetch board_sync.py from DEVKIT
         uses: actions/checkout@v4
         with:
           repository: Datumpin/DEVKIT
-          ref: main
+          ref: ${{ inputs.ref }}
           path: .devkit
 
       - uses: actions/setup-python@v5
