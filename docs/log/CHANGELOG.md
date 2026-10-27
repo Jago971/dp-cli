@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-27 - A cancelled pick does not re-ask Tested OK (plugin 0.8.16)
+
+- Leaving `test` skips `Tested OK?` when the ticket already has a Tested Pointer, so `back` at the picker no longer posts a second one (#162).
+
 ### [CHANGED] 2026-10-27 - Closed tickets wait in DoD (plugin 0.8.15)
 
 - board-sync moves a closed issue to DoD, forward only, not to Done; it had overridden `finish`'s move. The release merge moves it to Done (#61).

@@ -161,8 +161,10 @@ def unscoped(gitea, ticket):
 
 
 def tested(gitea, ticket):
-    """True when the ticket carries a Tested Pointer."""
-    return any(c["text"].startswith(f"{TESTED}, ") for c in commands.issue(gitea.call, gitea.repo, ticket)["comments"])
+    """True when the ticket's latest test verdict is a Tested Pointer, so a defect since then means a retest."""
+    verdicts = [c["text"] for c in commands.issue(gitea.call, gitea.repo, ticket)["comments"]
+                if c["text"].startswith((f"{TESTED}, ", f"{TESTED_DEFECT}, "))]
+    return bool(verdicts) and verdicts[-1].startswith(f"{TESTED}, ")
 
 
 def milestone_tested(gitea, ticket):
@@ -320,13 +322,18 @@ def recorded(root, flow, ticket, prompts):
                 prompts.say(f"{ref(flow, ticket)} {finding['id']} {finding['disposition']}")
 
 
-def leave_test(position, prompts, gitea, env, tested=False):
+def leave_test(position, prompts, gitea, env, answered=False):
     """Leaving `test` records the hand test as a Pointer on the ticket; False to stay at `test`.
 
-    Input: `tested` when the person chose `finish`, which is the answer to "Tested OK?".
+    Input: `answered` when the person chose `finish`, which is the answer to "Tested OK?".
     """
     ticket = position["ticket"]
-    if not tested and not prompts.confirm("Tested OK?"):
+    try:
+        if tested(gitea, ticket):  # a cancelled pick left us at `test` after the Pointer posted
+            return True
+    except GiteaError:
+        prompts.note(f"[ticket #{ticket}] Gitea unreachable · cannot check for a Pointer · asking")
+    if not answered and not prompts.confirm("Tested OK?"):
         prompts.note(f"[ticket #{ticket}] not tested · staying at test")
         return False
     where = prompts.text("Where, and what you checked", env).strip().rstrip(".") or env
@@ -453,7 +460,7 @@ def choose_flow(flow_map, paused, prompts):
 def may_leave(position, here, choice, prompts, gitea):
     """Leaving a step: `test` needs its Tested Pointer first, unless a defect reopens it; False to stay."""
     if position and position["step"] == "test" and position["ticket"] and choice["step"] != "defect":
-        return leave_test(position, prompts, gitea, here["env"], tested=choice["step"] == "finish")
+        return leave_test(position, prompts, gitea, here["env"], answered=choice["step"] == "finish")
     return True
 
 

@@ -94,6 +94,7 @@ class FakeGitea:
             return self.comments.get(int(found.group(1)), [])
         if method == "POST" and found:
             self.writes.append(("comment", int(found.group(1)), body["body"]))
+            self.comments.setdefault(int(found.group(1)), []).append({"user": {"login": "MattM"}, "body": body["body"]})
             return {"id": 1, "body": body["body"]}
         if method == "GET" and path.endswith("/pulls"):
             return self.page(self.pulls, params)
