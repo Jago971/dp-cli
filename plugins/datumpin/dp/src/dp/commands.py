@@ -161,6 +161,19 @@ def pr(call, repo, head, base, title, body, labels):
     return {"number": pull["number"], "url": pull["html_url"]}
 
 
+def finish(call, repo, number):
+    """Close ticket N and put it in DoD."""
+    call("PATCH", f"repos/{repo}/issues/{number}", {"state": "closed"})
+    move(call, repo, number, "DoD")
+
+
+def reopen(call, repo, number, text):
+    """Reopen ticket N to Backlog with a Progress comment."""
+    call("POST", f"repos/{repo}/issues/{number}/comments", {"body": text})
+    call("PATCH", f"repos/{repo}/issues/{number}", {"state": "open"})
+    move(call, repo, number, "Backlog")
+
+
 def pointer(call, repo, number, text):
     """Post a Pointer comment on ticket N, refusing text outside the Pointer shape."""
     if not POINTER.fullmatch(text):

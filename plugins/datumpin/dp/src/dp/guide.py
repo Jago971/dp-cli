@@ -37,6 +37,7 @@ DISPOSITIONS = {"Fix": "goes to the fix step", "Dismiss": "asks a reason, record
                 "Escalate": "asks to whom, records it", "Defer": "opens a new Triage ticket"}
 NEXT_STEP = "Next: choose the next step in dp guide"  # the closing line of a step the person finishes
 LEAVING_TEST = 'Test it by hand where it runs; leaving this step asks "Tested OK?" and records it'
+TESTED_DEFECT = "Defect at test"
 TESTED = "Tested by hand"  # the Event of the Pointer leaving `test` posts; milestone_tested looks for it
 BEFORE_TESTING = ("Triage", "Backlog", "In Progress", "Review")
 SEPARATOR_VALUE = "separator"
@@ -396,6 +397,14 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
         ticket = pick(prompts, gitea, git)
         if ticket is None:
             return None
+    elif step == "finish":
+        commands.finish(gitea.call, gitea.repo, ticket)  # the Pointer was posted on leaving `test`
+        prompts.say(f"{ref(flow, ticket)} DONE · closed, in DoD")
+    elif step == "defect":
+        found = prompts.text("What failed", "").strip().rstrip(".") or "a defect at test"
+        text = f"{TESTED_DEFECT}, {datetime.now():%Y-%m-%d}. Landed: merged to prep. Left: {found}. → Backlog"
+        commands.reopen(gitea.call, gitea.repo, ticket, text)
+        prompts.say(f"{ref(flow, ticket)} reopened · Backlog · {found}")
     elif skill == "human":
         does = flow_map["steps"][step]["does"]
         if step == "test":
@@ -430,9 +439,9 @@ def choose_flow(flow_map, paused, prompts):
                           + [(BACK, None)])
 
 
-def may_leave(position, here, prompts, gitea):
-    """Leaving a step: `test` needs its Tested Pointer first; False to stay."""
-    if position and position["step"] == "test" and position["ticket"]:
+def may_leave(position, here, choice, prompts, gitea):
+    """Leaving a step: `test` needs its Tested Pointer first, unless a defect reopens it; False to stay."""
+    if position and position["step"] == "test" and position["ticket"] and choice["step"] != "defect":
         return leave_test(position, prompts, gitea, here["env"])
     return True
 
@@ -470,7 +479,7 @@ def walk(root, prompts, gitea, git):
                 position, paused = locate(flow_map, paused, gitea, prompts), None
             if not isinstance(choice, dict):
                 continue
-        if not may_leave(position, here, prompts, gitea):
+        if not may_leave(position, here, choice, prompts, gitea):
             continue
         reached = run(root, flow_map, position, choice, prompts, gitea, git)
         if reached:

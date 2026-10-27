@@ -74,8 +74,8 @@ def test_a_fork_into_another_flow_names_it(flow_map):
     offered = flows.choices(flow_map, state("test"))
 
     assert [(c["step"], c["flow"]) for c in offered] == [
-        ("pick", "ticket"), ("gate", "release"), ("board", "session")]
-    assert offered[0]["does"] == flow_map["steps"]["pick"]["does"]
+        ("finish", "ticket"), ("defect", "ticket"), ("gate", "release"), ("board", "session")]
+    assert offered[1]["does"] == flow_map["steps"]["defect"]["does"]
 
 
 @pytest.mark.unit
@@ -96,7 +96,7 @@ def test_the_rail_marks_the_usual_path_done_current_and_to_come(flow_map):
     rail = flows.rail(flow_map, state("review"))
 
     assert [step for step, _ in rail] == ["pick", "build", "check", "commit", "review", "fix", "pr",
-                                          "merge", "test"]
+                                          "merge", "test", "finish"]
     assert dict(rail)["commit"] == "done"
     assert dict(rail)["review"] == "current"
     assert dict(rail)["fix"] == "next"
@@ -117,7 +117,7 @@ def test_a_fork_with_a_check_is_offered_only_when_it_holds(flow_map):
     offered = flows.choices(flow_map, state("test"), holds=lambda check: held.append(check) or False)
 
     assert held == ["milestone_tested"]
-    assert [(c["step"], c["kind"]) for c in offered] == [("pick", "next"), ("board", "fork")]
+    assert [(c["step"], c["kind"]) for c in offered] == [("finish", "next"), ("defect", "next"), ("board", "fork")]
 
 
 @pytest.mark.unit
