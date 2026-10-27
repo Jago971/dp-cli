@@ -439,6 +439,19 @@ def test_a_defect_reopens_the_ticket_to_backlog_with_a_progress_comment(tmp_path
 
 
 @pytest.mark.unit
+def test_finish_prints_the_column_the_ticket_is_in(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.lands_in = "Done"  # something moved the card on, as board-sync did
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+    script = Script("finish", "laptop", "stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert "[ticket #4] DONE · closed, in Done" in script.said
+
+
+@pytest.mark.unit
 def test_an_untested_change_is_not_finished(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
     gitea.add_issue(4)

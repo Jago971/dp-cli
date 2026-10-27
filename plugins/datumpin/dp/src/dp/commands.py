@@ -162,9 +162,12 @@ def pr(call, repo, head, base, title, body, labels):
 
 
 def finish(call, repo, number):
-    """Close ticket N and put it in DoD."""
+    """Close ticket N, put it in DoD, and return the column it is in."""
     call("PATCH", f"repos/{repo}/issues/{number}", {"state": "closed"})
     move(call, repo, number, "DoD")
+    board_id, columns = find_board(call, repo)
+    held = column_issues(call, repo, board_id, columns)
+    return next((title for title, issues in held.items() if any(i["number"] == number for i in issues)), None)
 
 
 def reopen(call, repo, number, text):

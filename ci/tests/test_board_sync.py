@@ -103,3 +103,22 @@ def test_issue_opened_already_on_the_board_keeps_its_column(gitea, monkeypatch, 
 
     assert gitea.column_of(7) == "Backlog"
     assert gitea.writes == []
+
+
+@pytest.mark.unit
+def test_issue_closed_waits_in_dod_for_the_gate(gitea, monkeypatch, tmp_path):
+    gitea.put("Testing", 7)
+
+    run_event(monkeypatch, tmp_path, {"action": "closed", "issue": {"number": 7}})
+
+    assert gitea.column_of(7) == "DoD"
+
+
+@pytest.mark.unit
+def test_issue_closed_already_in_dod_keeps_its_column(gitea, monkeypatch, tmp_path):
+    gitea.put("DoD", 7)
+
+    run_event(monkeypatch, tmp_path, {"action": "closed", "issue": {"number": 7}})
+
+    assert gitea.column_of(7) == "DoD"
+    assert gitea.writes == []

@@ -14,10 +14,11 @@ PAGE = 50
 
 
 class FakeGitea:
-    def __init__(self, page_size=PAGE, ignores_page=False, max_calls=500):
+    def __init__(self, page_size=PAGE, ignores_page=False, max_calls=500, lands_in=None):
         self.page_size = page_size
         self.ignores_page = ignores_page
         self.max_calls = max_calls
+        self.lands_in = lands_in  # a move settles here, as a card board-sync moved on
         self.calls = 0
         self.board_id = 1
         self.column_ids = {title: 100 + i for i, title in enumerate(COLUMNS)}
@@ -116,7 +117,7 @@ class FakeGitea:
             for nums in self.cards.values():
                 if number in nums:
                     nums.remove(number)
-            title = next(t for t, cid in self.column_ids.items() if cid == body["column_id"])
+            title = self.lands_in or next(t for t, cid in self.column_ids.items() if cid == body["column_id"])
             self.cards[title].append(number)
             return None
         raise AssertionError(f"unexpected call: {method} {path}")
