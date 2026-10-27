@@ -4,6 +4,11 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-27 - Re-pick and resume (plugin 0.8.18)
+
+- When the board places a ticket at a step that has not run, `dp guide` offers that step first, such as `build` (#168).
+- A pick over an existing branch asks: switch to it, delete it (only if merged into prep) and start new, or name a new branch (#168).
+
 ### [CHANGED] 2026-10-27 - Guide recognises a merged PR (plugin 0.8.17)
 
 - At `merge`, `dp guide` finds the ticket's newest PR by `Refs #N` in its body, then falls back to the branch name. A merged PR skips `Done?` even when Gitea reads its head as `refs/pull/N/head` (#189).

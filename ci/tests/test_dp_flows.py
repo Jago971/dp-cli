@@ -70,6 +70,15 @@ def test_choices_are_the_next_and_optional_steps_the_flow_lists(flow_map):
 
 
 @pytest.mark.unit
+def test_a_step_that_has_not_run_is_offered_first(flow_map):
+    offered = flows.choices(flow_map, state("build"), pending=True)
+
+    assert steps_of(offered) == ["build", "check"]
+    assert offered[0]["does"] == flow_map["steps"]["build"]["does"]
+    assert offered[0]["kind"] == "next"
+
+
+@pytest.mark.unit
 def test_a_fork_into_another_flow_names_it(flow_map):
     offered = flows.choices(flow_map, state("test"))
 
