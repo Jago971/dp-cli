@@ -69,8 +69,75 @@ def test_pick_moves_the_ticket_and_branches_from_prep(tmp_path, gitea):
 
     assert gitea.column_of(4) == "In Progress"
     assert not [w for w in gitea.writes if w[0] == "milestone"]
-    assert git.calls == [("switch", "--create=fix/4-fix-the-thing", "prep")]
+    assert [c for c in git.calls if c[0] == "switch"] == [("switch", "--create=fix/4-fix-the-thing", "prep")]
     assert (saved(tmp_path)["step"], saved(tmp_path)["ticket"]) == ("pick", 4)
+
+
+class OldBranch(Git):
+    """A repo where `fix/4-old` exists, merged into prep or not."""
+
+    def __init__(self, merged):
+        super().__init__()
+        self.merged, self.gone = merged, False
+
+    def __call__(self, *args):
+        super().__call__(*args)
+        if args[:2] == ("branch", "-d"):
+            self.gone = True
+        if args[:2] == ("branch", "--list"):
+            return "  fix/4-old\n" if args[2] == "fix/4-old" and not self.gone else ""
+        if args[:2] == ("branch", "--merged"):
+            return "  fix/4-old\n" if self.merged and not self.gone else ""
+        return " a.py | 2 +-" if args[0] == "diff" else ""
+
+
+def backlog_four(gitea):
+    gitea.add_issue(4, title="Old", labels=["TYPE/BUG"])
+    gitea.put("Backlog", 4)
+
+
+@pytest.mark.unit
+def test_a_pick_over_an_old_branch_can_switch_to_it(tmp_path, gitea):
+    backlog_four(gitea)
+    git = OldBranch(merged=False)
+
+    walk(tmp_path, Script("ticket", "#4", "fix/4-old", "Switch", "stop"), gitea, git)
+
+    assert ("switch", "fix/4-old") in git.calls
+    assert not [c for c in git.calls if c[0] == "switch" and c[1].startswith("--create")]
+    assert gitea.column_of(4) == "In Progress"
+
+
+@pytest.mark.unit
+def test_a_pick_over_a_merged_branch_can_delete_it_and_start_new(tmp_path, gitea):
+    backlog_four(gitea)
+    git = OldBranch(merged=True)
+
+    walk(tmp_path, Script("ticket", "#4", "fix/4-old", "Delete", "stop"), gitea, git)
+
+    assert ("branch", "-d", "fix/4-old") in git.calls
+    assert ("switch", "--create=fix/4-old", "prep") in git.calls
+
+
+@pytest.mark.unit
+def test_an_unmerged_branch_is_not_offered_for_deletion(tmp_path, gitea):
+    backlog_four(gitea)
+    script = Script("ticket", "#4", "fix/4-old", "Switch", "stop")
+
+    walk(tmp_path, script, gitea, OldBranch(merged=False))
+
+    assert not [label for label in script.menus[1][0] if label.startswith("Delete")]
+
+
+@pytest.mark.unit
+def test_a_pick_over_an_old_branch_can_name_a_new_one(tmp_path, gitea):
+    backlog_four(gitea)
+    git = OldBranch(merged=False)
+
+    walk(tmp_path, Script("ticket", "#4", "fix/4-old", "Name", "fix/4-again", "stop"), gitea, git)
+
+    assert ("switch", "--create=fix/4-again", "prep") in git.calls
+    assert ("branch", "-d", "fix/4-old") not in git.calls
 
 
 @pytest.mark.unit
@@ -266,6 +333,20 @@ def test_the_board_corrects_the_state_with_a_log_line(tmp_path, gitea):
 
     assert "[ticket #4] position · pick → build · from the board" in script.said
     assert saved(tmp_path)["step"] == "build"
+
+
+@pytest.mark.unit
+def test_a_ticket_placed_at_build_by_the_board_is_offered_build_first(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "pick", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("In Progress", 4)
+    script = Script("build", "stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert script.menus[0][0][0].startswith("build  ")
+    assert script.menus[1][0][0].startswith("check  ")
+    assert (tmp_path / ".factory" / "jobs" / "4" / "build.md").is_file()
 
 
 @pytest.mark.unit

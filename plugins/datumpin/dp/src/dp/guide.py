@@ -139,7 +139,9 @@ def column_of(gitea, ticket):
 
 
 def locate(flow_map, state, gitea, prompts):
-    """The position: the state file, corrected from the ticket's board column when Gitea answers."""
+    """(position, pending): the state file, corrected from the ticket's board column when Gitea answers.
+
+    `pending` when the board placed the ticket at a step that has not run, so the menu offers it."""
     column = None
     if state and state["flow"] == "ticket" and state["ticket"]:
         try:
@@ -152,7 +154,7 @@ def locate(flow_map, state, gitea, prompts):
     if corrected:
         prompts.note(f"{ref('ticket', state['ticket'])} position · {state['step']} → {position['step']} "
                      "· from the board")
-    return position
+    return position, corrected
 
 
 def unscoped(gitea, ticket):
@@ -199,10 +201,10 @@ def show(root, gitea):
     """The position, its environment, any corrections and the choices, as `dp guide --json` prints them."""
     flow_map, notes = flows.load(), Notes()
     state = read_state(root)
-    position = locate(flow_map, state, gitea, notes)
+    position, pending = locate(flow_map, state, gitea, notes)
     return {"position": position, "env": position and flow_map["steps"][position["step"]]["env"],
             "paused": state and state["paused"], "notes": notes.lines,
-            "choices": flows.choices(flow_map, position, checks(gitea, position, notes))}
+            "choices": flows.choices(flow_map, position, checks(gitea, position, notes), pending)}
 
 
 def header(position, env):
@@ -249,12 +251,37 @@ def branch_name(ticket):
     return f"{kind}/{ticket['number']}-{'-'.join(words)}"
 
 
-def take(gitea, git, ticket, branch):
+def has_branch(git, branch, merged=False):
+    """True when git lists the branch; with `merged`, only when prep contains it."""
+    return bool(git("branch", *(("--merged", BASE) if merged else ()), "--list", branch).strip())
+
+
+def settle_branch(prompts, git, branch):
+    """(branch, create): the name to work on once an existing branch of that name is dealt with.
+
+    Output: `create` False when the person switches to the old branch."""
+    while has_branch(git, branch):
+        options = [("Switch    to the existing branch", "switch")]
+        if has_branch(git, branch, merged=True):
+            options.append(("Delete    it, merged into prep, and start a new one", "delete"))
+        options.append(("Name      a new branch", "name"))
+        answer = prompts.choose(f"Branch {branch} exists", options)
+        if answer == "switch":
+            return branch, False
+        if answer == "delete":
+            git("branch", "-d", branch)
+        else:
+            branch = prompts.text("Branch", branch)
+    return branch, True
+
+
+def take(gitea, git, ticket, branch, create=True):
     """Move the ticket to In Progress (assigning the person), into the open milestone due first when it has
     none, and branch from prep; what happened, as `dp pick --json` prints it."""
     moved = commands.move(gitea.call, gitea.repo, ticket["number"], "In Progress", assignee=gitea.human())
     joined = None if ticket["milestone"] else commands.join_earliest_milestone(gitea.call, gitea.repo, ticket["number"])
-    git("switch", f"--create={branch}", BASE)  # one argument, so a leading-dash branch is not an option
+    # one argument, so a leading-dash branch is not an option
+    git("switch", f"--create={branch}", BASE) if create else git("switch", branch)
     return {**moved, "milestone": joined or ticket["milestone"], "joined": bool(joined), "branch": branch}
 
 
@@ -280,9 +307,9 @@ def pick(prompts, gitea, git):
                             + [(BACK, None)])
     if chosen is None:
         return None
-    branch = prompts.text("Branch", branch_name(chosen))
+    branch, create = settle_branch(prompts, git, prompts.text("Branch", branch_name(chosen)))
     with prompts.busy(f"Moving #{chosen['number']}"):
-        taken = take(gitea, git, chosen, branch)
+        taken = take(gitea, git, chosen, branch, create)
     for line in taken_lines(taken):
         prompts.say(line)
     prompts.say(NEXT_STEP)
@@ -487,7 +514,7 @@ def walk(root, prompts, gitea, git):
     root, flow_map = Path(root), flows.load()
     state = read_state(root)
     paused = state and state["paused"]
-    position = locate(flow_map, state, gitea, prompts)
+    position, pending = locate(flow_map, state, gitea, prompts)
     while True:
         # A review's dispositions come before the menu, so they can preselect fix or pr.
         preselect = position and position["step"] == "review" \
@@ -495,7 +522,7 @@ def walk(root, prompts, gitea, git):
         here = position and flow_map["steps"][position["step"]]
         prompts.header(position, here and here["env"], position and flows.rail(flow_map, position),
                        here and here["does"])
-        options = menu(flows.choices(flow_map, position, checks(gitea, position, prompts)), position)
+        options = menu(flows.choices(flow_map, position, checks(gitea, position, prompts), pending), position)
         default = next((v for _, v in options if isinstance(v, dict) and v["step"] == preselect), None)
         choice = prompts.choose("Next?", options, default)
         if choice is None:
@@ -503,14 +530,14 @@ def walk(root, prompts, gitea, git):
         if choice == "flows":
             choice = choose_flow(flow_map, paused, prompts)
             if choice == "resume":
-                position, paused = locate(flow_map, paused, gitea, prompts), None
+                (position, pending), paused = locate(flow_map, paused, gitea, prompts), None
             if not isinstance(choice, dict):
                 continue
         if not may_leave(position, here, choice, prompts, gitea):
             continue
         reached = run(root, flow_map, position, choice, prompts, gitea, git)
         if reached:
-            position, paused = reached, still_paused(position, reached, paused)
+            position, paused, pending = reached, still_paused(position, reached, paused), False
             write_state(root, position, paused)
     if position:
         write_state(root, position, paused)
