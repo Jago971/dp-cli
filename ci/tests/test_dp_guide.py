@@ -115,6 +115,76 @@ def test_a_human_step_says_what_to_do_next(tmp_path, gitea):
     assert guide.NEXT_STEP in script.said
 
 
+class OnBranch(Git):
+    def __call__(self, *args):
+        super().__call__(*args)
+        return "feat/4-a-change\n" if args[:2] == ("branch", "--show-current") else ""
+
+
+def at_merge(tmp_path, gitea, merged=None):
+    """Ticket 4 at `merge`; its branch has a PR, merged or open, unless `merged` is None."""
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "pr", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Review", 4)
+    if merged is not None:
+        gitea.pulls.append({"number": 9, "head": {"ref": "feat/4-a-change"}, "merged": merged})
+
+
+@pytest.mark.unit
+def test_a_merged_pr_skips_the_done_question_at_merge(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=True)
+
+    walk(tmp_path, Script("merge", "stop"), gitea, OnBranch())  # no confirm answer: merge must not ask
+
+    assert saved(tmp_path)["step"] == "merge"
+
+
+@pytest.mark.unit
+def test_an_open_pr_keeps_the_walk_at_merge_and_says_so(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=False)
+    script = Script("merge", "stop")
+
+    walk(tmp_path, script, gitea, OnBranch())
+
+    assert saved(tmp_path)["step"] == "pr"
+    assert "[ticket #4] PR #9 is not merged · merge it, then run dp guide" in script.said
+
+
+@pytest.mark.unit
+def test_a_closed_unmerged_pr_is_not_told_to_merge(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=False)
+    gitea.pulls[0]["state"] = "closed"
+    script = Script("merge", "stop")
+
+    walk(tmp_path, script, gitea, OnBranch())
+
+    assert saved(tmp_path)["step"] == "pr"
+    assert "[ticket #4] PR #9 is closed, not merged · reopen it or open a new one, then run dp guide" in script.said
+
+
+class FailingGit(Git):
+    def __call__(self, *args):
+        raise GiteaError("git branch: not a git repository")
+
+
+@pytest.mark.unit
+def test_a_failing_git_at_merge_falls_back_to_asking_done(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=True)
+
+    walk(tmp_path, Script("merge", True, "stop"), gitea, FailingGit())
+
+    assert saved(tmp_path)["step"] == "merge"
+
+
+@pytest.mark.unit
+def test_without_a_pr_merge_asks_done_as_before(tmp_path, gitea):
+    at_merge(tmp_path, gitea)
+
+    walk(tmp_path, Script("merge", True, "stop"), gitea, OnBranch())
+
+    assert saved(tmp_path)["step"] == "merge"
+
+
 @pytest.mark.unit
 def test_each_disposition_shows_its_effect(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "review", "ticket": 4})
@@ -259,6 +329,24 @@ def test_a_tag_waits_for_the_release_pr_on_main(tmp_path):
 
 
 @pytest.mark.unit
+def test_sign_off_shows_the_recorded_dispositions_and_asks_only_done(tmp_path):
+    guide.write_state(tmp_path, {"flow": "release", "step": "release-pr", "ticket": None})
+    findings = tmp_path / ".factory" / "jobs" / "release" / "findings.json"
+    findings.parent.mkdir(parents=True)
+    findings.write_text(json.dumps([
+        {"id": "S1", "file": "a.py", "line": 3, "severity": "low", "finding": "Long", "disposition": "Fixed (abc123)"},
+        {"id": "P1", "file": "b.py", "line": 9, "severity": "medium", "finding": "Odd",
+         "disposition": "Dismissed: out of scope"}]))
+    script = Script("sign-off", True, "stop")  # one confirm: Done?, no disposition question
+
+    walk(tmp_path, script, None)
+
+    assert "[release] S1 Fixed (abc123)" in script.said
+    assert "[release] P1 Dismissed: out of scope" in script.said
+    assert saved(tmp_path)["step"] == "sign-off"
+
+
+@pytest.mark.unit
 def test_findings_left_undecided_are_asked_before_the_next_brief(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "fix", "ticket": 4})
     gitea.add_issue(4)
@@ -318,6 +406,19 @@ def test_leaving_test_posts_a_pointer_tested(tmp_path, gitea):
     assert len(posted) == 1
     assert posted[0][2].startswith("Tested by hand, ")
     assert posted[0][2].endswith(". Done: laptop, names end -dev. → #4")
+
+
+@pytest.mark.unit
+def test_entering_test_asks_nothing_and_says_leaving_records_tested(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "merge", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Review", 4)
+    script = Script("test", "stop")  # no confirm answer: entering test must not ask
+
+    walk(tmp_path, script, gitea)
+
+    assert saved(tmp_path)["step"] == "test"
+    assert guide.LEAVING_TEST in script.said
 
 
 @pytest.mark.unit

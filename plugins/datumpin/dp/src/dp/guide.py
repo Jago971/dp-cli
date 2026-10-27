@@ -36,6 +36,7 @@ SLUG_WORDS = 4
 DISPOSITIONS = {"Fix": "goes to the fix step", "Dismiss": "asks a reason, records it",
                 "Escalate": "asks to whom, records it", "Defer": "opens a new Triage ticket"}
 NEXT_STEP = "Next: choose the next step in dp guide"  # the closing line of a step the person finishes
+LEAVING_TEST = 'Test it by hand where it runs; leaving this step asks "Tested OK?" and records it'
 TESTED = "Tested by hand"  # the Event of the Pointer leaving `test` posts; milestone_tested looks for it
 BEFORE_TESTING = ("Triage", "Backlog", "In Progress", "Review")
 SEPARATOR_VALUE = "separator"
@@ -309,6 +310,15 @@ def adjudicate(root, flow, ticket, prompts):
     return "fix" if any(f.get("disposition") in ("Fix", "Defer") for f in findings) else "pr"
 
 
+def recorded(root, flow, ticket, prompts):
+    """Say the dispositions already recorded for the flow's findings, one line each."""
+    path = brief.folder(root, ticket, flow) / brief.FINDINGS
+    if path.is_file():
+        for finding in json.loads(path.read_text(encoding="utf-8")):
+            if finding.get("disposition"):
+                prompts.say(f"{ref(flow, ticket)} {finding['id']} {finding['disposition']}")
+
+
 def leave_test(position, prompts, gitea, env):
     """Leaving `test` records the hand test as a Pointer on the ticket; False to stay at `test`."""
     ticket = position["ticket"]
@@ -349,6 +359,34 @@ def job(flow_map, flow, step, ticket, gitea, git, prompts):
                      column=column, diffstat=diffstat, skills=brief.skill_text(defined))
 
 
+def merge_state(gitea, git):
+    """The current branch's PR as (number, "merged" | "open" | "closed"), or None when it has none or git or Gitea cannot say."""
+    try:
+        branch = git("branch", "--show-current").strip()
+        pulls = commands.paged(gitea.call, f"repos/{gitea.repo}/pulls?state=all")
+    except GiteaError:  # `git` raises GiteaError too, so a failing git falls back to asking
+        return None
+    pull = next((p for p in pulls if p["head"]["ref"] == branch), None)
+    if not pull:
+        return None
+    state = "merged" if pull["merged"] else pull.get("state", "open")
+    return pull["number"], state
+
+
+def confirm_done(step, does, ticket, prompts, gitea, git):
+    """True when a person's step is done: `merge` reads the PR's state, any other step asks."""
+    pull = merge_state(gitea, git) if step == "merge" else None
+    if pull and pull[1] == "merged":
+        return True
+    if pull and pull[1] == "closed":
+        prompts.note(f"{ref('ticket', ticket)} PR #{pull[0]} is closed, not merged · reopen it or open a new one, then run dp guide")
+        return False
+    if pull:
+        prompts.note(f"{ref('ticket', ticket)} PR #{pull[0]} is not merged · merge it, then run dp guide")
+        return False
+    return prompts.confirm(f"{does}. Done?")
+
+
 def run(root, flow_map, position, choice, prompts, gitea, git):
     """Run the chosen step; the position it reached, or None when it did not happen."""
     flow, step = choice["flow"], choice["step"]
@@ -360,7 +398,11 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
             return None
     elif skill == "human":
         does = flow_map["steps"][step]["does"]
-        if not prompts.confirm(f"{does}. Done?"):
+        if step == "test":
+            prompts.say(LEAVING_TEST)  # leaving `test` asks "Tested OK?", so entering it does not ask "Done?"
+        elif step == "sign-off":
+            recorded(root, flow, ticket, prompts)  # what the person signs; nothing is asked again
+        if step != "test" and not confirm_done(step, does, ticket, prompts, gitea, git):
             return None
         prompts.say(NEXT_STEP)
     elif brief.user_invoked(skill):

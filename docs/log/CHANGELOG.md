@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-27 - dp guide reads state instead of asking (plugin 0.8.12)
+
+- Entering `test` no longer asks "Done?". The step says that leaving it records `Tested OK?` (#145).
+- `dp guide` reads the PR's merge state and skips "Have you merged it?" when the PR is merged. An open PR keeps the walk at `merge`; with no PR found, it asks as before.
+- At `sign-off` the guide prints the dispositions already recorded, and does not ask for them again.
+
 ### [CHANGED] 2026-10-26 - Decision log: a ticket is done when it is tested
 
 - `docs/plan/DECISIONS.md` is the decision log. Its first entry: a ticket closes when it leaves `test` with `Tested OK?` yes, and reopens to Backlog on a defect, so the milestone bar counts tested work (#118).
