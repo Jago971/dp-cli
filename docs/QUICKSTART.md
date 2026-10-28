@@ -49,7 +49,7 @@ A DEVKIT release is a promotion: merge PRs into `prep`, then an Owner merges a `
 
 ```mermaid
 flowchart LR
-  T[Triage] --> B[Backlog] --> I["In Progress: branch, tested locally"] --> V["Review: PR to prep, CI"] --> S["Testing: prep on Hammond"] --> D[DoD] --> N["Done: released on main"]
+  T[Triage] --> B[Backlog] --> I["In Progress: branch, tested locally"] --> V["Review: PR to prep, CI"] --> S["Testing: prep on Hammond"] --> D["DoD: waits for the milestone sign-off"] --> N["Done: released on main"]
 ```
 
 - **Pick up work:** `/datumpin:board`, then work a ticket on `<type>/<issue>-<slug>`; or `/datumpin:guide` to be led through the ticket flow one step at a time (the map is `plugins/datumpin/flows.yaml`).
