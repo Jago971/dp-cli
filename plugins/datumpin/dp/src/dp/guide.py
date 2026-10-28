@@ -48,6 +48,8 @@ BACK = f"{'back':<11} returns to the guide"
 FLOWS = (f"{'flows…':<11} Start or switch to any flow", "flows")
 PAUSE = (f"{'pause':<11} Saves this ticket's step, returns to the home menu", "pause")
 RESUME = (f"{'resume…':<11} Continue a paused ticket", "resume")
+HOME_FLOWS = ("ticket", "session")  # reached by `tickets` and `end`, so `flows…` leaves them out
+NEW_CHAT = "Start the new chat: run claude, then paste the Next prompt from the handoff."
 END = {"name": "end", "step": "retro", "flow": "session", "kind": "flow",
        "does": "Review the session, then write the handoff"}
 
@@ -495,7 +497,7 @@ def run(root, flow_map, position, choice, prompts, gitea, git, pull=None):
         prompts.say(NEXT_STEP)
     elif brief.user_invoked(skill):
         prompts.say(f"Type /datumpin:{skill} in the session you worked in.")
-        prompts.say("Next: type it there, then run dp guide")
+        prompts.say(NEW_CHAT if step == "handoff" else "Next: type it there, then run dp guide")
     else:
         # A tag follows the release PR on main, whatever the state file says (guide skill).
         if step == "tag" and not prompts.confirm("Is the release PR merged on main?"):
@@ -513,7 +515,8 @@ def run(root, flow_map, position, choice, prompts, gitea, git, pull=None):
 
 
 def choose_flow(flow_map, prompts):
-    return prompts.choose("Flow?", [(label(c, None), c) for c in flows.flow_starts(flow_map)] + [(BACK, None)])
+    started = [c for c in flows.flow_starts(flow_map) if c["flow"] not in HOME_FLOWS]  # ticket and session have entries
+    return prompts.choose("Flow?", [(label(c, None), c) for c in started] + [(BACK, None)])
 
 
 def choose_paused(paused, prompts):

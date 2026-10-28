@@ -26,7 +26,7 @@ updated: 2026-10-21T16:40:00
 
 ## Steps
 
-1. **Position.** Run `dp guide --json` (`gitea`, Calling dp). It reads the map, the state file and, in the ticket flow, the ticket's board column, which places the ticket over the state file (the map's `columns`). It returns the `position` (null with no state, one the map does not know, or a finished flow) and its `env`, the `paused` ticket flows, `notes` (a log line for each correction, or for Gitea unreachable) and the `choices`, each `next`, `fork` (only the forks whose check holds) or `flow`. Print the notes. At `review`, ask each finding's disposition (`change-review`) before offering, and offer `fix` first when one is to fix.
+1. **Position.** Run `dp guide --json` (`gitea`, Calling dp). It reads the map, the state file and, in the ticket flow, the ticket's board column, which places the ticket over the state file (the map's `columns`). It returns the `position` (null with no state, one the map does not know, or a finished flow; a null position is the home menu) and its `env`, the `paused` ticket flows, `notes` (a log line for each correction, or for Gitea unreachable) and the `choices`, each `next`, `fork` (only the forks whose check holds) or `flow`. Print the notes. At `review`, ask each finding's disposition (`change-review`) before offering, and offer `fix` first when one is to fix.
 2. **Offer.** Print the Guide prompt (`formats`) from the position and the choices. With no position the menu is home: `tickets`, `resume…` (each paused ticket with its step), `end` (retro, then handoff), `flows…`, `stop`. A ticket's menu ends with `pause`, which saves its step and returns home.
 3. **Run.** On a choice, run the step:
    - `pick`: `dp pick N --json` (`gitea`), not the board flow.

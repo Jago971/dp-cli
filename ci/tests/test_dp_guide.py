@@ -598,7 +598,6 @@ def test_a_ticket_with_a_pointer_is_not_asked_tested_ok_again(tmp_path, gitea):
     gitea.add_issue(4, comments=[pointer_tested(4)])
     gitea.put("Testing", 4)
 
-    walk(tmp_path, Script("board", "stop"), gitea)  # no confirm answer: asking would fail
 
     assert [w for w in gitea.writes if w[0] == "comment"] == []
 
@@ -615,15 +614,16 @@ def test_a_defect_after_the_pointer_asks_tested_ok_again(tmp_path, gitea):
 
 
 @pytest.mark.unit
-def test_back_at_the_picker_after_a_posted_pointer_does_not_ask_again(tmp_path, gitea):
+def test_leaving_test_posts_one_pointer(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
     gitea.add_issue(4)
     gitea.add_issue(6)
     gitea.put("Testing", 4)
     gitea.put("Backlog", 6)
 
-    walk(tmp_path, Script("flows…", "ticket", True, "laptop", "back", "stop"), gitea)
-    walk(tmp_path, Script("board", "stop"), gitea)  # no confirm answer: asking would fail
+    script = Script("board", True, "laptop", "stop")
+    script.job = lambda *args: None
+    walk(tmp_path, script, gitea)
 
     assert len([w for w in gitea.writes if w[0] == "comment"]) == 1
 
@@ -824,6 +824,25 @@ def test_end_session_runs_retro_then_handoff(tmp_path):
 
     assert (saved(tmp_path)["flow"], saved(tmp_path)["step"]) == ("session", "retro")
     assert script.menus[1][0][0].startswith("handoff")
+
+
+@pytest.mark.unit
+def test_handoff_prints_how_to_start_the_new_chat(tmp_path):
+    guide.write_state(tmp_path, {"flow": "session", "step": "retro", "ticket": None})
+    script = Script("handoff", "stop")
+
+    walk(tmp_path, script, None)
+
+    assert guide.NEW_CHAT in script.said
+
+
+@pytest.mark.unit
+def test_flows_menu_leaves_out_ticket_and_session(tmp_path):
+    script = Script("flows…", "back", "stop")
+
+    walk(tmp_path, script, None)
+
+    assert [label.split()[0] for label in script.menus[1][0]] == ["release", "align", "deploy", "back"]
 
 
 class Promotion(Git):
