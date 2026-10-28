@@ -4,6 +4,14 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-28 - dp prints its version (plugin 0.8.21)
+
+- `dp version` and `dp --version` print the installed dp version, such as `dp 0.8.21` (#193).
+
+### [CHANGED] 2026-10-28 - Guide shows the PR number and link at merge (plugin 0.8.20)
+
+- Entering `merge`, `dp guide` prints `PR #N` and its link, and the menu reads "You merge PR #N into prep" when a PR is found (#192).
+
 ### [CHANGED] 2026-10-28 - Steps end on numbered choices (plugin 0.8.19)
 
 - `formats` defines a Step ending block, and every job brief carries the rule: one input as numbered choices, a recommended one, and a line saying stay or `/exit` (#157).

@@ -171,3 +171,23 @@ def test_a_write_ends_with_one_tick_line(gitea):
     result = run("move", "4", "Review")
 
     assert result.output.strip() == "✔ #4 Backlog → Review"
+
+
+@pytest.mark.unit
+def test_version_command_prints_the_installed_version(monkeypatch):
+    monkeypatch.setattr("importlib.metadata.version", lambda name: "0.8.17" if name == "datumpin-dp" else "?")
+
+    result = run("version")
+
+    assert result.exit_code == 0
+    assert result.output.strip() == "dp 0.8.17"
+
+
+@pytest.mark.unit
+def test_version_flag_prints_the_same_as_the_command(monkeypatch):
+    monkeypatch.setattr("importlib.metadata.version", lambda name: "0.8.17" if name == "datumpin-dp" else "?")
+
+    result = run("--version")
+
+    assert result.exit_code == 0
+    assert result.output.strip() == "dp 0.8.17"
