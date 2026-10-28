@@ -83,6 +83,18 @@ Your steps    1. Merge DEVKIT#99
 - `Next prompt` is one line the user pastes as is; it names the document and the next flow step.
 - `Your steps` lists only what the human must do first, numbered; `none` when empty.
 
+## Step ending
+
+```
+Result    <one line: done, or what is open>
+You       1. <the action>   (recommended)
+          2. <the alternative>
+Session   stay to answer · /exit when done, then dp guide offers <step>
+```
+
+- Every agent step ends with this block, never an open question: one required input, as numbered choices, the recommended one first, `Other` for anything else.
+- Each choice says its effect. `Session` says whether to stay or `/exit`, and what `dp guide` then offers.
+
 ## Guide prompt
 
 ```

@@ -123,3 +123,16 @@ def test_a_brief_section_is_found_in_a_skills_sibling_file():
     text = brief.skill_text({"skill": "agent", "brief": ["docker-compose-conventions#Cron services"]})
 
     assert text.startswith("# Cron services")
+
+
+@pytest.mark.unit
+def test_every_brief_carries_the_step_ending_rule(tmp_path):
+    text = brief.write(tmp_path, job()).read_text(encoding="utf-8")
+    assert "Step ending" in text
+    assert "numbered" in text and "recommended" in text and "/exit" in text
+
+
+@pytest.mark.unit
+def test_formats_defines_the_step_ending_block_beside_the_handover_block():
+    text = brief.data("skills", "formats", "terminal.md").read_text(encoding="utf-8")
+    assert text.index("## Handover") < text.index("## Step ending") < text.index("## Guide prompt")
