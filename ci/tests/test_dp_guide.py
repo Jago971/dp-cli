@@ -277,6 +277,40 @@ def test_an_open_pr_keeps_the_walk_at_merge_and_says_so(tmp_path, gitea):
 
 
 @pytest.mark.unit
+def test_entering_merge_prints_the_prs_number_and_link(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=False)
+    gitea.pulls[0]["html_url"] = "https://gitea.test/Org/Repo/pulls/9"
+    script = Script("merge", "stop")
+
+    walk(tmp_path, script, gitea, OnBranch())
+
+    assert "PR #9 https://gitea.test/Org/Repo/pulls/9" in script.said
+
+
+@pytest.mark.unit
+def test_the_merge_choice_names_the_pr_it_found(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=False)
+    script = Script("merge", "stop")
+
+    walk(tmp_path, script, gitea, OnBranch())
+
+    merge = next(label for label in script.menus[0][0] if label.startswith("merge"))
+    assert merge.endswith("You merge PR #9 into prep once CI is green")
+
+
+@pytest.mark.unit
+def test_without_a_pr_the_merge_choice_and_output_stay_as_they_were(tmp_path, gitea):
+    at_merge(tmp_path, gitea)
+    script = Script("merge", True, "stop")
+
+    walk(tmp_path, script, gitea, OnBranch())
+
+    merge = next(label for label in script.menus[0][0] if label.startswith("merge"))
+    assert merge.endswith("You merge the PR into prep once CI is green")
+    assert not [line for line in script.said if line.startswith("PR #")]
+
+
+@pytest.mark.unit
 def test_a_closed_unmerged_pr_is_not_told_to_merge(tmp_path, gitea):
     at_merge(tmp_path, gitea, merged=False)
     gitea.pulls[0]["state"] = "closed"

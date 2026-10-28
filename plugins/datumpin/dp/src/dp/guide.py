@@ -215,18 +215,21 @@ def header(position, env):
     return f"Guide · {position['flow']} flow{ticket} · {position['step']} ({env})"
 
 
-def label(choice, position):
-    """A choice line (formats, Guide prompt): the name, its line, and a flow it switches to."""
+def label(choice, position, pull=None):
+    """A choice line (formats, Guide prompt): the name, its line, and a flow it switches to.
+
+    `merge` names the ticket's PR when `pull` found one."""
     switches = position and choice["flow"] != position["flow"]
-    return f"{choice['name']:<11} {choice['does']}" + (f" → {choice['flow']} flow" if switches else "")
+    does = choice["does"].replace("the PR", f"PR #{pull[0]}") if pull and choice["name"] == "merge" else choice["does"]
+    return f"{choice['name']:<11} {does}" + (f" → {choice['flow']} flow" if switches else "")
 
 
-def menu(offered, position):
+def menu(offered, position, pull=None):
     """The options: this flow's steps; inside a flow, a separator, the forks and `flows…`; then stop.
 
     At the end of a flow the choices are the flows already, so there is no `flows…`.
     """
-    options = [(label(c, position), c) for c in offered if c["kind"] != "fork"]
+    options = [(label(c, position, pull), c) for c in offered if c["kind"] != "fork"]
     if position and offered[0]["kind"] != "flow":
         options += [SEPARATOR, *((label(c, position), c) for c in offered if c["kind"] == "fork"), FLOWS]
     return options + [(STOP, None)]
@@ -402,7 +405,7 @@ def job(flow_map, flow, step, ticket, gitea, git, prompts):
 
 
 def merge_state(gitea, git, ticket):
-    """The ticket's PR as (number, "merged" | "open" | "closed"), or None when it has none or Gitea cannot say.
+    """The ticket's PR as (number, "merged" | "open" | "closed", url), or None when it has none or Gitea cannot say.
 
     The newest PR whose body has `Refs #N`; else the current branch's PR. Gitea reads a merged PR's head as
     `refs/pull/N/head`, so the head name alone cannot find it."""
@@ -421,7 +424,7 @@ def merge_state(gitea, git, ticket):
     if not pull:
         return None
     state = "merged" if pull["merged"] else pull.get("state", "open")
-    return pull["number"], state
+    return pull["number"], state, pull.get("html_url", "")
 
 
 def confirm_done(step, does, ticket, prompts, gitea, git):
@@ -469,6 +472,8 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
             prompts.say(LEAVING_TEST)  # leaving `test` asks "Tested OK?", so entering it does not ask "Done?"
         elif step == "sign-off":
             recorded(root, flow, ticket, prompts)  # what the person signs; nothing is asked again
+        if step == "merge" and (pull := merge_state(gitea, git, ticket)):
+            prompts.say(f"PR #{pull[0]} {pull[2]}".strip())
         if step != "test" and not confirm_done(step, does, ticket, prompts, gitea, git):
             return None
         prompts.say(NEXT_STEP)
@@ -526,7 +531,10 @@ def walk(root, prompts, gitea, git):
         here = position and flow_map["steps"][position["step"]]
         prompts.header(position, here and here["env"], position and flows.rail(flow_map, position),
                        here and here["does"])
-        options = menu(flows.choices(flow_map, position, checks(gitea, position, prompts), pending), position)
+        offered = flows.choices(flow_map, position, checks(gitea, position, prompts), pending)
+        at_merge = position and position["ticket"] and any(c["step"] == "merge" for c in offered)
+        pull = merge_state(gitea, git, position["ticket"]) if at_merge else None
+        options = menu(offered, position, pull)
         default = next((v for _, v in options if isinstance(v, dict) and v["step"] == preselect), None)
         choice = prompts.choose("Next?", options, default)
         if choice is None:
