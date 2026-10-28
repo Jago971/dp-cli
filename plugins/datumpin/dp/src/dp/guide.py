@@ -427,9 +427,8 @@ def merge_state(gitea, git, ticket):
     return pull["number"], state, pull.get("html_url", "")
 
 
-def confirm_done(step, does, ticket, prompts, gitea, git):
-    """True when a person's step is done: `merge` reads the PR's state, any other step asks."""
-    pull = merge_state(gitea, git, ticket) if step == "merge" else None
+def confirm_done(step, does, ticket, prompts, pull):
+    """True when a person's step is done: `merge` reads the PR's state (`pull`), any other step asks."""
     if pull and pull[1] == "merged":
         return True
     if pull and pull[1] == "closed":
@@ -441,8 +440,10 @@ def confirm_done(step, does, ticket, prompts, gitea, git):
     return prompts.confirm(f"{does}. Done?")
 
 
-def run(root, flow_map, position, choice, prompts, gitea, git):
-    """Run the chosen step; the position it reached, or None when it did not happen."""
+def run(root, flow_map, position, choice, prompts, gitea, git, pull=None):
+    """Run the chosen step; the position it reached, or None when it did not happen.
+
+    `pull` is the ticket's PR as `merge_state` found it, read once for the menu."""
     flow, step = choice["flow"], choice["step"]
     ticket = position["ticket"] if position and flow == "ticket" else None
     skill = flow_map["steps"][step]["skill"]
@@ -472,9 +473,9 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
             prompts.say(LEAVING_TEST)  # leaving `test` asks "Tested OK?", so entering it does not ask "Done?"
         elif step == "sign-off":
             recorded(root, flow, ticket, prompts)  # what the person signs; nothing is asked again
-        if step == "merge" and (pull := merge_state(gitea, git, ticket)):
+        if step == "merge" and pull:
             prompts.say(f"PR #{pull[0]} {pull[2]}".strip())
-        if step != "test" and not confirm_done(step, does, ticket, prompts, gitea, git):
+        if step != "test" and not confirm_done(step, does, ticket, prompts, pull if step == "merge" else None):
             return None
         prompts.say(NEXT_STEP)
     elif brief.user_invoked(skill):
@@ -547,7 +548,7 @@ def walk(root, prompts, gitea, git):
                 continue
         if not may_leave(position, here, choice, prompts, gitea):
             continue
-        reached = run(root, flow_map, position, choice, prompts, gitea, git)
+        reached = run(root, flow_map, position, choice, prompts, gitea, git, pull)
         if reached:
             position, paused, pending = reached, still_paused(position, reached, paused), False
             write_state(root, position, paused)

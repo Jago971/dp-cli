@@ -1,5 +1,6 @@
 """Unit tier: dp guide's walk (dp.guide), with Gitea in memory and the prompts scripted."""
 import json
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
@@ -308,6 +309,12 @@ def test_without_a_pr_the_merge_choice_and_output_stay_as_they_were(tmp_path, gi
     merge = next(label for label in script.menus[0][0] if label.startswith("merge"))
     assert merge.endswith("You merge the PR into prep once CI is green")
     assert not [line for line in script.said if line.startswith("PR #")]
+
+
+@pytest.mark.unit
+def test_the_merge_step_line_keeps_the_words_the_label_swaps_for_the_pr_number():
+    flows_yaml = Path(guide.__file__).parents[3] / "flows.yaml"
+    assert "You merge the PR into prep once CI is green" in flows_yaml.read_text(encoding="utf-8")
 
 
 @pytest.mark.unit
