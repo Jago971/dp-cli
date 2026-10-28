@@ -11,6 +11,9 @@ from dp.gitea import GiteaError
 from fake_gitea import FakeGitea
 
 
+HOME = ["tickets", "end", "flows…", "stop"]  # the menu with no ticket current
+
+
 class Script(guide.Plain):
     """The person at the terminal: answers in order, and what the guide said."""
 
@@ -66,7 +69,7 @@ def test_pick_moves_the_ticket_and_branches_from_prep(tmp_path, gitea):
     gitea.put("Backlog", 4)
     git = Git()
 
-    walk(tmp_path, Script("ticket", "#4", None, "stop"), gitea, git)
+    walk(tmp_path, Script("tickets", "#4", None, "stop"), gitea, git)
 
     assert gitea.column_of(4) == "In Progress"
     assert not [w for w in gitea.writes if w[0] == "milestone"]
@@ -102,7 +105,7 @@ def test_a_pick_over_an_old_branch_can_switch_to_it(tmp_path, gitea):
     backlog_four(gitea)
     git = OldBranch(merged=False)
 
-    walk(tmp_path, Script("ticket", "#4", "fix/4-old", "Switch", "stop"), gitea, git)
+    walk(tmp_path, Script("tickets", "#4", "fix/4-old", "Switch", "stop"), gitea, git)
 
     assert ("switch", "fix/4-old") in git.calls
     assert not [c for c in git.calls if c[0] == "switch" and c[1].startswith("--create")]
@@ -114,7 +117,7 @@ def test_a_pick_over_a_merged_branch_can_delete_it_and_start_new(tmp_path, gitea
     backlog_four(gitea)
     git = OldBranch(merged=True)
 
-    walk(tmp_path, Script("ticket", "#4", "fix/4-old", "Delete", "stop"), gitea, git)
+    walk(tmp_path, Script("tickets", "#4", "fix/4-old", "Delete", "stop"), gitea, git)
 
     assert ("branch", "-d", "fix/4-old") in git.calls
     assert ("switch", "--create=fix/4-old", "prep") in git.calls
@@ -123,7 +126,7 @@ def test_a_pick_over_a_merged_branch_can_delete_it_and_start_new(tmp_path, gitea
 @pytest.mark.unit
 def test_an_unmerged_branch_is_not_offered_for_deletion(tmp_path, gitea):
     backlog_four(gitea)
-    script = Script("ticket", "#4", "fix/4-old", "Switch", "stop")
+    script = Script("tickets", "#4", "fix/4-old", "Switch", "stop")
 
     walk(tmp_path, script, gitea, OldBranch(merged=False))
 
@@ -139,7 +142,7 @@ class CheckedOut(OldBranch):
 @pytest.mark.unit
 def test_the_checked_out_branch_is_not_offered_for_deletion(tmp_path, gitea):
     backlog_four(gitea)
-    script = Script("ticket", "#4", "fix/4-old", "Switch", "stop")
+    script = Script("tickets", "#4", "fix/4-old", "Switch", "stop")
 
     walk(tmp_path, script, gitea, CheckedOut(merged=True))
 
@@ -151,7 +154,7 @@ def test_a_pick_over_an_old_branch_can_name_a_new_one(tmp_path, gitea):
     backlog_four(gitea)
     git = OldBranch(merged=False)
 
-    walk(tmp_path, Script("ticket", "#4", "fix/4-old", "Name", "fix/4-again", "stop"), gitea, git)
+    walk(tmp_path, Script("tickets", "#4", "fix/4-old", "Name", "fix/4-again", "stop"), gitea, git)
 
     assert ("switch", "--create=fix/4-again", "prep") in git.calls
     assert ("branch", "-d", "fix/4-old") not in git.calls
@@ -445,11 +448,11 @@ def test_leaving_review_asks_a_disposition_for_each_finding(tmp_path, gitea):
 @pytest.mark.unit
 def test_a_user_invoked_skill_is_typed_in_the_session(tmp_path):
     guide.write_state(tmp_path, {"flow": "session", "step": "board", "ticket": None})
-    script = Script("handoff", "stop")
+    script = Script("retro", "stop")
 
     walk(tmp_path, script, None)
 
-    assert "Type /datumpin:handoff in the session you worked in." in script.said
+    assert "Type /datumpin:retro in the session you worked in." in script.said
     assert not (tmp_path / ".factory" / "jobs").exists()
 
 
@@ -489,7 +492,7 @@ def test_pick_puts_a_ticket_without_a_milestone_in_the_one_due_first(tmp_path, g
                          {"id": 3, "title": "v1", "due_on": "2026-11-01T00:00:00Z"}]
     gitea.add_issue(4, title="A ticket")
     gitea.put("Backlog", 4)
-    script = Script("ticket", "#4", None, "stop")
+    script = Script("tickets", "#4", None, "stop")
 
     walk(tmp_path, script, gitea)
 
@@ -557,7 +560,7 @@ def test_the_menu_puts_this_flow_first_then_the_forks_that_hold(tmp_path, gitea)
     walk(tmp_path, script, gitea)
 
     labels = [label.split()[0] for label in script.menus[0][0]]
-    assert labels == ["finish", "defect", "───────────", "board", "flows…", "stop"]  # no gate: #5 is not tested
+    assert labels == ["finish", "defect", "───────────", "board", "flows…", "pause", "stop"]  # no gate: #5 is not tested
 
 
 @pytest.mark.unit
@@ -626,7 +629,7 @@ def test_back_at_the_picker_after_a_posted_pointer_does_not_ask_again(tmp_path, 
 
 
 @pytest.mark.unit
-def test_finish_posts_the_pointer_closes_the_ticket_and_offers_pick_or_board(tmp_path, gitea):
+def test_finish_posts_the_pointer_closes_the_ticket_and_lands_on_the_home_menu(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
     gitea.add_issue(4)
     gitea.put("Testing", 4)
@@ -638,7 +641,8 @@ def test_finish_posts_the_pointer_closes_the_ticket_and_offers_pick_or_board(tmp
     assert gitea.issues[4]["state"] == "closed"
     assert gitea.column_of(4) == "DoD"
     assert "[ticket #4] DONE · closed, in DoD" in script.said
-    assert [label.split()[0] for label in script.menus[1][0]] == ["pick", "───────────", "board", "flows…", "stop"]
+    assert [label.split()[0] for label in script.menus[1][0]] == HOME
+    assert saved(tmp_path)["ticket"] is None
 
 
 @pytest.mark.unit
@@ -733,7 +737,7 @@ def test_an_untested_change_stays_at_test(tmp_path, gitea):
 
 
 @pytest.mark.unit
-def test_leaving_the_ticket_flow_pauses_it_and_flows_resumes_it(tmp_path, gitea):
+def test_leaving_the_ticket_flow_holds_the_ticket_and_the_home_menu_resumes_it(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
     gitea.add_issue(4, comments=[pointer_tested(4)])
     gitea.put("Testing", 4)
@@ -742,13 +746,50 @@ def test_leaving_the_ticket_flow_pauses_it_and_flows_resumes_it(tmp_path, gitea)
     walk(tmp_path, script, gitea)
 
     assert saved(tmp_path)["flow"] == "align"
-    assert saved(tmp_path)["paused"] == {"flow": "ticket", "step": "test", "ticket": 4}
+    assert saved(tmp_path)["paused"] == [{"flow": "ticket", "step": "test", "ticket": 4}]
 
-    script = Script("flows…", "resume", "stop")
+    guide.write_state(tmp_path, None, saved(tmp_path)["paused"])
+    script = Script("resume…", "#4", "stop")
     walk(tmp_path, script, gitea)
 
-    assert "resume      #4 at test" in script.menus[1][0]
+    assert "resume…     Continue a paused ticket" in script.menus[0][0]
+    assert "#4 at test" in script.menus[1][0]
     assert (saved(tmp_path)["flow"], saved(tmp_path)["step"], saved(tmp_path)["ticket"]) == ("ticket", "test", 4)
+    assert saved(tmp_path)["paused"] == []
+
+
+@pytest.mark.unit
+def test_pause_saves_the_step_and_lands_on_the_home_menu_without_asking_tested_ok(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+    script = Script("pause", "stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert "pause       Saves this ticket's step, returns to the home menu" in script.menus[0][0]
+    assert "[ticket #4] paused · test · home menu" in script.said
+    assert [label.split()[0] for label in script.menus[1][0]] == [*HOME[:1], "resume…", *HOME[1:]]
+    assert saved(tmp_path)["ticket"] is None
+    assert saved(tmp_path)["paused"] == [{"flow": "ticket", "step": "test", "ticket": 4}]
+    assert not [w for w in gitea.writes if w[0] == "comment"]
+
+
+@pytest.mark.unit
+def test_more_than_one_paused_ticket_is_held_each_with_its_step(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "build", "ticket": 5},
+                      [{"flow": "ticket", "step": "test", "ticket": 4}])
+    gitea.add_issue(4)
+    gitea.add_issue(5)
+    gitea.put("Testing", 4)
+    gitea.put("In Progress", 5)
+    script = Script("pause", "resume…", "#4", "stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert script.menus[2][0][:2] == ["#4 at test", "#5 at build"]
+    assert saved(tmp_path)["ticket"] == 4
+    assert saved(tmp_path)["paused"] == [{"flow": "ticket", "step": "build", "ticket": 5}]
 
 
 @pytest.mark.unit
@@ -766,14 +807,23 @@ def test_an_agent_step_hands_claude_the_skills_model_and_effort(tmp_path, gitea)
 
 
 @pytest.mark.unit
-def test_the_end_of_a_flow_lists_the_flows_once(tmp_path):
-    guide.write_state(tmp_path, {"flow": "session", "step": "retro", "ticket": None})
+def test_the_end_of_a_flow_is_the_home_menu(tmp_path):
+    guide.write_state(tmp_path, {"flow": "session", "step": "handoff", "ticket": None})
     script = Script("stop")
 
     walk(tmp_path, script, None)
 
-    labels = [label.split()[0] for label in script.menus[0][0]]
-    assert labels == ["ticket", "release", "align", "deploy", "session", "stop"]
+    assert [label.split()[0] for label in script.menus[0][0]] == HOME
+
+
+@pytest.mark.unit
+def test_end_session_runs_retro_then_handoff(tmp_path):
+    script = Script("end", "stop")
+
+    walk(tmp_path, script, None)
+
+    assert (saved(tmp_path)["flow"], saved(tmp_path)["step"]) == ("session", "retro")
+    assert script.menus[1][0][0].startswith("handoff")
 
 
 class Promotion(Git):

@@ -111,7 +111,7 @@ Done          change-review · CHANGES · Standards 2 · Spec 1
 
 - The first line is the position: flow, ticket when there is one, step and its environment.
 - `Done` is the last step's outcome line, omitted before the first step.
-- Each choice is the step's name and its `does` line from the flow map; a human step's line names the person (`You merge…`). This flow's steps come first; below a `───` line come the forks whose check holds (one into another flow ends `→ <flow> flow`), then `flows…`. `stop` is always last.
+- Each choice is the step's name and its `does` line from the flow map; a human step's line names the person (`You merge…`). This flow's steps come first; below a `───` line come the forks whose check holds (one into another flow ends `→ <flow> flow`), then `flows…`, and `pause` in a ticket. With no ticket current the choices are the home menu: `tickets`, `resume…` when one is paused, `end`, `flows…`. `stop` is always last.
 - With no position, the first line is `Guide · start` and the choices are the flows.
 - `dp guide` at a terminal prints the first line and shows the choices as an arrow-key menu.
 

@@ -115,8 +115,8 @@ def test_guide_off_a_terminal_prints_the_guide_prompt(gitea, tmp_path, monkeypat
 
     assert result.exit_code == 0
     assert result.output.splitlines()[0] == "Guide · start"
-    assert "1. ticket" in result.output
-    assert result.output.rstrip().endswith("? Next? (1 / 2 / 3 / 4 / 5 / 6)")
+    assert "1. tickets" in result.output
+    assert result.output.rstrip().endswith("? Next? (1 / 2 / 3 / 4)")
 
 
 @pytest.mark.unit

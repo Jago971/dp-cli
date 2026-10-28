@@ -4,6 +4,12 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-28 - Home menu: pause any ticket, pick another (plugin 0.8.22)
+
+- With no ticket current, `dp guide` shows a home menu: `tickets`, `resume…`, `end`, `flows…`, `stop`. Finishing a ticket lands there (#170).
+- Every ticket step's menu offers `pause`, which saves the step and returns home, without asking `Tested OK?`. Several tickets can be paused; `guide.yaml` holds them as a `paused:` list, replacing `paused_ticket` and `paused_step`.
+- The session flow runs board, retro, handoff; `end` starts at retro.
+
 ### [CHANGED] 2026-10-28 - dp prints its version (plugin 0.8.21)
 
 - `dp version` and `dp --version` print the installed dp version, such as `dp 0.8.21` (#193).

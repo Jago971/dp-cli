@@ -7,7 +7,8 @@ Summary: finds the position, offers the next steps (this flow's first, then
          job brief and a Claude session on the step's model, or the Job
          prompt to paste; a user-invoked skill as the command to type. Each
          step reached is written to .factory/guide.yaml, the guide skill's
-         state file, with the ticket flow it paused when it left one.
+         state file, with the ticket flows it holds paused (the home menu
+         resumes one; `pause` saves one and returns there).
 Input:   the repo root; prompts (a Plain: plain lines in tests and pipes, the
          coloured Terminal at a terminal); the Gitea connection (`offline`
          when it cannot be reached); git(*args).
@@ -45,6 +46,10 @@ SEPARATOR = ("─" * 11, SEPARATOR_VALUE)
 STOP = f"{'stop':<11} saves the position and exits"
 BACK = f"{'back':<11} returns to the guide"
 FLOWS = (f"{'flows…':<11} Start or switch to any flow", "flows")
+PAUSE = (f"{'pause':<11} Saves this ticket's step, returns to the home menu", "pause")
+RESUME = (f"{'resume…':<11} Continue a paused ticket", "resume")
+END = {"name": "end", "step": "retro", "flow": "session", "kind": "flow",
+       "does": "Review the session, then write the handoff"}
 
 
 class Plain:
@@ -105,24 +110,26 @@ def as_int(value):
 def read_state(root):
     """The state file as {flow, step, ticket, paused}, or None; a ticket that is not a number is dropped.
 
-    `paused` is the ticket flow's position when the guide left it, or None.
+    `paused` lists the ticket flow positions the guide holds, each as {flow, step, ticket}.
     """
     path = Path(root) / STATE
     state = yaml.safe_load(path.read_text(encoding="utf-8")) if path.is_file() else None
     if not isinstance(state, dict):
         return None
-    paused = as_int(state.get("paused_ticket"))
+    held = state.get("paused") if isinstance(state.get("paused"), list) else []
+    paused = [{"flow": "ticket", "step": entry.get("step"), "ticket": as_int(entry.get("ticket"))}
+              for entry in held if isinstance(entry, dict) and as_int(entry.get("ticket"))]
     return {"flow": state.get("flow"), "step": state.get("step"), "ticket": as_int(state.get("ticket")),
-            "paused": paused and {"flow": "ticket", "step": state.get("paused_step"), "ticket": paused}}
+            "paused": paused}
 
 
-def write_state(root, position, paused=None):
-    """Write the position, and a paused ticket flow, to the state file in the guide skill's shape."""
+def write_state(root, position, paused=()):
+    """Write the position (None at the home menu) and the paused tickets to the state file in the guide skill's shape."""
     path = Path(root) / STATE
     path.parent.mkdir(parents=True, exist_ok=True)
-    lines = [f"flow: {position['flow']}", f"step: {position['step']}"]
-    lines += [f"ticket: {position['ticket']}"] if position["ticket"] else []
-    lines += [f"paused_ticket: {paused['ticket']}", f"paused_step: {paused['step']}"] if paused else []
+    lines = [f"flow: {position['flow']}", f"step: {position['step']}"] if position else []
+    lines += [f"ticket: {position['ticket']}"] if position and position["ticket"] else []
+    lines += ["paused:", *(f"  - {{ticket: {p['ticket']}, step: {p['step']}}}" for p in paused)] if paused else []
     lines += [f"updated: {datetime.now().isoformat(timespec='seconds')}"]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
@@ -224,21 +231,29 @@ def label(choice, position, pull=None):
     return f"{choice['name']:<11} {does}" + (f" → {choice['flow']} flow" if switches else "")
 
 
-def menu(offered, position, pull=None):
-    """The options: this flow's steps; inside a flow, a separator, the forks and `flows…`; then stop.
+def home(offered, paused):
+    """The menu with no ticket current: tickets, resume (when one is paused), end session, flows."""
+    tickets = next(c for c in offered if c["name"] == "ticket")
+    return [(f"{'tickets':<11} Pick a Backlog ticket", tickets), *([RESUME] if paused else []),
+            (label(END, None), END), FLOWS]
 
-    At the end of a flow the choices are the flows already, so there is no `flows…`.
+
+def menu(offered, position, pull=None, paused=()):
+    """The options: this flow's steps, a separator, the forks, `flows…` and, in a ticket, `pause`; then stop.
+
+    At the end of a flow, or with no position, the home menu.
     """
+    if offered[0]["kind"] == "flow":
+        return home(offered, paused) + [(STOP, None)]
     options = [(label(c, position, pull), c) for c in offered if c["kind"] != "fork"]
-    if position and offered[0]["kind"] != "flow":
-        options += [SEPARATOR, *((label(c, position), c) for c in offered if c["kind"] == "fork"), FLOWS]
-    return options + [(STOP, None)]
+    options += [SEPARATOR, *((label(c, position), c) for c in offered if c["kind"] == "fork"), FLOWS]
+    return options + ([PAUSE] if position["flow"] == "ticket" and position["ticket"] else []) + [(STOP, None)]
 
 
 def guide_prompt(shown):
     """The Guide prompt as text, for a session or a pipe."""
     lines, count = [*shown["notes"], header(shown["position"], shown["env"])], 0
-    for text, value in menu(shown["choices"], shown["position"]):
+    for text, value in menu(shown["choices"], shown["position"], paused=shown["paused"]):
         if value == SEPARATOR_VALUE:
             lines.append(f"   {text}")
         else:
@@ -497,10 +512,13 @@ def run(root, flow_map, position, choice, prompts, gitea, git, pull=None):
     return {"flow": flow, "step": step, "ticket": ticket}
 
 
-def choose_flow(flow_map, paused, prompts):
-    resume = [(f"{'resume':<11} #{paused['ticket']} at {paused['step']}", "resume")] if paused else []
-    return prompts.choose("Flow?", resume + [(label(c, None), c) for c in flows.flow_starts(flow_map)]
-                          + [(BACK, None)])
+def choose_flow(flow_map, prompts):
+    return prompts.choose("Flow?", [(label(c, None), c) for c in flows.flow_starts(flow_map)] + [(BACK, None)])
+
+
+def choose_paused(paused, prompts):
+    """The paused ticket the person resumes, or None for back."""
+    return prompts.choose("Resume?", [(f"#{p['ticket']} at {p['step']}", p) for p in paused] + [(BACK, None)])
 
 
 def may_leave(position, here, choice, prompts, gitea):
@@ -510,20 +528,24 @@ def may_leave(position, here, choice, prompts, gitea):
     return True
 
 
+def hold(paused, position):
+    """The paused tickets with this ticket flow position added, replacing the same ticket's step."""
+    return [p for p in paused if p["ticket"] != position["ticket"]] + [position]
+
+
 def still_paused(position, reached, paused):
-    """The paused ticket flow after a step: set on leaving the ticket flow, cleared on coming back to it."""
-    if reached["flow"] == "ticket":
-        return None
-    if position and position["flow"] == "ticket" and position["ticket"]:
-        return position
-    return paused
+    """The paused tickets after a step: the ticket left is held, a ticket worked again is not."""
+    if position and position["flow"] == "ticket" and position["ticket"] \
+            and (reached["flow"] != "ticket" or reached["ticket"] != position["ticket"]):
+        paused = hold(paused, position)
+    return [p for p in paused if p["ticket"] != reached["ticket"]]
 
 
 def walk(root, prompts, gitea, git):
     """Offer the next steps and run each choice, until the person stops."""
     root, flow_map = Path(root), flows.load()
     state = read_state(root)
-    paused = state and state["paused"]
+    paused = state["paused"] if state else []
     position, pending = locate(flow_map, state, gitea, prompts)
     while True:
         # A review's dispositions come before the menu, so they can preselect fix or pr.
@@ -535,25 +557,36 @@ def walk(root, prompts, gitea, git):
         offered = flows.choices(flow_map, position, checks(gitea, position, prompts), pending)
         at_merge = position and position["ticket"] and any(c["step"] == "merge" for c in offered)
         pull = merge_state(gitea, git, position["ticket"]) if at_merge else None
-        options = menu(offered, position, pull)
+        options = menu(offered, position, pull, paused)
         default = next((v for _, v in options if isinstance(v, dict) and v["step"] == preselect), None)
         choice = prompts.choose("Next?", options, default)
         if choice is None:
             break
+        if choice == "pause":
+            paused, pending = hold(paused, position), False
+            prompts.say(f"{ref('ticket', position['ticket'])} paused · {position['step']} · home menu")
+            position = None
+            write_state(root, position, paused)
+            continue
+        if choice == "resume":
+            entry = choose_paused(paused, prompts)
+            if entry:
+                (position, pending), paused = locate(flow_map, entry, gitea, prompts), still_paused(None, entry, paused)
+                write_state(root, position, paused)
+            continue
         if choice == "flows":
-            choice = choose_flow(flow_map, paused, prompts)
-            if choice == "resume":
-                (position, pending), paused = locate(flow_map, paused, gitea, prompts), None
+            choice = choose_flow(flow_map, prompts)
             if not isinstance(choice, dict):
                 continue
         if not may_leave(position, here, choice, prompts, gitea):
             continue
         reached = run(root, flow_map, position, choice, prompts, gitea, git, pull)
         if reached:
-            position, paused, pending = reached, still_paused(position, reached, paused), False
+            paused = still_paused(position, reached, paused)
+            position, pending = (None if reached["step"] == "finish" else reached), False  # a finished ticket lands home
             write_state(root, position, paused)
+    write_state(root, position, paused)
     if position:
-        write_state(root, position, paused)
         prompts.outro(f"{ref(position['flow'], position['ticket'])} stopped · resume at {position['step']} · dp guide")
     else:
         prompts.outro("[guide] stopped")

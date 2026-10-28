@@ -97,7 +97,7 @@ def test_without_a_position_each_flow_is_offered_at_its_first_step(flow_map):
 
 @pytest.mark.unit
 def test_a_finished_flow_offers_the_flows(flow_map):
-    assert flows.choices(flow_map, state("retro", "session", None)) == flows.choices(flow_map, None)
+    assert flows.choices(flow_map, state("handoff", "session", None)) == flows.choices(flow_map, None)
 
 
 @pytest.mark.unit
