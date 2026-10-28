@@ -52,14 +52,14 @@ flows:
     steps: [deploy-prep, test]
   session:
     does: Start or end a working session
-    steps: [board, handoff, retro]
+    steps: [board, retro, handoff]
 
 steps:
   board:
     skill: board
     env: dev
     does: Sync the board and suggest the next ticket
-    next: [handoff]
+    next: [retro]
     fork: {work a ticket: pick, the backlog or plans drifted: align, a milestone is ready: gate}
   pick:
     skill: board
@@ -174,9 +174,9 @@ steps:
     skill: handoff
     env: dev
     does: Write the handoff document and its Handover block
-    next: [retro]
+    next: []
   retro:
     skill: retro
     env: dev
     does: Review the session and suggest improvements
-    next: []
+    next: [handoff]

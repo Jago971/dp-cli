@@ -19,15 +19,15 @@ At a terminal, `dp guide` walks the same flows with no session: the person's gat
 flow: ticket
 step: review
 ticket: 52   # a number; anything else is ignored
-paused_ticket: 48   # the ticket flow left for another flow, with its step
-paused_step: test
+paused:   # ticket flows held for later, each with its step; none at the home menu
+  - {ticket: 48, step: test}
 updated: 2026-10-21T16:40:00
 ```
 
 ## Steps
 
-1. **Position.** Run `dp guide --json` (`gitea`, Calling dp). It reads the map, the state file and, in the ticket flow, the ticket's board column, which places the ticket over the state file (the map's `columns`). It returns the `position` (null with no state, one the map does not know, or a finished flow) and its `env`, the `paused` ticket flow, `notes` (a log line for each correction, or for Gitea unreachable) and the `choices`, each `next`, `fork` (only the forks whose check holds) or `flow`. Print the notes. At `review`, ask each finding's disposition (`change-review`) before offering, and offer `fix` first when one is to fix.
-2. **Offer.** Print the Guide prompt (`formats`) from the position and the choices. `flows…` offers `resume #N` when a ticket flow is paused, then the flows.
+1. **Position.** Run `dp guide --json` (`gitea`, Calling dp). It reads the map, the state file and, in the ticket flow, the ticket's board column, which places the ticket over the state file (the map's `columns`). It returns the `position` (null with no state, one the map does not know, or a finished flow; a null position is the home menu) and its `env`, the `paused` ticket flows, `notes` (a log line for each correction, or for Gitea unreachable) and the `choices`, each `next`, `fork` (only the forks whose check holds) or `flow`. Print the notes. At `review`, ask each finding's disposition (`change-review`) before offering, and offer `fix` first when one is to fix.
+2. **Offer.** Print the Guide prompt (`formats`) from the position and the choices. With no position the menu is home: `tickets`, `resume…` (each paused ticket with its step), `end` (retro, then handoff), `flows…`, `stop`. A ticket's menu ends with `pause`, which saves its step and returns home.
 3. **Run.** On a choice, run the step:
    - `pick`: `dp pick N --json` (`gitea`), not the board flow.
    - a skill: call the Skill tool with it and the ticket as the argument; the skill decides its own output and prompts.
@@ -35,8 +35,8 @@ updated: 2026-10-21T16:40:00
    - `agent`: do the step directly, in its `formats` shape.
    - `human`: print what the person does, and wait for them to say it is done.
 
-   After `shape`, ask which of its tickets to pick. Offer `tag` only once the release PR is merged on `main` (`gitea`); a state file alone never reaches it. Leaving `test`, ask `Tested OK?`: on yes, post a Tested Pointer (`formats`, Comment) with `dp pointer`; on no, stay at `test`. `finish` is the yes (no second ask): it posts the Pointer, closes the ticket, moves it to DoD and prints the column it reads back; offer `pick` or `board` after. `defect` reopens the ticket to Backlog with a Progress comment.
-4. **Record.** Write the new position to the state file, with `paused_ticket` and `paused_step` when the choice left the ticket flow (cleared on coming back to it), then go back to step 1. On `stop`, write the state and end with one log line naming where to resume.
+   After `shape`, ask which of its tickets to pick. Offer `tag` only once the release PR is merged on `main` (`gitea`); a state file alone never reaches it. Leaving `test`, ask `Tested OK?`: on yes, post a Tested Pointer (`formats`, Comment) with `dp pointer`; on no, stay at `test`. `finish` is the yes (no second ask): it posts the Pointer, closes the ticket, moves it to DoD and prints the column it reads back; land on the home menu after, with no ticket current. `defect` reopens the ticket to Backlog with a Progress comment.
+4. **Record.** Write the new position to the state file, adding the ticket to `paused` when the choice left it (removed on coming back to it), then go back to step 1. On `stop`, write the state and end with one log line naming where to resume.
 
 ## Done when
 

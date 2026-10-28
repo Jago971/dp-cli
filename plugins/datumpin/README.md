@@ -81,7 +81,7 @@ To pick up a new plugin version: `claude plugin marketplace update datumpin`, th
 
 `tag` first asks whether the release PR is merged on `main`. Before any brief but a review's, undecided findings are asked for. Colour directs the eye, one meaning each, from the DP palette: pink is where you are and what to act on, cyan is the menu cursor, yellow needs attention, red failed; the rest is the terminal's own text and grey. It shows a rail of the flow's usual path with the current step's `does` line under it, a spinner while Gitea answers, number shortcuts in menus, and the Job prompt in a panel, copied to the clipboard when the system has `clip`, `pbcopy`, `wl-copy` or `xclip`; `NO_COLOR` turns colour off.
 
-The menu lists this flow's next steps first; below a line come the forks whose check holds, then `flows…`, which starts or switches flow and offers `resume #N` for a ticket flow left behind. Each step reached is written to the state file, so the `guide` skill carries on where `dp guide` stopped. Off a terminal it prints the Guide prompt and exits; `--json` gives the position and choices, which the `guide` skill reads.
+The menu lists this flow's next steps first; below a line come the forks whose check holds, then `flows…`, `pause` in a ticket and `stop`. With no ticket current the menu is home: `tickets`, `resume…` for the tickets paused (each with its step), `end` (retro, then handoff), `flows…` and `stop`; finishing a ticket lands there. Each step reached is written to the state file, so the `guide` skill carries on where `dp guide` stopped. Off a terminal it prints the Guide prompt and exits; `--json` gives the position and choices, which the `guide` skill reads.
 
 ## Token usage
 
