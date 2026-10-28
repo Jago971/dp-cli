@@ -1,5 +1,6 @@
 """Unit tier: dp guide's walk (dp.guide), with Gitea in memory and the prompts scripted."""
 import json
+from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
@@ -274,6 +275,46 @@ def test_an_open_pr_keeps_the_walk_at_merge_and_says_so(tmp_path, gitea):
 
     assert saved(tmp_path)["step"] == "pr"
     assert "[ticket #4] PR #9 is not merged · merge it, then run dp guide" in script.said
+
+
+@pytest.mark.unit
+def test_entering_merge_prints_the_prs_number_and_link(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=False)
+    gitea.pulls[0]["html_url"] = "https://gitea.test/Org/Repo/pulls/9"
+    script = Script("merge", "stop")
+
+    walk(tmp_path, script, gitea, OnBranch())
+
+    assert "PR #9 https://gitea.test/Org/Repo/pulls/9" in script.said
+
+
+@pytest.mark.unit
+def test_the_merge_choice_names_the_pr_it_found(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=False)
+    script = Script("merge", "stop")
+
+    walk(tmp_path, script, gitea, OnBranch())
+
+    merge = next(label for label in script.menus[0][0] if label.startswith("merge"))
+    assert merge.endswith("You merge PR #9 into prep once CI is green")
+
+
+@pytest.mark.unit
+def test_without_a_pr_the_merge_choice_and_output_stay_as_they_were(tmp_path, gitea):
+    at_merge(tmp_path, gitea)
+    script = Script("merge", True, "stop")
+
+    walk(tmp_path, script, gitea, OnBranch())
+
+    merge = next(label for label in script.menus[0][0] if label.startswith("merge"))
+    assert merge.endswith("You merge the PR into prep once CI is green")
+    assert not [line for line in script.said if line.startswith("PR #")]
+
+
+@pytest.mark.unit
+def test_the_merge_step_line_keeps_the_words_the_label_swaps_for_the_pr_number():
+    flows_yaml = Path(guide.__file__).parents[3] / "flows.yaml"
+    assert "You merge the PR into prep once CI is green" in flows_yaml.read_text(encoding="utf-8")
 
 
 @pytest.mark.unit
