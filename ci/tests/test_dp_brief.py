@@ -129,7 +129,9 @@ def test_a_brief_section_is_found_in_a_skills_sibling_file():
 def test_every_brief_carries_the_step_ending_rule(tmp_path):
     text = brief.write(tmp_path, job()).read_text(encoding="utf-8")
     assert "Step ending" in text
-    assert "numbered" in text and "recommended" in text and "/exit" in text
+    assert "numbered choices" in text and "the recommended one first" in text
+    assert "`Other` last" in text
+    assert "stay or `/exit`, and what `dp guide` then offers" in text
 
 
 @pytest.mark.unit

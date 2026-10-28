@@ -32,7 +32,7 @@ ACT_ON_FINDINGS = (
 STEP_ENDING = (
     "End the step with the `formats` Step ending block: one required input as numbered choices, "
     "each with its effect, the recommended one first and `Other` last, then one line saying stay "
-    "or `/exit`. Propose any decision, seams included, as such choices; never end on an open question.")
+    "or `/exit`, and what `dp guide` then offers. Propose any decision, seams included, as such choices; never end on an open question.")
 
 
 @dataclass

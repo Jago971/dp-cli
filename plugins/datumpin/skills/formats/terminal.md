@@ -87,8 +87,9 @@ Your steps    1. Merge DEVKIT#99
 
 ```
 Result    <one line: done, or what is open>
-You       1. <the action>   (recommended)
-          2. <the alternative>
+You       1. <the action>, <its effect>   (recommended)
+          2. <the alternative>, <its effect>
+          3. Other, say what
 Session   stay to answer · /exit when done, then dp guide offers <step>
 ```
 
