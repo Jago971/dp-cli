@@ -30,6 +30,7 @@ Title `Board`. Description: `The <Repo> kanban. Columns are the ticket's state; 
 - Title: `vX.Y.Z – <theme>`, the theme 35 characters or fewer.
 - Description: one sentence stating what is true when the milestone closes. A second line `Depends on: <milestone or Owner/Repo>` only when it does.
 - Due date: only when a human sets one.
+- The milestone is gated by DoD: it ships when its sign-off is given.
 
 ```
 v0.2.0 – Approved addressings
