@@ -1,5 +1,7 @@
 """Unit tier: dp's command line (plugins/datumpin/dp), with Gitea in memory."""
 import json
+import tomllib
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
@@ -7,6 +9,8 @@ from typer.testing import CliRunner
 from dp import cli
 from dp.gitea import GiteaError
 from fake_gitea import FakeGitea
+
+PYPROJECT = Path(__file__).parents[2] / "plugins/datumpin/dp/pyproject.toml"
 
 
 @pytest.fixture
@@ -171,3 +175,28 @@ def test_a_write_ends_with_one_tick_line(gitea):
     result = run("move", "4", "Review")
 
     assert result.output.strip() == "✔ #4 Backlog → Review"
+
+
+@pytest.fixture
+def installed_version(monkeypatch):
+    """Stand in for the installed dp, and fail when dp asks for any other distribution name."""
+    name = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))["project"]["name"]
+    version = "1.2.3"
+    monkeypatch.setattr("importlib.metadata.version", lambda asked: version if asked == name else "?")
+    return version
+
+
+@pytest.mark.unit
+def test_version_command_prints_the_installed_version(installed_version):
+    result = run("version")
+
+    assert result.exit_code == 0
+    assert result.output.strip() == f"dp {installed_version}"
+
+
+@pytest.mark.unit
+def test_version_flag_prints_the_same_as_the_command(installed_version):
+    result = run("--version")
+
+    assert result.exit_code == 0
+    assert result.output.strip() == f"dp {installed_version}"

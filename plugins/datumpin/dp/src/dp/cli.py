@@ -1,6 +1,6 @@
 """dp's command line: one command per repeated Gitea task, the guide and the token report.
 
-Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp guide` and `dp tokens`.
+Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp guide`, `dp tokens` and `dp version`.
 Input:   the repo in the working directory (its git remote and
          `.claude/flow.yaml`) and tea's logins; writes go as the agent login.
 Output:  text through dp.terminal (NO_COLOR, `--plain` and pipes give it
@@ -10,6 +10,7 @@ Output:  text through dp.terminal (NO_COLOR, `--plain` and pipes give it
 import functools
 import json
 import sys
+from importlib import metadata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -24,8 +25,16 @@ app = typer.Typer(no_args_is_help=True, help="Repeated Gitea work and token repo
 JSON = typer.Option(False, "--json", help="Print JSON for the agent.")
 
 
+def print_version(requested: bool):
+    if requested:
+        version()
+        raise typer.Exit()
+
+
 @app.callback()
-def options(plain: bool = typer.Option(False, "--plain", help="No colour and no spinners, for logs.")):
+def options(plain: bool = typer.Option(False, "--plain", help="No colour and no spinners, for logs."),
+            show_version: bool = typer.Option(False, "--version", callback=print_version, is_eager=True,
+                                              help="Print the installed dp version.")):
     use_plain(plain)
 
 
@@ -166,6 +175,12 @@ def guide_command(as_json: bool = JSON):
         guide.walk(root, Terminal(), gitea, git)
     except KeyboardInterrupt:
         raise typer.Exit(130)
+
+
+@app.command()
+def version():
+    """Print the installed dp version."""
+    typer.echo(f"dp {metadata.version('datumpin-dp')}")
 
 
 @app.command(name="tokens")
