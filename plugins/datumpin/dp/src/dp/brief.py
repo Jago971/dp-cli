@@ -29,6 +29,10 @@ ASK_FINDINGS = (
 ACT_ON_FINDINGS = (
     "Act on each disposition: `Fix` is fixed in this step and becomes `Fixed (<sha>)`; `Defer` "
     "becomes `Deferred: #N`, with N a Triage ticket opened for it; the others stand as written.")
+STEP_ENDING = (
+    "End the step with the `formats` Step ending block: one required input as numbered choices, "
+    "each with its effect, the recommended one first and `Other` last, then one line saying stay "
+    "or `/exit`, and what `dp guide` then offers. Propose any decision, seams included, as such choices; never end on an open question.")
 
 
 @dataclass
@@ -117,7 +121,7 @@ def render(job, findings, findings_path):
     parts = [f"# Step {job.step}: {title}", f"{job.does}. {where}.",
              "This brief carries what the step needs, its skill text included: do not load that skill "
              "again. Print in the `formats` shapes with nothing between tool calls (Quiet steps), and stop "
-             "when the step is done."]
+             "when the step is done.", STEP_ENDING]
     if ticket:
         comments = "\n\n".join(f"**{c['author']}:** {c['text'].strip()}" for c in ticket["comments"])
         parts += ["## Ticket", ticket["body"].strip() or "(no body)", "## Comments", comments or "(none)"]

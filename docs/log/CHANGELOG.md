@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-28 - Steps end on numbered choices (plugin 0.8.19)
+
+- `formats` defines a Step ending block, and every job brief carries the rule: one input as numbered choices, a recommended one, and a line saying stay or `/exit` (#157).
+
 ### [CHANGED] 2026-10-27 - Re-pick and resume (plugin 0.8.18)
 
 - When the board places a ticket at a step that has not run, `dp guide` offers that step first, such as `build` (#168).
