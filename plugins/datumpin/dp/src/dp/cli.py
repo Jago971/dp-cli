@@ -185,6 +185,7 @@ class Asks(guide.Plain):
 def tag(version: str):
     """Tag VERSION on main and push the tag, after a confirm; main's release PR must be merged."""
     if not guide.tag(connect(), git, Asks(), version):
+        failed("dp: not tagged")
         raise typer.Exit(1)
     done(f"{version} tagged and pushed")
 

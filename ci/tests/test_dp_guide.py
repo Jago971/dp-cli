@@ -594,7 +594,7 @@ def test_gate_lists_the_untested_and_moves_none(gitea):
 
 @pytest.mark.unit
 def test_tag_refuses_while_the_release_pr_is_not_merged_on_main(gitea):
-    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": False, "state": "open"})
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": False, "state": "open", "title": "v1.0.0 – first"})
     git = Git()
 
     with pytest.raises(GiteaError, match="#30"):
@@ -605,7 +605,7 @@ def test_tag_refuses_while_the_release_pr_is_not_merged_on_main(gitea):
 
 @pytest.mark.unit
 def test_tag_tags_main_and_pushes_the_tag_after_a_confirm(gitea):
-    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True})
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True, "title": "v1.0.0 – first"})
     git = Git()
 
     tagged = guide.tag(gitea.connection, git, Script(True), "v1.0.0")
@@ -616,8 +616,29 @@ def test_tag_tags_main_and_pushes_the_tag_after_a_confirm(gitea):
 
 
 @pytest.mark.unit
+def test_tag_ignores_other_prs_into_main(gitea):
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True, "title": "v1.0.0 – first"})
+    gitea.pulls.append({"number": 31, "base": {"ref": "main"}, "head": {"ref": "hotfix"}, "merged": False, "title": "Hotfix"})
+
+    assert guide.tag(gitea.connection, Git(), Script(True), "v1.0.0") is True
+    with pytest.raises(GiteaError, match="for v1.0.1"):
+        guide.tag(gitea.connection, Git(), Script(True), "v1.0.1")
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("version", ["v1", "-f", "1.0.0"])
+def test_tag_rejects_a_version_that_is_not_vxyz(gitea, version):
+    git = Git()
+
+    with pytest.raises(GiteaError, match="not a vX.Y.Z"):
+        guide.tag(gitea.connection, git, Script(True), version)
+
+    assert not git.calls
+
+
+@pytest.mark.unit
 def test_tag_does_nothing_when_the_confirm_is_declined(gitea):
-    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True})
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True, "title": "v1.0.0 – first"})
     git = Git()
 
     assert guide.tag(gitea.connection, git, Script(False), "v1.0.0") is False
@@ -976,7 +997,7 @@ def test_the_gate_step_runs_dp_gate_without_an_agent_session(tmp_path, gitea):
 @pytest.mark.unit
 def test_the_tag_step_runs_dp_tag_without_an_agent_session(tmp_path, gitea):
     gitea.milestones.append({"id": 7, "title": "v1.0.0", "due_on": None})
-    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True})
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True, "title": "v1.0.0 – first"})
     git = Git()
 
     reached = guide.run(tmp_path, guide.flows.load(), None, {"flow": "release", "step": "tag"},

@@ -227,12 +227,12 @@ def test_gate_stops_with_one_error_line_when_a_ticket_is_untested(gitea):
 
 @pytest.mark.unit
 def test_tag_pushes_after_a_confirm(gitea, monkeypatch):
-    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True})
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True, "title": "v1.0.0 – first"})
     calls = []
     monkeypatch.setattr(cli, "git", lambda *args: calls.append(args) or "")
 
     declined = CliRunner().invoke(cli.app, ["tag", "v1.0.0"], input="n\n")
-    assert declined.exit_code == 1 and not calls
+    assert declined.exit_code == 1 and not calls and "✖ dp: not tagged" in declined.output
 
     result = CliRunner().invoke(cli.app, ["tag", "v1.0.0"], input="y\n")
     assert result.exit_code == 0

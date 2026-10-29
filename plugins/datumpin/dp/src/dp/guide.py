@@ -193,6 +193,15 @@ def milestone_tested(gitea, ticket):
     return all(commands.each(lambda n: tested(gitea, n), others["Testing"]))
 
 
+VERSION = re.compile(r"v\d+\.\d+\.\d+")
+
+
+def release_version(title):
+    """The leading vX.Y.Z of a milestone or release PR title (`vX.Y.Z – <theme>`), else the title as is."""
+    found = re.match(VERSION, title)
+    return found.group() if found else title
+
+
 def gate(gitea, milestone):
     """Move each open ticket of the milestone to DoD; the numbers moved.
 
@@ -211,13 +220,16 @@ def gate(gitea, milestone):
 def tag(gitea, git, prompts, version):
     """Tag main's tip `version` and push the tag after a confirm; False when declined.
 
-    Process: the newest PR into main must be merged, else GiteaError, so a tag never lands before the release does.
+    Process: the version must be vX.Y.Z and its release PR (titled `vX.Y.Z – <theme>`, formats) must be merged on
+    main, else GiteaError, so a tag never lands before the release does.
     """
+    if not VERSION.fullmatch(version):
+        raise GiteaError(f"{version!r} is not a vX.Y.Z version")
     pulls = [p for p in commands.paged(gitea.call, f"repos/{gitea.repo}/pulls?state=all")
-             if p["base"]["ref"] == "main"]
+             if p["base"]["ref"] == "main" and release_version(p["title"]) == version]
     latest = max(pulls, key=lambda p: p["number"], default=None)
     if not latest or not latest["merged"]:
-        which = f"#{latest['number']}" if latest else "to main"
+        which = f"#{latest['number']}" if latest else f"for {version}"
         raise GiteaError(f"release PR {which} is not merged on main")
     if not prompts.confirm(f"Tag {version} on main and push it?"):
         return False
@@ -502,7 +514,7 @@ def release_step(step, prompts, gitea, git):
         moved = gate(gitea, milestone)
         prompts.say(f"[release] gate · {len(moved)} to DoD · {milestone}")
         return True
-    return tag(gitea, git, prompts, milestone)
+    return tag(gitea, git, prompts, release_version(milestone))
 
 
 def run(root, flow_map, position, choice, prompts, gitea, git, pull=None):
