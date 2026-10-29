@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-29 - Closed tickets count toward the milestone (plugin 0.8.24)
+
+- `gitea` says a ticket closes when it leaves `test` with "Tested OK?" yes, and that the milestone bar is the management view. The `gate` fork waits for a Tested Pointer on tickets in DoD as well as Testing (#156).
+
 ### [CHANGED] 2026-10-28 - DoD is the milestone's release gate (plugin 0.8.23)
 
 - `gitea` defines DoD as waiting for the milestone's sign-off. `change-ready`'s gate is per milestone: the agent prepares the evidence pack, humans sign, the model never signs. `gitea-workflows` has one release PR and tag per milestone; `formats` says the milestone is gated by DoD (#59).
