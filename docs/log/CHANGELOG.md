@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-29 - dp pick branches from origin/prep (plugin 0.8.27)
+
+- `dp pick` fetches `origin` and cuts the branch from `origin/prep`, so it starts current. A failed fetch prints one `dp:` line and moves nothing (#228).
+
 ### [CHANGED] 2026-10-29 - dp fills the fixed texts (plugin 0.8.26)
 
 - `dp pr-body` fills the PR body shape, `dp pointers` posts a Done Pointer per closed ticket of a milestone, and `dp worksheet` pre-fills the release worksheet's evidence. Each of the first and last prints an estimated tokens-saved line (#122).
