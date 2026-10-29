@@ -179,17 +179,17 @@ def tested(gitea, ticket):
 
 
 def milestone_tested(gitea, ticket):
-    """True when every other open ticket in the ticket's milestone is past Testing, or in it with a Tested Pointer."""
+    """True when every other open ticket in the ticket's milestone is past Testing, or in Testing or DoD with a Tested Pointer."""
     milestone = ticket and commands.issue(gitea.call, gitea.repo, ticket)["milestone"]
     if not milestone:
         return False
     placed = commands.column_tickets(gitea.call, gitea.repo)
     others = {column: [t["number"] for t in placed.get(column, [])
                        if t["milestone"] == milestone and t["number"] != ticket]
-              for column in (*BEFORE_TESTING, "Testing")}
+              for column in (*BEFORE_TESTING, "Testing", "DoD")}
     if any(others[column] for column in BEFORE_TESTING):
         return False
-    return all(commands.each(lambda n: tested(gitea, n), others["Testing"]))
+    return all(commands.each(lambda n: tested(gitea, n), others["Testing"] + others["DoD"]))
 
 
 CHECKS = {"unscoped": unscoped, "milestone_tested": milestone_tested}

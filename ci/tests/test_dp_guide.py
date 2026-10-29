@@ -579,6 +579,34 @@ def test_gate_is_offered_once_every_other_ticket_in_the_milestone_is_tested(tmp_
 
 
 @pytest.mark.unit
+def test_gate_waits_for_a_pointer_on_a_ticket_closed_into_dod(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4, milestone="v1")
+    gitea.add_issue(5, milestone="v1", state="closed")  # closed by hand, never tested
+    gitea.put("Testing", 4)
+    gitea.put("DoD", 5)
+    script = Script("stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert "gate" not in [label.split()[0] for label in script.menus[0][0]]
+
+
+@pytest.mark.unit
+def test_gate_is_offered_when_a_closed_ticket_in_dod_has_its_pointer(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
+    gitea.add_issue(4, milestone="v1")
+    gitea.add_issue(5, milestone="v1", state="closed", comments=[pointer_tested(5)])
+    gitea.put("Testing", 4)
+    gitea.put("DoD", 5)
+    script = Script("stop")
+
+    walk(tmp_path, script, gitea)
+
+    assert "gate" in [label.split()[0] for label in script.menus[0][0]]
+
+
+@pytest.mark.unit
 def test_leaving_test_posts_a_pointer_tested(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
     gitea.add_issue(4)
