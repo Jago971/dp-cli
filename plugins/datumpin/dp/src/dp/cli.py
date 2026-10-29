@@ -1,6 +1,6 @@
 """dp's command line: one command per repeated Gitea task, the guide and the token report.
 
-Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp gate`, `dp tag`, `dp guide`, `dp tokens` and `dp version`.
+Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp pointers`, `dp pr-body`, `dp worksheet`, `dp gate`, `dp tag`, `dp guide`, `dp tokens` and `dp version`.
 Input:   the repo in the working directory (its git remote and
          `.claude/flow.yaml`) and tea's logins; writes go as the agent login.
 Output:  text through dp.terminal (NO_COLOR, `--plain` and pipes give it
@@ -10,6 +10,7 @@ Output:  text through dp.terminal (NO_COLOR, `--plain` and pipes give it
 import functools
 import json
 import sys
+from datetime import date
 from importlib import metadata
 from dataclasses import dataclass
 from pathlib import Path
@@ -161,6 +162,37 @@ def pointer(number: int, text: str, as_json: bool = JSON):
 
 @app.command()
 @reports_errors
+def pointers(milestone: str, as_json: bool = JSON):
+    """Post a Done Pointer on every closed ticket of MILESTONE."""
+    gitea = connect()
+    with busy(f"Posting on {milestone}", quiet=as_json):
+        posted = commands.milestone_pointers(gitea.call, gitea.repo, milestone, date.today().isoformat())
+    saved = sum(tokens.saving(row["text"], row["title"]) for row in posted)
+    emit({"pointers": posted, "saved_tokens": saved}, as_json,
+         lambda r: done(f"{len(r['pointers'])} pointers posted · ~{r['saved_tokens']} tokens saved"))
+
+
+def fill(build, parts, **fixed):
+    """Run build on the JSON parts file; bad JSON or a wrong key set is a GiteaError, not a traceback."""
+    try:
+        given = json.loads(parts.read_text(encoding="utf-8"))
+        return given, build(**fixed, **given)
+    except (ValueError, TypeError) as error:
+        raise GiteaError(f"{parts.name}: {error}")
+
+
+@app.command(name="pr-body")
+@reports_errors
+def pr_body_command(parts: Path = typer.Argument(..., exists=True, dir_okay=False, help="JSON: summary, changes, evidence, findings, refs (or no_ticket), see, check."),
+                    as_json: bool = JSON):
+    """Print the PR body in the formats shape, filled from the JSON parts; for `dp pr --body-file`."""
+    given, body = fill(commands.pr_body, parts)
+    saved = tokens.saving(body, json.dumps(given, ensure_ascii=False))
+    emit({"body": body, "saved_tokens": saved}, as_json, lambda r: (say(r["body"]), done(f"~{r['saved_tokens']} tokens saved")))
+
+
+@app.command()
+@reports_errors
 def gate(milestone: str, as_json: bool = JSON):
     """Move each ticket of MILESTONE to DoD; stops, moving none, when one has no Tested Pointer."""
     gitea = connect()
@@ -178,6 +210,19 @@ class Asks(guide.Plain):
 
     def say(self, line):
         typer.echo(line)
+
+
+@app.command()
+@reports_errors
+def worksheet(parts: Path = typer.Argument(..., exists=True, dir_okay=False, help="JSON: project, tickets, pulls, tests, findings."),
+              template: Path = typer.Option(..., exists=True, dir_okay=False, help="The WIKI review worksheet template."),
+              as_json: bool = JSON):
+    """Print the release worksheet with its evidence filled; judgement and sign-off stay blank."""
+    given, sheet = fill(lambda **kw: commands.worksheet(template.read_text(encoding="utf-8"), **kw),
+                        parts, date=date.today().isoformat())
+    saved = tokens.saving(sheet, json.dumps(given, ensure_ascii=False))
+    emit({"worksheet": sheet, "saved_tokens": saved}, as_json,
+         lambda r: (say(r["worksheet"]), done(f"~{r['saved_tokens']} tokens saved")))
 
 
 @app.command()

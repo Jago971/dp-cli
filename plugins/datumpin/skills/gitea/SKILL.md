@@ -18,6 +18,9 @@ Gitea is the single source for tickets, milestones and the board. Read and write
 | Take a ticket in | `dp pick N --json`: In Progress and assigned to the human, into the open milestone due first when it has none, and the branch `<type>/<N>-<slug>` from `prep` (`--branch` for another) |
 | Open a PR | `dp pr --title T --body-file F --labels "A,B,C" --json`, from the current branch into `prep` (`--base` for another) |
 | Pointer comment | `dp pointer N "<text>" --json`; it refuses text outside the Pointer shape (`formats`) |
+| Fill a PR body | `dp pr-body PARTS.json`: the `formats` Pull request shape from `summary`, `changes`, `evidence`, `findings`, `refs`, `see`, `check`; write the output to F for `dp pr`. It prints the tokens saved. |
+| Done Pointers for a milestone | `dp pointers "<milestone title>"`: a Done Pointer on each of its closed tickets |
+| Fill the release worksheet | `dp worksheet PARTS.json --template <WIKI worksheet>`: header and Evidence (tickets, PRs, tests, findings) filled; judgement rows and sign-off stay for people |
 | Gate a milestone | `dp gate MILESTONE --json`: each ticket with a Tested Pointer moves to DoD; if any lacks one it lists them and moves none |
 | Tag a release | `dp tag vX.Y.Z`: checks the release PR is merged on `main`, then tags and pushes after a confirm |
 | Position and choices in a flow | `dp guide --json`: the `position` from the state file and the ticket's column, its `env`, `notes` (log lines) and the `choices` (`guide`) |

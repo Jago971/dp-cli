@@ -115,6 +115,14 @@ def report(lines):
     return list(rows.values())
 
 
+CHARS_PER_TOKEN = 4  # a rough estimate; the saving is not metered
+
+
+def saving(filled, varying):
+    """Tokens of `filled` that dp writes and the model does not: all but the `varying` parts it supplied."""
+    return max(len(filled) - len(varying), 0) // CHARS_PER_TOKEN
+
+
 def table(rows):
     """The rows and their TOTAL as aligned text."""
     total = {"step": "TOTAL", **{count: sum(row[count] for row in rows) for count in COUNTS}}
