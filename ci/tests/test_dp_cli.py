@@ -209,7 +209,21 @@ def test_pointers_posts_a_done_pointer_per_closed_ticket(gitea):
     result = run("pointers", "v0.8.0", "--json")
 
     assert result.exit_code == 0
-    assert [p["number"] for p in json.loads(result.output)] == [1]
+    shown = json.loads(result.output)
+    assert [p["number"] for p in shown["pointers"]] == [1]
+    assert shown["saved_tokens"] > 0
+
+
+@pytest.mark.unit
+def test_pr_body_with_bad_json_fails_on_one_line(tmp_path):
+    parts = tmp_path / "parts.json"
+    parts.write_text("{not json")
+
+    result = run("pr-body", str(parts))
+
+    assert result.exit_code == 1
+    assert "Traceback" not in result.output
+    assert "dp:" in result.output
 
 
 @pytest.mark.unit

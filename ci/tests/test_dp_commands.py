@@ -168,6 +168,20 @@ def test_pr_body_omits_empty_see_and_check():
 
 
 @pytest.mark.unit
+def test_pr_body_without_refs_gives_the_no_ticket_reason():
+    body = commands.pr_body(summary="s", changes=[("a", "b")], evidence="e",
+                            findings=[("S1", "none", "-", "-")], no_ticket="a typo fix")
+
+    assert body.endswith("## Refs\nNo ticket: a typo fix\n")
+
+
+@pytest.mark.unit
+def test_pr_body_needs_refs_or_a_no_ticket_reason():
+    with pytest.raises(commands.GiteaError):
+        commands.pr_body(summary="s", changes=[("a", "b")], evidence="e", findings=[])
+
+
+@pytest.mark.unit
 def test_milestone_pointers_post_a_done_pointer_per_closed_ticket(gitea):
     gitea.add_issue(1, title="Home menu", state="closed", milestone="v0.8.0 – Guide")
     gitea.add_issue(2, title="Other release", state="closed", milestone="v0.9.0 – Next")

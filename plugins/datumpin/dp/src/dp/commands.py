@@ -161,10 +161,16 @@ def pr(call, repo, head, base, title, body, labels):
     return {"number": pull["number"], "url": pull["html_url"]}
 
 
-def pr_body(summary, changes, evidence, findings, refs, see=(), check=()):
-    """The PR body in the formats shape: the model supplies the parts that vary."""
+def pr_body(summary, changes, evidence, findings, refs=(), see=(), check=(), no_ticket=""):
+    """The PR body in the formats shape: the model supplies the parts that vary.
+
+    With no refs, `no_ticket` gives the reason a PR has no local ticket.
+    """
     rows = "\n".join(f"| {' | '.join(row)} |" for row in findings)
-    reference = "\n".join([f"Refs {' · '.join(refs)}"] + ([f"See {' · '.join(see)}"] if see else []))
+    if not refs and not no_ticket:
+        raise GiteaError("give refs, or no_ticket with the reason there is no ticket")
+    first = f"Refs {' · '.join(refs)}" if refs else f"No ticket: {no_ticket}"
+    reference = "\n".join([first] + ([f"See {' · '.join(see)}"] if see else []))
     sections = [
         f"## Summary\n{summary}",
         "## Changes\n" + "\n".join(f"- `{area}`: {what}" for area, what in changes),
@@ -216,6 +222,7 @@ def milestone_pointers(call, repo, milestone, date):
     """Post a Done Pointer on each closed ticket of a milestone; the tickets posted on."""
     closed = paged(call, f"repos/{repo}/issues?state=closed&type=issues")
     tickets = [t for t in closed if (t.get("milestone") or {}).get("title") == milestone]
-    return [pointer(call, repo, t["number"],
-                    f"Released {milestone}, {date}. Done: {t['title']}. → #{t['number']}")
+    return [{**pointer(call, repo, t["number"],
+                       f"Released {milestone}, {date}. Done: {t['title']}. → #{t['number']}"),
+             "title": t["title"]}
             for t in tickets]
