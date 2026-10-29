@@ -1,6 +1,6 @@
 """dp's command line: one command per repeated Gitea task, the guide and the token report.
 
-Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp guide`, `dp tokens` and `dp version`.
+Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp pointers`, `dp pr-body`, `dp worksheet`, `dp guide`, `dp tokens` and `dp version`.
 Input:   the repo in the working directory (its git remote and
          `.claude/flow.yaml`) and tea's logins; writes go as the agent login.
 Output:  text through dp.terminal (NO_COLOR, `--plain` and pipes give it
@@ -10,6 +10,7 @@ Output:  text through dp.terminal (NO_COLOR, `--plain` and pipes give it
 import functools
 import json
 import sys
+from datetime import date
 from importlib import metadata
 from dataclasses import dataclass
 from pathlib import Path
@@ -157,6 +158,38 @@ def pointer(number: int, text: str, as_json: bool = JSON):
     with busy(f"Posting on #{number}", quiet=as_json):
         posted = commands.pointer(gitea.call, gitea.repo, number, text)
     emit(posted, as_json, lambda p: done(f"#{p['number']} pointer posted"))
+
+
+@app.command()
+@reports_errors
+def pointers(milestone: str, as_json: bool = JSON):
+    """Post a Done Pointer on every closed ticket of MILESTONE."""
+    gitea = connect()
+    with busy(f"Posting on {milestone}", quiet=as_json):
+        posted = commands.milestone_pointers(gitea.call, gitea.repo, milestone, date.today().isoformat())
+    emit(posted, as_json, lambda rows: done(f"{len(rows)} pointers posted"))
+
+
+@app.command(name="pr-body")
+def pr_body_command(parts: Path = typer.Argument(..., exists=True, dir_okay=False, help="JSON: summary, changes, evidence, findings, refs, see, check."),
+                    as_json: bool = JSON):
+    """Print the PR body in the formats shape, filled from the JSON parts; for `dp pr --body-file`."""
+    given = json.loads(parts.read_text(encoding="utf-8"))
+    body = commands.pr_body(**given)
+    saved = tokens.saving(body, json.dumps(given, ensure_ascii=False))
+    emit({"body": body, "saved_tokens": saved}, as_json, lambda r: (say(r["body"]), done(f"~{saved} tokens saved")))
+
+
+@app.command()
+def worksheet(parts: Path = typer.Argument(..., exists=True, dir_okay=False, help="JSON: project, tickets, pulls, tests, findings."),
+              template: Path = typer.Option(..., exists=True, dir_okay=False, help="The WIKI review worksheet template."),
+              as_json: bool = JSON):
+    """Print the release worksheet with its evidence filled; judgement and sign-off stay blank."""
+    given = json.loads(parts.read_text(encoding="utf-8"))
+    sheet = commands.worksheet(template.read_text(encoding="utf-8"), date=date.today().isoformat(), **given)
+    saved = tokens.saving(sheet, json.dumps(given, ensure_ascii=False))
+    emit({"worksheet": sheet, "saved_tokens": saved}, as_json,
+         lambda r: (say(r["worksheet"]), done(f"~{r['saved_tokens']} tokens saved")))
 
 
 @app.command(name="guide")

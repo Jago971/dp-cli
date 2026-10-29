@@ -136,3 +136,73 @@ def test_pointer_refuses_text_outside_the_pointer_shape(gitea):
         commands.pointer(gitea.call, REPO, 12, "Closing this one.")
 
     assert gitea.writes == []
+
+
+@pytest.mark.unit
+def test_pr_body_fills_the_formats_shape():
+    body = commands.pr_body(
+        summary="dp fills the fixed PR text.",
+        changes=[("plugins/datumpin/dp", "pr_body builder")],
+        evidence="12 passed",
+        findings=[("S1", "Name is vague", "low", "Fixed (abc1234)")],
+        refs=["#122"], see=["#121"], check=["Read the body once"])
+
+    assert body == (
+        "## Summary\ndp fills the fixed PR text.\n\n"
+        "## Changes\n- `plugins/datumpin/dp`: pr_body builder\n\n"
+        "## Review\nEvidence: 12 passed\n\n"
+        "| # | Finding | Sev | Disposition |\n|---|---|---|---|\n"
+        "| S1 | Name is vague | low | Fixed (abc1234) |\n\n"
+        "## Refs\nRefs #122\nSee #121\n\n"
+        "## Check before merging\n- Read the body once\n")
+
+
+@pytest.mark.unit
+def test_pr_body_omits_empty_see_and_check():
+    body = commands.pr_body(summary="s", changes=[("a", "b")], evidence="e",
+                            findings=[("S1", "none", "-", "-")], refs=["#1"])
+
+    assert "See" not in body
+    assert "Check before merging" not in body
+    assert body.endswith("## Refs\nRefs #1\n")
+
+
+@pytest.mark.unit
+def test_milestone_pointers_post_a_done_pointer_per_closed_ticket(gitea):
+    gitea.add_issue(1, title="Home menu", state="closed", milestone="v0.8.0 – Guide")
+    gitea.add_issue(2, title="Other release", state="closed", milestone="v0.9.0 – Next")
+    gitea.add_issue(3, title="Still open", milestone="v0.8.0 – Guide")
+    gitea.add_issue(4, title="Token report", state="closed", milestone="v0.8.0 – Guide")
+
+    posted = commands.milestone_pointers(gitea.call, REPO, "v0.8.0 – Guide", "2026-10-29")
+
+    assert [p["number"] for p in posted] == [1, 4]
+    assert gitea.comments[1][-1]["body"] == "Released v0.8.0 – Guide, 2026-10-29. Done: Home menu. → #1"
+    assert gitea.comments[2] == [] and gitea.comments[3] == []
+
+
+TEMPLATE = ("# Definition of Done - Review Worksheet\n\n"
+            "**Project:** **\_\_\_** **Date:** **\_\_\_** **Engineer:** **\_\_\_**\n\n---\n\n"
+            "## Stage 1\n\n| Criteria | Eng |\n|---|---|\n| README | ☐ |\n\n---\n\n"
+            "## Sign-Off\n\n| Stage | Engineer |\n|---|---|\n| Approved | ☐ |\n")
+
+
+@pytest.mark.unit
+def test_worksheet_prefills_evidence_and_leaves_judgement_and_sign_off():
+    sheet = commands.worksheet(
+        TEMPLATE, project="Repo", date="2026-10-29",
+        tickets=[(121, "Fixed texts")], pulls=[(210, "DoD column")], tests="159 passed",
+        findings=[("S1", "Name is vague", "low", "Fixed (abc1234)")])
+
+    assert sheet.startswith("# Definition of Done - Review Worksheet\n\n**Project:** Repo **Date:** 2026-10-29 ")
+    assert "- #121 Fixed texts" in sheet and "- #210 DoD column" in sheet
+    assert "Tests: 159 passed" in sheet
+    assert "| S1 | Name is vague | low | Fixed (abc1234) |" in sheet
+    assert "| README | ☐ |" in sheet and "| Approved | ☐ |" in sheet
+    assert sheet.index("Evidence") < sheet.index("## Stage 1")
+
+
+@pytest.mark.unit
+def test_saving_counts_the_filled_text_the_model_no_longer_writes():
+    from dp import tokens
+    assert tokens.saving("abcdefgh" * 10, "abcdefgh") == 18

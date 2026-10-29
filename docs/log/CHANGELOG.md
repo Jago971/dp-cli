@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-29 - dp fills the fixed texts (plugin 0.8.24)
+
+- `dp pr-body` fills the PR body shape, `dp pointers` posts a Done Pointer per closed ticket of a milestone, and `dp worksheet` pre-fills the release worksheet's evidence. Each of the first and last prints an estimated tokens-saved line (#122).
+
 ### [CHANGED] 2026-10-28 - DoD is the milestone's release gate (plugin 0.8.23)
 
 - `gitea` defines DoD as waiting for the milestone's sign-off. `change-ready`'s gate is per milestone: the agent prepares the evidence pack, humans sign, the model never signs. `gitea-workflows` has one release PR and tag per milestone; `formats` says the milestone is gated by DoD (#59).

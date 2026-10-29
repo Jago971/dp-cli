@@ -200,3 +200,38 @@ def test_version_flag_prints_the_same_as_the_command(installed_version):
 
     assert result.exit_code == 0
     assert result.output.strip() == f"dp {installed_version}"
+
+
+@pytest.mark.unit
+def test_pointers_posts_a_done_pointer_per_closed_ticket(gitea):
+    gitea.add_issue(1, title="Home menu", state="closed", milestone="v0.8.0")
+
+    result = run("pointers", "v0.8.0", "--json")
+
+    assert result.exit_code == 0
+    assert [p["number"] for p in json.loads(result.output)] == [1]
+
+
+@pytest.mark.unit
+def test_pr_body_prints_the_body_and_the_saving(tmp_path):
+    parts = tmp_path / "parts.json"
+    parts.write_text(json.dumps({"summary": "s", "changes": [["a", "b"]], "evidence": "e",
+                                 "findings": [["S1", "none", "-", "-"]], "refs": ["#1"]}))
+
+    result = run("pr-body", str(parts), "--json")
+
+    out = json.loads(result.output)
+    assert out["body"].startswith("## Summary\ns\n") and out["saved_tokens"] >= 0
+
+
+@pytest.mark.unit
+def test_worksheet_prints_the_filled_sheet(tmp_path):
+    parts = tmp_path / "parts.json"
+    parts.write_text(json.dumps({"project": "Repo", "tickets": [[1, "T"]], "pulls": [[2, "P"]],
+                                 "tests": "5 passed", "findings": [["S1", "none", "-", "-"]]}))
+    template = tmp_path / "t.md"
+    template.write_text("# W\n\n**Project:** **\_\_\_** **Date:** **\_\_\_**\n\n---\n\n## Sign-Off\n")
+
+    result = run("worksheet", str(parts), "--template", str(template), "--json")
+
+    assert "**Project:** Repo" in json.loads(result.output)["worksheet"]
