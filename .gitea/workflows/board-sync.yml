@@ -1,8 +1,9 @@
 name: Board sync
 # Moves tickets across the repo's Board as their pull requests progress
 # (ci/board_sync.py has the rules): PR opened -> Review, merged to prep ->
-# Testing; issue opened -> Triage (when off the Board), closed -> Done,
-# reopened -> Backlog. A repo calls it from .gitea/workflows/board.yml, on
+# Testing; issue opened -> Triage (when off the Board), closed -> DoD,
+# reopened -> Backlog; prep -> main merged -> the milestone's DoD tickets to
+# Done. A repo calls it from .gitea/workflows/board.yml, on
 # the events ci.yml does not receive:
 #
 #   on:
