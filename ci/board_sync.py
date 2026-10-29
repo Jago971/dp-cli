@@ -74,12 +74,20 @@ def column_holding(repo, board_id, columns, issue_id):
     return None
 
 
-def move(repo, number, column, forward_only):
+def board_of(repo):
+    """The repo's open Board and its columns as (board, {title: id}), or None without a Board."""
     board = next((p for p in call("GET", f"repos/{repo}/projects?state=open") if p["title"] == "Board"), None)
     if board is None:
+        return None
+    return board, {c["title"]: c["id"] for c in call("GET", f"repos/{repo}/projects/{board['id']}/columns")}
+
+
+def move(repo, number, column, forward_only):
+    found = board_of(repo)
+    if found is None:
         print(f"SKIP  #{number}: {repo} has no Board")
         return
-    columns = {c["title"]: c["id"] for c in call("GET", f"repos/{repo}/projects/{board['id']}/columns")}
+    board, columns = found
     issue = call("GET", f"repos/{repo}/issues/{number}")
     if issue.get("pull_request"):
         return
@@ -103,13 +111,14 @@ def release(repo, pull):
     if not milestone:
         print("SKIP  release pull request has no milestone")
         return
-    board = next((p for p in call("GET", f"repos/{repo}/projects?state=open") if p["title"] == "Board"), None)
-    if board is None:
+    found = board_of(repo)
+    if found is None:
         print(f"SKIP  {repo} has no Board")
         return
-    columns = {c["title"]: c["id"] for c in call("GET", f"repos/{repo}/projects/{board['id']}/columns")}
+    board, columns = found
+    query = f"state=all&type=issues&milestones={urllib.parse.quote(milestone)}&limit=50"
     for page in range(1, MAX_PAGES + 1):
-        issues = call("GET", f"repos/{repo}/issues?state=all&type=issues&milestones={urllib.parse.quote(milestone)}&limit=50&page={page}")
+        issues = call("GET", f"repos/{repo}/issues?{query}&page={page}")
         if not issues:
             return
         for issue in issues:
