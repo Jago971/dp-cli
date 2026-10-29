@@ -30,6 +30,7 @@ from dp.gitea import GiteaError
 
 STATE = Path(".factory") / "guide.yaml"
 BASE = "prep"
+START = f"origin/{BASE}"  # a branch starts from the remote, so it is current whatever local prep holds
 PROMOTION = "origin/main...prep"  # what a release promotes; the release flow runs on prep, so BASE is empty there
 BRANCH_TYPES = {"TYPE/FEATURE": "feat", "TYPE/BUG": "fix", "TYPE/CHORE": "chore", "TYPE/DOCUMENTATION": "docs"}
 SLUG_WORDS = 4
@@ -345,14 +346,22 @@ def settle_branch(prompts, git, branch):
 
 def take(gitea, git, ticket, branch, create=True):
     """Move the ticket to In Progress (assigning the person), into the open milestone due first when it has
-    none, and branch from prep; what happened, as `dp pick --json` prints it."""
-    moved = commands.move(gitea.call, gitea.repo, ticket["number"], "In Progress", assignee=gitea.human())
-    joined = None if ticket["milestone"] else commands.join_earliest_milestone(gitea.call, gitea.repo, ticket["number"])
+    none, and branch from origin/prep, fetched first so it is current; what happened, as `dp pick --json`
+    prints it. A failed fetch raises before anything moves."""
+    try:
+        git("fetch", "origin")
+        moved = commands.move(gitea.call, gitea.repo, ticket["number"], "In Progress", assignee=gitea.human())
+        joined = None if ticket["milestone"] else commands.join_earliest_milestone(gitea.call, gitea.repo, ticket["number"])
+    except GiteaError as error:
+        raise GiteaError(f"{error} · ticket not moved, pick when it answers") from error
     # one argument, so a leading-dash branch is not an option
-    if create:
-        git("switch", f"--create={branch}", BASE)
-    else:
-        git("switch", branch)
+    try:
+        if create:
+            git("switch", f"--create={branch}", START)
+        else:
+            git("switch", branch)
+    except GiteaError as error:
+        raise GiteaError(f"{error} · ticket #{ticket['number']} is In Progress, switch the branch by hand") from error
     return {**moved, "milestone": joined or ticket["milestone"], "joined": bool(joined), "branch": branch}
 
 
@@ -360,7 +369,7 @@ def taken_lines(taken):
     at = f"[ticket #{taken['number']}]"
     return [f"{at} {taken['from'] or 'off the Board'} → In Progress · assigned {taken['assigned']}",
             *([f"{at} joined {taken['milestone']}"] if taken["joined"] else []),
-            f"{at} branch {taken['branch']} from {BASE}"]
+            f"{at} branch {taken['branch']} from {START}"]
 
 
 def pick(prompts, gitea, git):
@@ -379,8 +388,12 @@ def pick(prompts, gitea, git):
     if chosen is None:
         return None
     branch, create = settle_branch(prompts, git, prompts.text("Branch", branch_name(chosen)))
-    with prompts.busy(f"Moving #{chosen['number']}"):
-        taken = take(gitea, git, chosen, branch, create)
+    try:
+        with prompts.busy(f"Moving #{chosen['number']}"):
+            taken = take(gitea, git, chosen, branch, create)
+    except GiteaError as error:
+        prompts.note(f"dp: {error}")
+        return None
     for line in taken_lines(taken):
         prompts.say(line)
     prompts.say(NEXT_STEP)

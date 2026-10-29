@@ -73,8 +73,43 @@ def test_pick_moves_the_ticket_and_branches_from_prep(tmp_path, gitea):
 
     assert gitea.column_of(4) == "In Progress"
     assert not [w for w in gitea.writes if w[0] == "milestone"]
-    assert [c for c in git.calls if c[0] == "switch"] == [("switch", "--create=fix/4-fix-the-thing", "prep")]
+    assert [c for c in git.calls if c[0] == "switch"] == [("switch", "--create=fix/4-fix-the-thing", "origin/prep")]
     assert (saved(tmp_path)["step"], saved(tmp_path)["ticket"]) == ("pick", 4)
+
+
+class FetchFails(Git):
+    def __call__(self, *args):
+        super().__call__(*args)
+        if args[0] == "fetch":
+            raise GiteaError("git fetch: no route")
+        return ""
+
+
+@pytest.mark.unit
+def test_pick_fetches_origin_before_cutting_the_branch(tmp_path, gitea):
+    backlog_four(gitea)
+    git = Git()
+
+    walk(tmp_path, Script("tickets", "#4", None, "stop"), gitea, git)
+
+    kinds = [c[0] for c in git.calls]
+    assert ("fetch", "origin") in git.calls
+    assert kinds.index("fetch") < kinds.index("switch")
+
+
+@pytest.mark.unit
+def test_a_failed_fetch_cuts_no_branch_and_leaves_the_ticket(tmp_path, gitea):
+    backlog_four(gitea)
+    git = FetchFails()
+
+    script = Script("tickets", "#4", None, "stop")
+
+    walk(tmp_path, script, gitea, git)
+
+    assert not [c for c in git.calls if c[0] == "switch"]
+    assert gitea.column_of(4) == "Backlog"
+    lines = [l for l in script.said if l.startswith("dp:")]
+    assert len(lines) == 1 and "git fetch: no route" in lines[0]
 
 
 class OldBranch(Git):
@@ -120,7 +155,7 @@ def test_a_pick_over_a_merged_branch_can_delete_it_and_start_new(tmp_path, gitea
     walk(tmp_path, Script("tickets", "#4", "fix/4-old", "Delete", "stop"), gitea, git)
 
     assert ("branch", "-d", "fix/4-old") in git.calls
-    assert ("switch", "--create=fix/4-old", "prep") in git.calls
+    assert ("switch", "--create=fix/4-old", "origin/prep") in git.calls
 
 
 @pytest.mark.unit
@@ -156,7 +191,7 @@ def test_a_pick_over_an_old_branch_can_name_a_new_one(tmp_path, gitea):
 
     walk(tmp_path, Script("tickets", "#4", "fix/4-old", "Name", "fix/4-again", "stop"), gitea, git)
 
-    assert ("switch", "--create=fix/4-again", "prep") in git.calls
+    assert ("switch", "--create=fix/4-again", "origin/prep") in git.calls
     assert ("branch", "-d", "fix/4-old") not in git.calls
 
 
