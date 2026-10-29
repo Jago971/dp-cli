@@ -501,18 +501,6 @@ def test_pick_puts_a_ticket_without_a_milestone_in_the_one_due_first(tmp_path, g
 
 
 @pytest.mark.unit
-def test_a_tag_waits_for_the_release_pr_on_main(tmp_path):
-    guide.write_state(tmp_path, {"flow": "release", "step": "sign-off", "ticket": None})
-
-    walk(tmp_path, Script("tag", False, "stop"), None)
-    assert saved(tmp_path)["step"] == "sign-off"
-    assert not (tmp_path / ".factory" / "jobs").exists()
-
-    walk(tmp_path, Script("tag", True, "stop"), None)
-    assert (tmp_path / ".factory" / "jobs" / "release" / "tag.md").is_file()
-
-
-@pytest.mark.unit
 def test_sign_off_shows_the_recorded_dispositions_and_asks_only_done(tmp_path):
     guide.write_state(tmp_path, {"flow": "release", "step": "release-pr", "ticket": None})
     findings = tmp_path / ".factory" / "jobs" / "release" / "findings.json"
@@ -576,6 +564,85 @@ def test_gate_is_offered_once_every_other_ticket_in_the_milestone_is_tested(tmp_
     walk(tmp_path, script, gitea)
 
     assert "gate" in [label.split()[0] for label in script.menus[0][0]]
+
+
+@pytest.mark.unit
+def test_gate_moves_every_tested_ticket_of_the_milestone_to_dod(gitea):
+    gitea.add_issue(4, milestone="v1", comments=[pointer_tested(4)])
+    gitea.add_issue(5, milestone="v1", comments=[pointer_tested(5)])
+    gitea.add_issue(6, milestone="v2")
+    gitea.put("Testing", 4, 5, 6)
+
+    moved = guide.gate(gitea.connection, "v1")
+
+    assert moved == [4, 5]
+    assert gitea.column_of(4) == gitea.column_of(5) == "DoD"
+    assert gitea.column_of(6) == "Testing"
+
+
+@pytest.mark.unit
+def test_gate_lists_the_untested_and_moves_none(gitea):
+    gitea.add_issue(4, milestone="v1", comments=[pointer_tested(4)])
+    gitea.add_issue(5, milestone="v1")
+    gitea.put("Testing", 4, 5)
+
+    with pytest.raises(GiteaError, match="#5"):
+        guide.gate(gitea.connection, "v1")
+
+    assert gitea.column_of(4) == "Testing"
+
+
+@pytest.mark.unit
+def test_tag_refuses_while_the_release_pr_is_not_merged_on_main(gitea):
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": False, "state": "open", "title": "v1.0.0 – first"})
+    git = Git()
+
+    with pytest.raises(GiteaError, match="#30"):
+        guide.tag(gitea.connection, git, Script(), "v1.0.0")
+
+    assert not [call for call in git.calls if call[0] in ("tag", "push")]
+
+
+@pytest.mark.unit
+def test_tag_tags_main_and_pushes_the_tag_after_a_confirm(gitea):
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True, "title": "v1.0.0 – first"})
+    git = Git()
+
+    tagged = guide.tag(gitea.connection, git, Script(True), "v1.0.0")
+
+    assert tagged is True
+    assert ("tag", "v1.0.0", "origin/main") in git.calls
+    assert git.calls[-1] == ("push", "origin", "v1.0.0")
+
+
+@pytest.mark.unit
+def test_tag_ignores_other_prs_into_main(gitea):
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True, "title": "v1.0.0 – first"})
+    gitea.pulls.append({"number": 31, "base": {"ref": "main"}, "head": {"ref": "hotfix"}, "merged": False, "title": "Hotfix"})
+
+    assert guide.tag(gitea.connection, Git(), Script(True), "v1.0.0") is True
+    with pytest.raises(GiteaError, match="for v1.0.1"):
+        guide.tag(gitea.connection, Git(), Script(True), "v1.0.1")
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("version", ["v1", "-f", "1.0.0"])
+def test_tag_rejects_a_version_that_is_not_vxyz(gitea, version):
+    git = Git()
+
+    with pytest.raises(GiteaError, match="not a vX.Y.Z"):
+        guide.tag(gitea.connection, git, Script(True), version)
+
+    assert not git.calls
+
+
+@pytest.mark.unit
+def test_tag_does_nothing_when_the_confirm_is_declined(gitea):
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True, "title": "v1.0.0 – first"})
+    git = Git()
+
+    assert guide.tag(gitea.connection, git, Script(False), "v1.0.0") is False
+    assert not [call for call in git.calls if call[0] in ("tag", "push")]
 
 
 @pytest.mark.unit
@@ -938,3 +1005,32 @@ def test_finish_asks_the_evidence_once_and_no_tested_confirm(tmp_path, gitea):
     walk(tmp_path, script, gitea)
 
     assert gitea.issues[4]["state"] == "closed"
+
+
+@pytest.mark.unit
+def test_the_gate_step_runs_dp_gate_without_an_agent_session(tmp_path, gitea):
+    gitea.milestones.append({"id": 7, "title": "v1", "due_on": None})
+    gitea.add_issue(4, milestone="v1", comments=[pointer_tested(4)])
+    gitea.put("Testing", 4)
+    script = Script(None)  # the milestone, by default the open one due first
+
+    reached = guide.run(tmp_path, guide.flows.load(), None, {"flow": "release", "step": "gate"},
+                        script, gitea.connection, Git())
+
+    assert reached == {"flow": "release", "step": "gate", "ticket": None}
+    assert gitea.column_of(4) == "DoD"
+    assert not (tmp_path / ".factory" / "jobs").exists()
+
+
+@pytest.mark.unit
+def test_the_tag_step_runs_dp_tag_without_an_agent_session(tmp_path, gitea):
+    gitea.milestones.append({"id": 7, "title": "v1.0.0", "due_on": None})
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True, "title": "v1.0.0 – first"})
+    git = Git()
+
+    reached = guide.run(tmp_path, guide.flows.load(), None, {"flow": "release", "step": "tag"},
+                        Script(None, True), gitea.connection, git)
+
+    assert reached["step"] == "tag"
+    assert git.calls[-1] == ("push", "origin", "v1.0.0")
+    assert not (tmp_path / ".factory" / "jobs").exists()

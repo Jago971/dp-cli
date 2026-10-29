@@ -200,3 +200,40 @@ def test_version_flag_prints_the_same_as_the_command(installed_version):
 
     assert result.exit_code == 0
     assert result.output.strip() == f"dp {installed_version}"
+
+
+@pytest.mark.unit
+def test_gate_moves_the_tested_tickets_and_prints_them(gitea):
+    gitea.add_issue(4, milestone="v1", comments=[("Squire", "Tested by hand, 2026-10-22. Done: prep. → #4")])
+    gitea.put("Testing", 4)
+
+    result = run("gate", "v1", "--json")
+
+    assert result.exit_code == 0
+    assert json.loads(result.output) == {"milestone": "v1", "moved": [4]}
+    assert gitea.column_of(4) == "DoD"
+
+
+@pytest.mark.unit
+def test_gate_stops_with_one_error_line_when_a_ticket_is_untested(gitea):
+    gitea.add_issue(5, milestone="v1")
+    gitea.put("Testing", 5)
+
+    result = run("gate", "v1")
+
+    assert result.exit_code == 1
+    assert "✖ dp:" in result.output and "#5" in result.output
+
+
+@pytest.mark.unit
+def test_tag_pushes_after_a_confirm(gitea, monkeypatch):
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True, "title": "v1.0.0 – first"})
+    calls = []
+    monkeypatch.setattr(cli, "git", lambda *args: calls.append(args) or "")
+
+    declined = CliRunner().invoke(cli.app, ["tag", "v1.0.0"], input="n\n")
+    assert declined.exit_code == 1 and not calls and "✖ dp: not tagged" in declined.output
+
+    result = CliRunner().invoke(cli.app, ["tag", "v1.0.0"], input="y\n")
+    assert result.exit_code == 0
+    assert calls[-1] == ("push", "origin", "v1.0.0")

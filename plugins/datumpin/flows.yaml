@@ -134,7 +134,7 @@ steps:
     does: A defect at test; reopens the ticket to Backlog
     next: [pick]
   gate:
-    skill: change-ready
+    skill: dp
     env: prep
     does: Move the milestone's tickets to DoD
     next: [review]
@@ -149,9 +149,9 @@ steps:
     does: You sign the worksheet and merge the release PR
     next: [tag]
   tag:
-    skill: agent
+    skill: dp
     env: prod
-    does: Tag vX.Y.Z on main and update the plugin in each repo
+    does: Tag vX.Y.Z on main and push the tag
     next: [close]
   close:
     skill: gitea

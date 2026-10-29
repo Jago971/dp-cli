@@ -18,7 +18,7 @@ import yaml
 from dp import data
 
 FINDINGS = "findings.json"
-NO_SKILL_FILE = ("agent", "human")
+NO_SKILL_FILE = ("agent", "human", "dp")
 HEADING = re.compile(r"(#{1,6}) (.+)")
 FENCE = re.compile(r"\s*```")
 ASK_FINDINGS = (

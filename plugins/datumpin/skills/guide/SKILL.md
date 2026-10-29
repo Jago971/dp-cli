@@ -35,7 +35,7 @@ updated: 2026-10-21T16:40:00
    - `agent`: do the step directly, in its `formats` shape.
    - `human`: print what the person does, and wait for them to say it is done.
 
-   After `shape`, ask which of its tickets to pick. Offer `tag` only once the release PR is merged on `main` (`gitea`); a state file alone never reaches it. Leaving `test`, ask `Tested OK?`: on yes, post a Tested Pointer (`formats`, Comment) with `dp pointer`; on no, stay at `test`. `finish` is the yes (no second ask): it posts the Pointer, closes the ticket, moves it to DoD and prints the column it reads back; land on the home menu after, with no ticket current. `defect` reopens the ticket to Backlog with a Progress comment.
+   After `shape`, ask which of its tickets to pick. `gate` and `tag` are bookkeeping, not agent work: run `dp gate MILESTONE` and `dp tag vX.Y.Z` (`gitea`). `dp tag` refuses until the release PR is merged on `main`, then tags and pushes after a confirm. Leaving `test`, ask `Tested OK?`: on yes, post a Tested Pointer (`formats`, Comment) with `dp pointer`; on no, stay at `test`. `finish` is the yes (no second ask): it posts the Pointer, closes the ticket, moves it to DoD and prints the column it reads back; land on the home menu after, with no ticket current. `defect` reopens the ticket to Backlog with a Progress comment.
 4. **Record.** Write the new position to the state file, adding the ticket to `paused` when the choice left it (removed on coming back to it), then go back to step 1. On `stop`, write the state and end with one log line naming where to resume.
 
 ## Done when
