@@ -4,9 +4,17 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
-### [CHANGED] 2026-10-29 - dp fills the fixed texts (plugin 0.8.24)
+### [CHANGED] 2026-10-29 - dp fills the fixed texts (plugin 0.8.26)
 
 - `dp pr-body` fills the PR body shape, `dp pointers` posts a Done Pointer per closed ticket of a milestone, and `dp worksheet` pre-fills the release worksheet's evidence. Each of the first and last prints an estimated tokens-saved line (#122).
+
+### [CHANGED] 2026-10-29 - dp runs the release gate and tag (plugin 0.8.25)
+
+- `dp gate MILESTONE` moves each ticket with a Tested Pointer to DoD, or lists the untested and moves none. `dp tag vX.Y.Z` checks the `vX.Y.Z` release PR (matched by title) is merged on `main`, then tags and pushes after a confirm. `dp guide` runs both as CLI steps with no agent turn; the guide skill calls the same commands (#133).
+
+### [CHANGED] 2026-10-29 - Closed tickets count toward the milestone (plugin 0.8.24)
+
+- `gitea` says a ticket closes when it leaves `test` with "Tested OK?" yes, and that the milestone bar is the management view. The `gate` fork waits for a Tested Pointer on tickets in DoD as well as Testing (#156).
 
 ### [CHANGED] 2026-10-28 - DoD is the milestone's release gate (plugin 0.8.23)
 

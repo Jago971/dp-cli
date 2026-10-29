@@ -70,7 +70,9 @@ class FakeGitea:
             title = next(t for t, cid in self.column_ids.items() if cid == int(found.group(1)))
             return [self.issue(n) for n in self.page(self.cards[title], params)]
         if method == "GET" and re.search(r"^repos/[^/]+/[^/]+/issues$", path):
-            wanted = [i for i in self.issues.values() if i["state"] == params.get("state", "open")]
+            state, milestone = params.get("state", "open"), params.get("milestones")
+            wanted = [i for i in self.issues.values() if state in ("all", i["state"])
+                      and (milestone is None or (i["milestone"] or {}).get("title") == milestone)]
             return self.page(wanted, params)
         found = re.search(r"/issues/(\d+)$", path)
         if method == "GET" and found:
