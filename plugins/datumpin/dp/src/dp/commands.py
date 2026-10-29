@@ -138,12 +138,18 @@ def move(call, repo, number, column, assignee=None):
     return {"number": number, "from": current, "to": title, "assigned": assigned}
 
 
+def earliest_milestone(call, repo):
+    """The open milestone due first (the oldest when none is due), or None."""
+    open_milestones = paged(call, f"repos/{repo}/milestones?state=open")
+    return min(open_milestones, key=lambda m: (m.get("due_on") is None, m.get("due_on") or "", m["id"]),
+               default=None)
+
+
 def join_earliest_milestone(call, repo, number):
     """Put ticket N in the open milestone due first (the oldest when none is due); its title, or None."""
-    open_milestones = paged(call, f"repos/{repo}/milestones?state=open")
-    if not open_milestones:
+    earliest = earliest_milestone(call, repo)
+    if not earliest:
         return None
-    earliest = min(open_milestones, key=lambda m: (m.get("due_on") is None, m.get("due_on") or "", m["id"]))
     call("PATCH", f"repos/{repo}/issues/{number}", {"milestone": earliest["id"]})
     return earliest["title"]
 

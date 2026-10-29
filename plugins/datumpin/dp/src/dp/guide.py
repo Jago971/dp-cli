@@ -2,8 +2,9 @@
 
 Summary: finds the position, offers the next steps (this flow's first, then
          the forks that hold, `flows…` and stop), and runs the chosen one: a
-         person's gate (a pick, a human step, a tag, the review's
-         dispositions, leaving `test`) as a CLI prompt; an agent step as a
+         person's gate (a pick, a human step, the review's
+         dispositions, leaving `test`) as a CLI prompt; `gate` and `tag` as dp's own
+         commands, no agent turn; an agent step as a
          job brief and a Claude session on the step's model, or the Job
          prompt to paste; a user-invoked skill as the command to type. Each
          step reached is written to .factory/guide.yaml, the guide skill's
@@ -190,6 +191,40 @@ def milestone_tested(gitea, ticket):
     if any(others[column] for column in BEFORE_TESTING):
         return False
     return all(commands.each(lambda n: tested(gitea, n), others["Testing"]))
+
+
+def gate(gitea, milestone):
+    """Move each open ticket of the milestone to DoD; the numbers moved.
+
+    Process: a ticket without a Tested Pointer stops the gate before any move, so a release is never half gated.
+    """
+    open_tickets = [t["number"] for column in commands.column_tickets(gitea.call, gitea.repo).values()
+                    for t in column if t["milestone"] == milestone]
+    untested = [n for n, ok in zip(open_tickets, commands.each(lambda n: tested(gitea, n), open_tickets)) if not ok]
+    if untested:
+        raise GiteaError(f"no Tested Pointer: {', '.join(f'#{n}' for n in untested)}")
+    for number in open_tickets:
+        commands.move(gitea.call, gitea.repo, number, "DoD")
+    return open_tickets
+
+
+def tag(gitea, git, prompts, version):
+    """Tag main's tip `version` and push the tag after a confirm; False when declined.
+
+    Process: the newest PR into main must be merged, else GiteaError, so a tag never lands before the release does.
+    """
+    pulls = [p for p in commands.paged(gitea.call, f"repos/{gitea.repo}/pulls?state=all")
+             if p["base"]["ref"] == "main"]
+    latest = max(pulls, key=lambda p: p["number"], default=None)
+    if not latest or not latest["merged"]:
+        which = f"#{latest['number']}" if latest else "to main"
+        raise GiteaError(f"release PR {which} is not merged on main")
+    if not prompts.confirm(f"Tag {version} on main and push it?"):
+        return False
+    git("fetch", "origin", "main")
+    git("tag", version, "origin/main")
+    git("push", "origin", version)
+    return True
 
 
 CHECKS = {"unscoped": unscoped, "milestone_tested": milestone_tested}
@@ -457,6 +492,19 @@ def confirm_done(step, does, ticket, prompts, pull):
     return prompts.confirm(f"{does}. Done?")
 
 
+def release_step(step, prompts, gitea, git):
+    """Run `gate` or `tag` as dp does, asking the milestone (the open one due first by default); False to stay."""
+    found = commands.earliest_milestone(gitea.call, gitea.repo)
+    milestone = prompts.text("Milestone", found["title"] if found else "").strip()
+    if not milestone:
+        raise GiteaError("no open milestone: give one")
+    if step == "gate":
+        moved = gate(gitea, milestone)
+        prompts.say(f"[release] gate · {len(moved)} to DoD · {milestone}")
+        return True
+    return tag(gitea, git, prompts, milestone)
+
+
 def run(root, flow_map, position, choice, prompts, gitea, git, pull=None):
     """Run the chosen step; the position it reached, or None when it did not happen.
 
@@ -484,6 +532,10 @@ def run(root, flow_map, position, choice, prompts, gitea, git, pull=None):
             prompts.note(f"{ref(flow, ticket)} FAILED · Gitea unreachable · staying at test")
             return None
         prompts.say(f"{ref(flow, ticket)} reopened · Backlog · {found}")
+    elif skill == "dp":
+        reached = release_step(step, prompts, gitea, git)
+        if not reached:
+            return None
     elif skill == "human":
         does = flow_map["steps"][step]["does"]
         if step == "test":
@@ -499,9 +551,6 @@ def run(root, flow_map, position, choice, prompts, gitea, git, pull=None):
         prompts.say(f"Type /datumpin:{skill} in the session you worked in.")
         prompts.say(NEW_CHAT if step == "handoff" else "Next: type it there, then run dp guide")
     else:
-        # A tag follows the release PR on main, whatever the state file says (guide skill).
-        if step == "tag" and not prompts.confirm("Is the release PR merged on main?"):
-            return None
         if step != "review":
             adjudicate(root, flow, ticket, prompts)  # findings a resumed walk passed by undecided
         work = job(flow_map, flow, step, ticket, gitea, git, prompts)

@@ -1,6 +1,6 @@
 """dp's command line: one command per repeated Gitea task, the guide and the token report.
 
-Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp guide`, `dp tokens` and `dp version`.
+Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp gate`, `dp tag`, `dp guide`, `dp tokens` and `dp version`.
 Input:   the repo in the working directory (its git remote and
          `.claude/flow.yaml`) and tea's logins; writes go as the agent login.
 Output:  text through dp.terminal (NO_COLOR, `--plain` and pipes give it
@@ -157,6 +157,36 @@ def pointer(number: int, text: str, as_json: bool = JSON):
     with busy(f"Posting on #{number}", quiet=as_json):
         posted = commands.pointer(gitea.call, gitea.repo, number, text)
     emit(posted, as_json, lambda p: done(f"#{p['number']} pointer posted"))
+
+
+@app.command()
+@reports_errors
+def gate(milestone: str, as_json: bool = JSON):
+    """Move each ticket of MILESTONE to DoD; stops, moving none, when one has no Tested Pointer."""
+    gitea = connect()
+    with busy(f"Gating {milestone}", quiet=as_json):
+        moved = guide.gate(gitea, milestone)
+    emit({"milestone": milestone, "moved": moved}, as_json,
+         lambda g: done(f"{g['milestone']} · {len(g['moved'])} to DoD"))
+
+
+class Asks(guide.Plain):
+    """The confirm for a command: typer asks it, and say() prints."""
+
+    def confirm(self, message):
+        return typer.confirm(message)
+
+    def say(self, line):
+        typer.echo(line)
+
+
+@app.command()
+@reports_errors
+def tag(version: str):
+    """Tag VERSION on main and push the tag, after a confirm; main's release PR must be merged."""
+    if not guide.tag(connect(), git, Asks(), version):
+        raise typer.Exit(1)
+    done(f"{version} tagged and pushed")
 
 
 @app.command(name="guide")
