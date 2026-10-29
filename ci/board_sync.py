@@ -7,8 +7,11 @@ anyone dragging cards:
     pull request opened or reopened -> each ticket it names: Review
     pull request merged into prep   -> each ticket it names: Testing
     issue opened                    -> Triage, when not on the Board yet
-    issue closed                    -> DoD, where it waits for the gate (#61 moves it to Done)
+    issue closed                    -> DoD, where it waits for the release gate
+    pull request merged prep -> main -> the milestone it carries: DoD tickets to Done, with a comment
     issue reopened                  -> Backlog
+
+A release leaves a ticket not in DoD where it is and lists it in the log.
 
 A pull request names a ticket with "Refs #N" (the formats skill) or through
 its branch, <type>/<N>-<slug>. A ticket it only relates to goes on a "See #N"
@@ -23,6 +26,7 @@ import json
 import os
 import re
 import sys
+import urllib.parse
 import urllib.request
 
 ORDER = ["Triage", "Backlog", "In Progress", "Review", "Testing", "DoD", "Done"]
@@ -93,15 +97,45 @@ def move(repo, number, column, forward_only):
     print(f"MOVE  #{number}: {current or 'not on the Board'} -> {column}")
 
 
+def release(repo, pull):
+    """Moves the DoD tickets of the pull request's milestone to Done, commenting the release."""
+    milestone = (pull.get("milestone") or {}).get("title")
+    if not milestone:
+        print("SKIP  release pull request has no milestone")
+        return
+    board = next((p for p in call("GET", f"repos/{repo}/projects?state=open") if p["title"] == "Board"), None)
+    if board is None:
+        print(f"SKIP  {repo} has no Board")
+        return
+    columns = {c["title"]: c["id"] for c in call("GET", f"repos/{repo}/projects/{board['id']}/columns")}
+    for page in range(1, MAX_PAGES + 1):
+        issues = call("GET", f"repos/{repo}/issues?state=all&type=issues&milestones={urllib.parse.quote(milestone)}&limit=50&page={page}")
+        if not issues:
+            return
+        for issue in issues:
+            current = column_holding(repo, board["id"], columns, issue["id"])
+            if current != "DoD":
+                print(f"LEAVE #{issue['number']}: in {current or 'not on the Board'}, not DoD")
+                continue
+            move(repo, issue["number"], "Done", forward_only=True)
+            call("POST", f"repos/{repo}/issues/{issue['number']}/comments",
+                 {"body": f"Released in {milestone} (#{pull['number']})."})
+    raise RuntimeError(f"{milestone}: no empty page after {MAX_PAGES} pages; is paging honoured?")
+
+
 def main():
     repo = os.environ["REPOSITORY"]
     event = json.load(open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8"))
     action = event.get("action")
     if "pull_request" in event:
         pull = event["pull_request"]
+        merged = action == "closed" and pull.get("merged")
+        if merged and pull.get("base", {}).get("ref") == "main" and pull.get("head", {}).get("ref") == "prep":
+            release(repo, pull)
+            return
         if action in ("opened", "reopened", "ready_for_review"):
             target = "Review"
-        elif action == "closed" and pull.get("merged") and pull.get("base", {}).get("ref") == "prep":
+        elif merged and pull.get("base", {}).get("ref") == "prep":
             target = "Testing"
         else:
             print(f"SKIP  pull request {action}: nothing to move")
