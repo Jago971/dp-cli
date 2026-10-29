@@ -98,14 +98,18 @@ def test_pick_fetches_origin_before_cutting_the_branch(tmp_path, gitea):
 
 
 @pytest.mark.unit
-def test_a_failed_fetch_cuts_no_branch_and_leaves_the_ticket(tmp_path, gitea, capsys):
+def test_a_failed_fetch_cuts_no_branch_and_leaves_the_ticket(tmp_path, gitea):
     backlog_four(gitea)
     git = FetchFails()
 
-    walk(tmp_path, Script("tickets", "#4", None, "stop"), gitea, git)
+    script = Script("tickets", "#4", None, "stop")
+
+    walk(tmp_path, script, gitea, git)
 
     assert not [c for c in git.calls if c[0] == "switch"]
     assert gitea.column_of(4) == "Backlog"
+    lines = [l for l in script.said if l.startswith("dp:")]
+    assert len(lines) == 1 and "git fetch: no route" in lines[0]
 
 
 class OldBranch(Git):
