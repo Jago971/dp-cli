@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-30 - the check brief names the dev-container test command (plugin 0.8.28)
+
+- The `check` step's brief carries `The local loop`, so tests run in the dev container (`ci/local-check.sh` in DEVKIT), not on the host, and a host-only failure no longer fails a check (#223). `ci/local-check.sh` also mounts `.gitea` read-only, so the board workflow tests find their files in the container.
+
 ### [CHANGED] 2026-10-29 - dp pick branches from origin/prep (plugin 0.8.27)
 
 - `dp pick` fetches `origin` and cuts the branch from `origin/prep`, so it starts current. A failed fetch prints one `dp:` line and moves nothing (#228).
