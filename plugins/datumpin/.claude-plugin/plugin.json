@@ -1,7 +1,7 @@
 {
   "name": "datumpin",
   "description": "Datumpin conventions and the agentic workflow: Gitea-led tickets, board, shape, align.",
-  "version": "0.8.27",
+  "version": "0.8.28",
   "author": {
     "name": "Datumpin"
   }

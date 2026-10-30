@@ -138,3 +138,10 @@ def test_every_brief_carries_the_step_ending_rule(tmp_path):
 def test_formats_defines_the_step_ending_block_beside_the_handover_block():
     text = brief.data("skills", "formats", "terminal.md").read_text(encoding="utf-8")
     assert text.index("## Handover") < text.index("## Step ending") < text.index("## Guide prompt")
+
+
+@pytest.mark.unit
+def test_the_check_brief_names_the_dev_container_test_command():
+    text = brief.skill_text(flows.load()["steps"]["check"])
+    assert "ci/local-check.sh" in text
+    assert "docker compose <dev> exec <service> python -m pytest" in text

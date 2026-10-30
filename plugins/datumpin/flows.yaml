@@ -85,7 +85,8 @@ steps:
   check:
     skill: change-ready
     env: dev
-    does: Tick the change checklist, with the tests passing locally
+    does: Tick the change checklist, with the tests passing in the dev container
+    brief: [change-ready#Change checklist, testing-conventions#The local loop]
     next: [commit]
   commit:
     skill: agent

@@ -56,7 +56,7 @@ osv_scan() {
 }
 
 check pytest docker run --rm -e PYTHONDONTWRITEBYTECODE=1 \
-  -v /var/run/docker.sock:/var/run/docker.sock -v "$ROOT/ci:/w/ci" -v "$ROOT/plugins:/w/plugins:ro" \
+  -v /var/run/docker.sock:/var/run/docker.sock -v "$ROOT/ci:/w/ci" -v "$ROOT/plugins:/w/plugins:ro" -v "$ROOT/.gitea:/w/.gitea:ro" \
   -w /w/ci/tests python:3.11-alpine \
   sh -c 'apk add -q bash docker-cli && pip install -q -r requirements.txt && python -m pytest -q -p no:cacheprovider -m "unit or integration"'
 check conformance in_repo python:3.11-alpine python ci/conformance.py .
