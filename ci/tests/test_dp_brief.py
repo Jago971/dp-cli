@@ -165,6 +165,8 @@ def test_the_handover_next_prompt_tells_the_user_to_run_dp_guide_not_start_a_tic
     line = next(l for l in handover_block().splitlines() if l.startswith("Next prompt"))
     assert "dp guide" in line
     assert "continue #" not in line and "/datumpin:board" not in line
+    assert "paste" not in line
+    assert "does not start the ticket" in line
 
 
 @pytest.mark.unit
