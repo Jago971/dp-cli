@@ -900,6 +900,32 @@ def test_entering_test_asks_nothing_and_says_leaving_records_tested(tmp_path, gi
 
 
 @pytest.mark.unit
+def test_choosing_test_at_a_board_placed_test_asks_nothing(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "merge", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)  # the board places the ticket at test
+    script = Script("test", "stop")  # no confirm answer: choosing test must not ask "Tested OK?"
+
+    walk(tmp_path, script, gitea)
+
+    assert saved(tmp_path)["step"] == "test"
+    assert guide.LEAVING_TEST in script.said
+    assert not [w for w in gitea.writes if w[0] == "comment"]
+
+
+@pytest.mark.unit
+def test_finish_after_a_board_placed_test_still_asks_the_evidence(tmp_path, gitea):
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "merge", "ticket": 4})
+    gitea.add_issue(4)
+    gitea.put("Testing", 4)
+    script = Script("test", "finish", "laptop", "stop")  # finish is the "Tested OK?" answer
+
+    walk(tmp_path, script, gitea)
+
+    assert [w for w in gitea.writes if w[0] == "comment"]
+
+
+@pytest.mark.unit
 def test_an_untested_change_stays_at_test(tmp_path, gitea):
     guide.write_state(tmp_path, {"flow": "ticket", "step": "test", "ticket": 4})
     gitea.add_issue(4)

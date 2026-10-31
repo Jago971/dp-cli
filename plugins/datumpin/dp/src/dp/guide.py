@@ -600,8 +600,12 @@ def choose_paused(paused, prompts):
     return prompts.choose("Resume?", [(f"#{p['ticket']} at {p['step']}", p) for p in paused] + [(BACK, None)])
 
 
-def may_leave(position, here, choice, prompts, gitea):
-    """Leaving a step: `test` needs its Tested Pointer first, unless a defect reopens it; False to stay."""
+def may_leave(position, here, choice, prompts, gitea, pending=False):
+    """Leaving a step: `test` needs its Tested Pointer first, unless a defect reopens it; False to stay.
+
+    Input: `pending` when the board placed the ticket at `test`, so choosing `test` enters it."""
+    if pending and choice["step"] == "test":
+        return True
     if position and position["step"] == "test" and position["ticket"] and choice["step"] != "defect":
         return leave_test(position, prompts, gitea, here["env"], answered=choice["step"] == "finish")
     return True
@@ -657,7 +661,7 @@ def walk(root, prompts, gitea, git):
             choice = choose_flow(flow_map, prompts)
             if not isinstance(choice, dict):
                 continue
-        if not may_leave(position, here, choice, prompts, gitea):
+        if not may_leave(position, here, choice, prompts, gitea, pending):
             continue
         reached = run(root, flow_map, position, choice, prompts, gitea, git, pull)
         if reached:
