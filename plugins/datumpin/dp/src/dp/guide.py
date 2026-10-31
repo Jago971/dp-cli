@@ -570,7 +570,7 @@ def run(root, flow_map, position, choice, prompts, gitea, git, pull=None):
         if step == "merge" and pull:
             prompts.say(f"PR #{pull[0]} {pull[2]}".strip())
         if step == "merge":
-            pull = merge_state(gitea, git, ticket)  # the person may have merged since the menu drew
+            pull = merge_state(gitea, git, ticket) or pull  # the person may have merged since the menu drew; a failed read keeps the menu's
         if step != "test" and not confirm_done(step, does, ticket, prompts, pull if step == "merge" else None):
             return None
         prompts.say(NEXT_STEP)
