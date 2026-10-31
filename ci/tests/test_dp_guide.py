@@ -315,6 +315,53 @@ def test_an_open_pr_keeps_the_walk_at_merge_and_says_so(tmp_path, gitea):
     assert "[ticket #4] PR #9 is not merged · merge it, then run dp guide" in script.said
 
 
+class MergesWhileMenuWaits(Script):
+    """The person merges the PR in Gitea after the menu drew, before choosing."""
+
+    def __init__(self, pull, *answers):
+        super().__init__(*answers)
+        self.pull = pull
+
+    def choose(self, message, options, default=None):
+        chosen = super().choose(message, options, default)
+        self.pull["merged"] = True
+        return chosen
+
+
+@pytest.mark.unit
+def test_a_pr_merged_while_the_menu_waits_passes_at_the_first_choice(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=False)
+    script = MergesWhileMenuWaits(gitea.pulls[0], "merge", "stop")
+
+    walk(tmp_path, script, gitea, OnBranch())
+
+    assert saved(tmp_path)["step"] == "merge"
+    assert not [line for line in script.said if "is not merged" in line]
+
+
+class GiteaDropsAfterMenu(Script):
+    """Gitea answers the menu's read, then goes unreachable."""
+
+    def __init__(self, gitea, *answers):
+        super().__init__(*answers)
+        self.gitea = gitea
+
+    def choose(self, message, options, default=None):
+        chosen = super().choose(message, options, default)
+        self.gitea.connection.call = mock.Mock(side_effect=GiteaError("unreachable"))
+        return chosen
+
+
+@pytest.mark.unit
+def test_a_failed_reread_at_merge_keeps_the_menus_pr_state(tmp_path, gitea):
+    at_merge(tmp_path, gitea, merged=True)
+    script = GiteaDropsAfterMenu(gitea, "merge", "stop")  # no confirm answer: merged must still hold
+
+    walk(tmp_path, script, gitea, OnBranch())
+
+    assert saved(tmp_path)["step"] == "merge"
+
+
 @pytest.mark.unit
 def test_entering_merge_prints_the_prs_number_and_link(tmp_path, gitea):
     at_merge(tmp_path, gitea, merged=False)

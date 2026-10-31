@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-31 - dp guide re-reads the PR at merge (plugin 0.8.29)
+
+- Choosing `merge` reads the PR's state again, so a PR merged while the menu waited passes at the first choice. An open PR still gets the "is not merged" note (#211).
+
 ### [CHANGED] 2026-10-30 - the check brief names the dev-container test command (plugin 0.8.28)
 
 - The `check` step's brief carries `The local loop`, so tests run in the dev container (`ci/local-check.sh` in DEVKIT), not on the host, and a host-only failure no longer fails a check (#223). `ci/local-check.sh` also mounts `.gitea` read-only, so the board workflow tests find their files in the container.
