@@ -533,7 +533,7 @@ def release_step(step, prompts, gitea, git):
 def run(root, flow_map, position, choice, prompts, gitea, git, pull=None):
     """Run the chosen step; the position it reached, or None when it did not happen.
 
-    `pull` is the ticket's PR as `merge_state` found it, read once for the menu."""
+    `pull` is the ticket's PR as `merge_state` found it for the menu; `merge` reads it again after the choice."""
     flow, step = choice["flow"], choice["step"]
     ticket = position["ticket"] if position and flow == "ticket" else None
     skill = flow_map["steps"][step]["skill"]
@@ -569,6 +569,8 @@ def run(root, flow_map, position, choice, prompts, gitea, git, pull=None):
             recorded(root, flow, ticket, prompts)  # what the person signs; nothing is asked again
         if step == "merge" and pull:
             prompts.say(f"PR #{pull[0]} {pull[2]}".strip())
+        if step == "merge":
+            pull = merge_state(gitea, git, ticket)  # the person may have merged since the menu drew
         if step != "test" and not confirm_done(step, does, ticket, prompts, pull if step == "merge" else None):
             return None
         prompts.say(NEXT_STEP)
