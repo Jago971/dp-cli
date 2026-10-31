@@ -1116,3 +1116,9 @@ def test_the_tag_step_runs_dp_tag_without_an_agent_session(tmp_path, gitea):
     assert reached["step"] == "tag"
     assert git.calls[-1] == ("push", "origin", "v1.0.0")
     assert not (tmp_path / ".factory" / "jobs").exists()
+
+
+@pytest.mark.unit
+def test_handoff_tells_the_user_to_run_dp_guide_not_to_paste_a_prompt():
+    assert "dp guide" in guide.NEW_CHAT
+    assert "paste" not in guide.NEW_CHAT
