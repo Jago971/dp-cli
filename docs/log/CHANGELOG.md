@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-10-31 - choosing test at a board-placed test asks nothing (plugin 0.8.31)
+
+- When the board places a ticket at `test`, choosing `test` enters it: no "Tested OK?", and the line says leaving records Tested. Leaving for `finish` or any step but `defect` still asks (#205).
+
 ### [CHANGED] 2026-10-31 - the handoff prompts the user to run dp guide (plugin 0.8.30)
 
 - The handoff's Next section never tells a chat to start a ticket, and the Handover block tells the user to run `dp guide` with the recommended ticket and step. The block is fenced and prints the path repo-relative with forward slashes, so markdown keeps it (#214).
