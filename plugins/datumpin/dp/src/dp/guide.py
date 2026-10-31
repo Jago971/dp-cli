@@ -51,7 +51,7 @@ FLOWS = (f"{'flows…':<11} Start or switch to any flow", "flows")
 PAUSE = (f"{'pause':<11} Saves this ticket's step, returns to the home menu", "pause")
 RESUME = (f"{'resume…':<11} Continue a paused ticket", "resume")
 HOME_FLOWS = ("ticket", "session")  # reached by `tickets` and `end`, so `flows…` leaves them out
-NEW_CHAT = "Start the new chat: run claude, then paste the Next prompt from the handoff."
+NEW_CHAT = "Next session: run dp guide in dp-cli and choose the ticket and step the handoff recommends."
 END = {"name": "end", "step": "retro", "flow": "session", "kind": "flow",
        "does": "Review the session, then write the handoff"}
 

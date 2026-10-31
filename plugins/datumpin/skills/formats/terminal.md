@@ -74,13 +74,13 @@ To close · 2 superseded
 ## Handover
 
 ```
-Handover · <repo>\.factory\handoff-2026-10-21.md
-Next prompt   Read <repo>\.factory\handoff-2026-10-21.md, then run /datumpin:board and continue #89.
+Handover · .factory/handoff-2026-10-21.md
+Next prompt   In dp-cli run `dp guide`: it offers #89 at its step. A chat reading .factory/handoff-2026-10-21.md tells you this; it does not start the ticket.
 Your steps    1. Merge DEVKIT#99
               2. Merge Datumpin/AHJ#169
 ```
 
-- `Next prompt` is one line the user pastes as is; it names the document and the next flow step.
+- `Next prompt` is one line that tells the user to run `dp guide` in dp-cli with the recommended ticket and step, and names the document by its repo-relative path. It also says a chat reading that document tells the user to run `dp guide` and does not start the ticket, since a reading chat does not load the handoff skill.
 - `Your steps` lists only what the human must do first, numbered; `none` when empty.
 
 ## Step ending
