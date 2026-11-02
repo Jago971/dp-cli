@@ -1,5 +1,7 @@
 """Unit tier: dp's command line (plugins/datumpin/dp), with Gitea in memory."""
 import json
+import tomllib
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
@@ -7,6 +9,8 @@ from typer.testing import CliRunner
 from dp import cli
 from dp.gitea import GiteaError
 from fake_gitea import FakeGitea
+
+PYPROJECT = Path(__file__).parents[2] / "plugins/datumpin/dp/pyproject.toml"
 
 
 @pytest.fixture
@@ -74,6 +78,20 @@ def test_pr_reads_its_body_from_a_file(gitea, tmp_path, monkeypatch):
 
 
 @pytest.mark.unit
+def test_pr_copies_the_labels_of_the_ticket_in_the_branch_name(gitea, tmp_path, monkeypatch):
+    gitea.labels["org"].append({"id": 9, "name": "TYPE/BUG"})
+    gitea.add_issue(4, labels=["TYPE/BUG"])
+    body = tmp_path / "pr.md"
+    body.write_text("## Summary\nWhy.\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "current_branch", lambda: "fix/4-x")
+
+    result = run("pr", "--title", "Title", "--body-file", str(body), "--json")
+
+    assert result.exit_code == 0
+    assert len(gitea.writes[0][1]["labels"]) == 1
+
+
+@pytest.mark.unit
 def test_a_gitea_error_prints_one_line_and_exits_1(monkeypatch):
     def unreachable():
         raise GiteaError("Gitea unreachable: connection refused")
@@ -111,8 +129,8 @@ def test_guide_off_a_terminal_prints_the_guide_prompt(gitea, tmp_path, monkeypat
 
     assert result.exit_code == 0
     assert result.output.splitlines()[0] == "Guide · start"
-    assert "1. ticket" in result.output
-    assert result.output.rstrip().endswith("? Next? (1 / 2 / 3 / 4 / 5 / 6)")
+    assert "1. tickets" in result.output
+    assert result.output.rstrip().endswith("? Next? (1 / 2 / 3 / 4)")
 
 
 @pytest.mark.unit
@@ -127,7 +145,7 @@ def test_pick_takes_a_ticket_in_on_its_branch(gitea, monkeypatch):
     assert result.exit_code == 0
     taken = json.loads(result.output)
     assert (taken["to"], taken["assigned"], taken["branch"]) == ("In Progress", "MattM", "fix/4-fix-the-thing")
-    assert branched == [("switch", "--create=fix/4-fix-the-thing", "prep")]
+    assert branched == [("fetch", "origin"), ("switch", "--create=fix/4-fix-the-thing", "origin/prep")]
 
 
 @pytest.mark.unit
@@ -140,7 +158,7 @@ def test_pick_passes_a_leading_dash_branch_as_a_value_not_an_option(gitea, monke
     result = run("pick", "4", "--branch=-x", "--json")
 
     assert result.exit_code == 0
-    assert branched == [("switch", "--create=-x", "prep")]
+    assert branched == [("fetch", "origin"), ("switch", "--create=-x", "origin/prep")]
 
 
 @pytest.mark.unit
@@ -171,3 +189,114 @@ def test_a_write_ends_with_one_tick_line(gitea):
     result = run("move", "4", "Review")
 
     assert result.output.strip() == "✔ #4 Backlog → Review"
+
+
+@pytest.fixture
+def installed_version(monkeypatch):
+    """Stand in for the installed dp, and fail when dp asks for any other distribution name."""
+    name = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))["project"]["name"]
+    version = "1.2.3"
+    monkeypatch.setattr("importlib.metadata.version", lambda asked: version if asked == name else "?")
+    return version
+
+
+@pytest.mark.unit
+def test_version_command_prints_the_installed_version(installed_version):
+    result = run("version")
+
+    assert result.exit_code == 0
+    assert result.output.strip() == f"dp {installed_version}"
+
+
+@pytest.mark.unit
+def test_version_flag_prints_the_same_as_the_command(installed_version):
+    result = run("--version")
+
+    assert result.exit_code == 0
+    assert result.output.strip() == f"dp {installed_version}"
+
+
+@pytest.mark.unit
+def test_pointers_posts_a_done_pointer_per_closed_ticket(gitea):
+    gitea.add_issue(1, title="Home menu", state="closed", milestone="v0.8.0")
+
+    result = run("pointers", "v0.8.0", "--json")
+
+    assert result.exit_code == 0
+    shown = json.loads(result.output)
+    assert [p["number"] for p in shown["pointers"]] == [1]
+    assert shown["saved_tokens"] > 0
+
+
+@pytest.mark.unit
+def test_pr_body_with_bad_json_fails_on_one_line(tmp_path):
+    parts = tmp_path / "parts.json"
+    parts.write_text("{not json")
+
+    result = run("pr-body", str(parts))
+
+    assert result.exit_code == 1
+    assert "Traceback" not in result.output
+    assert "dp:" in result.output
+
+
+@pytest.mark.unit
+def test_pr_body_prints_the_body_and_the_saving(tmp_path):
+    parts = tmp_path / "parts.json"
+    parts.write_text(json.dumps({"summary": "s", "changes": [["a", "b"]], "evidence": "e",
+                                 "findings": [["S1", "none", "-", "-"]], "refs": ["#1"]}))
+
+    result = run("pr-body", str(parts), "--json")
+
+    out = json.loads(result.output)
+    assert out["body"].startswith("## Summary\ns\n") and out["saved_tokens"] >= 0
+
+
+@pytest.mark.unit
+def test_worksheet_prints_the_filled_sheet(tmp_path):
+    parts = tmp_path / "parts.json"
+    parts.write_text(json.dumps({"project": "Repo", "tickets": [[1, "T"]], "pulls": [[2, "P"]],
+                                 "tests": "5 passed", "findings": [["S1", "none", "-", "-"]]}))
+    template = tmp_path / "t.md"
+    template.write_text("# W\n\n**Project:** **\_\_\_** **Date:** **\_\_\_**\n\n---\n\n## Sign-Off\n")
+
+    result = run("worksheet", str(parts), "--template", str(template), "--json")
+
+    assert "**Project:** Repo" in json.loads(result.output)["worksheet"]
+
+
+@pytest.mark.unit
+def test_gate_moves_the_tested_tickets_and_prints_them(gitea):
+    gitea.add_issue(4, milestone="v1", comments=[("Squire", "Tested by hand, 2026-10-22. Done: prep. → #4")])
+    gitea.put("Testing", 4)
+
+    result = run("gate", "v1", "--json")
+
+    assert result.exit_code == 0
+    assert json.loads(result.output) == {"milestone": "v1", "moved": [4]}
+    assert gitea.column_of(4) == "DoD"
+
+
+@pytest.mark.unit
+def test_gate_stops_with_one_error_line_when_a_ticket_is_untested(gitea):
+    gitea.add_issue(5, milestone="v1")
+    gitea.put("Testing", 5)
+
+    result = run("gate", "v1")
+
+    assert result.exit_code == 1
+    assert "✖ dp:" in result.output and "#5" in result.output
+
+
+@pytest.mark.unit
+def test_tag_pushes_after_a_confirm(gitea, monkeypatch):
+    gitea.pulls.append({"number": 30, "base": {"ref": "main"}, "head": {"ref": "prep"}, "merged": True, "title": "v1.0.0 – first"})
+    calls = []
+    monkeypatch.setattr(cli, "git", lambda *args: calls.append(args) or "")
+
+    declined = CliRunner().invoke(cli.app, ["tag", "v1.0.0"], input="n\n")
+    assert declined.exit_code == 1 and not calls and "✖ dp: not tagged" in declined.output
+
+    result = CliRunner().invoke(cli.app, ["tag", "v1.0.0"], input="y\n")
+    assert result.exit_code == 0
+    assert calls[-1] == ("push", "origin", "v1.0.0")

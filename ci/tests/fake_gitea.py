@@ -15,10 +15,11 @@ PAGE = 50
 
 
 class FakeGitea:
-    def __init__(self, page_size=PAGE, ignores_page=False, max_calls=500):
+    def __init__(self, page_size=PAGE, ignores_page=False, max_calls=500, lands_in=None):
         self.page_size = page_size
         self.ignores_page = ignores_page
         self.max_calls = max_calls
+        self.lands_in = lands_in  # a move settles here, as a card board-sync moved on
         self.calls = 0
         self.board_id = 1
         self.column_ids = {title: 100 + i for i, title in enumerate(COLUMNS)}
@@ -70,7 +71,9 @@ class FakeGitea:
             title = next(t for t, cid in self.column_ids.items() if cid == int(found.group(1)))
             return [self.issue(n) for n in self.page(self.cards[title], params)]
         if method == "GET" and re.search(r"^repos/[^/]+/[^/]+/issues$", path):
-            wanted = [i for i in self.issues.values() if i["state"] == params.get("state", "open")
+            state, milestone = params.get("state", "open"), params.get("milestones")
+            wanted = [i for i in self.issues.values() if state in ("all", i["state"])
+                      and (milestone is None or (i["milestone"] or {}).get("title") == milestone)
                       and unquote(params.get("q", "")) in i["title"]]
             return self.page(wanted, params)
         found = re.search(r"/issues/(\d+)$", path)
@@ -82,6 +85,10 @@ class FakeGitea:
                 self.writes.append(("milestone", number, body["milestone"]))
                 title = next(m["title"] for m in self.milestones if m["id"] == body["milestone"])
                 self.issues[number]["milestone"] = {"title": title}
+            if "state" in body:
+                if body["state"] == "closed":
+                    self.writes.append(("close", number))
+                self.issues[number]["state"] = body["state"]
             if "assignees" in body:
                 self.writes.append(("assign", number, body["assignees"]))
                 self.issues[number]["assignees"] = [{"login": login} for login in body["assignees"]]
@@ -91,6 +98,7 @@ class FakeGitea:
             return self.comments.get(int(found.group(1)), [])
         if method == "POST" and found:
             self.writes.append(("comment", int(found.group(1)), body["body"]))
+            self.comments.setdefault(int(found.group(1)), []).append({"user": {"login": "MattM"}, "body": body["body"]})
             return {"id": 1, "body": body["body"]}
         if method == "GET" and path.endswith("/pulls"):
             return self.page(self.pulls, params)
@@ -114,7 +122,7 @@ class FakeGitea:
             for nums in self.cards.values():
                 if number in nums:
                     nums.remove(number)
-            title = next(t for t, cid in self.column_ids.items() if cid == body["column_id"])
+            title = self.lands_in or next(t for t, cid in self.column_ids.items() if cid == body["column_id"])
             self.cards[title].append(number)
             return None
         raise AssertionError(f"unexpected call: {method} {path}")

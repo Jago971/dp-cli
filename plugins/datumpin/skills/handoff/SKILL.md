@@ -17,4 +17,6 @@ Redact any sensitive information, such as API keys, passwords, or personally ide
 
 If the user passed arguments, treat them as a description of what the next session will focus on and tailor the doc accordingly.
 
-End by printing the Handover block (`formats`): the document's absolute path, the first prompt to paste into the new session (naming the document and the next flow step), and the steps still open for the human.
+The document's "Next" section never tells the chat to start or build a ticket: the person starts work in `dp guide`, so it lists what is open and leaves the choice to them. A chat that reads a handoff tells the user to run `dp guide`; it does not start the ticket itself.
+
+End by printing the Handover block (`formats`) in a code block, so markdown cannot change it. It shows the repo-relative path with forward slashes (a backslash is lost to markdown), a prompt that tells the user to run `dp guide` in dp-cli with the recommended ticket and step and names the document by that path, and the steps still open for the human.

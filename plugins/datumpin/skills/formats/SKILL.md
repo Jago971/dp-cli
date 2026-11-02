@@ -19,6 +19,7 @@ A flow that prints or writes something new adds its shape here, or to the siblin
 | Tickets or milestones before pushing | Draft list | [terminal.md](terminal.md) |
 | Superseded tickets left for a human to close | To-close list | [terminal.md](terminal.md) |
 | The end of a session, for the next one | Handover | [terminal.md](terminal.md) |
+| The end of an agent step | Step ending | [terminal.md](terminal.md) |
 | A scoping question | Shaping question | [terminal.md](terminal.md) |
 | The next choice in a flow | Guide prompt | [terminal.md](terminal.md) |
 | An agent step handed to a session | Job prompt | [terminal.md](terminal.md) |

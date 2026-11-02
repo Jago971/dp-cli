@@ -46,7 +46,7 @@ Three levels use the same idea:
 
 ## Promotion gate
 
-A promotion PR (dev → prep → prod) adds the full worksheet: Stage 1 orientation, Stage 2 quality, Stage 3 security, the meta-review, the final decision and the sign-off table. An independent `change-review` pass and the `security-review` skill run first and fill the Rev and Sec columns with findings, and the reviewer and security owner confirm, dismiss or escalate each. The gate closes when a named person signs. The model never signs for itself.
+The gate runs per milestone, once all its tickets wait in DoD. The agent prepares the evidence pack and presents it to the human reviewers, who object or sign; anything found goes back through Review and Testing. The release PR adds the full worksheet: Stage 1 orientation, Stage 2 quality, Stage 3 security, the meta-review, the final decision and the sign-off table. An independent `change-review` pass and the `security-review` skill run first and fill the Rev and Sec columns with findings, and the reviewer and security owner confirm, dismiss or escalate each. The gate closes when a named person signs. The model never signs.
 
 ## Done when
 

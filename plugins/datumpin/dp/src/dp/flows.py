@@ -6,14 +6,15 @@ Input:   flows.yaml, packaged with dp from the plugin; a state as
          {flow, step, ticket}.
 Output:  plain dicts, as `dp guide --json` prints them.
 """
-from importlib.resources import files
 
 import yaml
+
+from dp import data
 
 
 def load():
     """The flow map that shipped with this dp."""
-    return yaml.safe_load((files("dp") / "data" / "flows.yaml").read_text(encoding="utf-8"))
+    return yaml.safe_load(data("flows.yaml").read_text(encoding="utf-8"))
 
 
 def known(flow_map, state):
@@ -61,12 +62,13 @@ def flow_starts(flow_map):
             for name, listed in flow_map["flows"].items()]
 
 
-def choices(flow_map, position, holds=lambda check: True):
+def choices(flow_map, position, holds=lambda check: True, pending=False):
     """What may come next: the step's `next` and `optional` steps its flow lists, then the forks that hold.
 
     Without a position, or at the end of a flow, each flow at its first step.
     `name` is what the menu shows: the step, or the flow it starts; `kind`
     is `next`, `fork` or `flow`. holds(check) answers a fork's `when`.
+    A `pending` position is a step that has not run, so it is offered first.
     """
     offered = []
     if position:
@@ -74,7 +76,7 @@ def choices(flow_map, position, holds=lambda check: True):
         listed = flow_map["flows"][flow]["steps"]
         following = [s for s in step.get("next", []) + step.get("optional", []) if s in listed]
         offered = [{"name": s, "step": s, "flow": flow, "does": flow_map["steps"][s]["does"], "kind": "next"}
-                   for s in dict.fromkeys(following)]
+                   for s in dict.fromkeys(([position["step"]] if pending else []) + following)]
         offered += [{"name": s, "step": s, "flow": flow_of(flow_map, flow, s),
                      "does": flow_map["steps"][s]["does"], "kind": "fork"}
                     for s, check in forks(step) if check is None or holds(check)]

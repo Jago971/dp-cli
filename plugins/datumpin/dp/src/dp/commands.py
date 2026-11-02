@@ -138,12 +138,18 @@ def move(call, repo, number, column, assignee=None):
     return {"number": number, "from": current, "to": title, "assigned": assigned}
 
 
+def earliest_milestone(call, repo):
+    """The open milestone due first (the oldest when none is due), or None."""
+    open_milestones = paged(call, f"repos/{repo}/milestones?state=open")
+    return min(open_milestones, key=lambda m: (m.get("due_on") is None, m.get("due_on") or "", m["id"]),
+               default=None)
+
+
 def join_earliest_milestone(call, repo, number):
     """Put ticket N in the open milestone due first (the oldest when none is due); its title, or None."""
-    open_milestones = paged(call, f"repos/{repo}/milestones?state=open")
-    if not open_milestones:
+    earliest = earliest_milestone(call, repo)
+    if not earliest:
         return None
-    earliest = min(open_milestones, key=lambda m: (m.get("due_on") is None, m.get("due_on") or "", m["id"]))
     call("PATCH", f"repos/{repo}/issues/{number}", {"milestone": earliest["id"]})
     return earliest["title"]
 
@@ -165,6 +171,54 @@ def pr(call, repo, head, base, title, body, labels, ticket=None):
     return {"number": pull["number"], "url": pull["html_url"]}
 
 
+def pr_body(summary, changes, evidence, findings, refs=(), see=(), check=(), no_ticket=""):
+    """The PR body in the formats shape: the model supplies the parts that vary.
+
+    With no refs, `no_ticket` gives the reason a PR has no local ticket.
+    """
+    rows = "\n".join(f"| {' | '.join(row)} |" for row in findings)
+    if not refs and not no_ticket:
+        raise GiteaError("give refs, or no_ticket with the reason there is no ticket")
+    first = f"Refs {' · '.join(refs)}" if refs else f"No ticket: {no_ticket}"
+    reference = "\n".join([first] + ([f"See {' · '.join(see)}"] if see else []))
+    sections = [
+        f"## Summary\n{summary}",
+        "## Changes\n" + "\n".join(f"- `{area}`: {what}" for area, what in changes),
+        f"## Review\nEvidence: {evidence}\n\n| # | Finding | Sev | Disposition |\n|---|---|---|---|\n{rows}",
+        f"## Refs\n{reference}"]
+    if check:
+        sections.append("## Check before merging\n" + "\n".join(f"- {item}" for item in check))
+    return "\n\n".join(sections) + "\n"
+
+
+def worksheet(template, project, date, tickets, pulls, tests, findings):
+    """The release worksheet with its header and an Evidence block filled; judgement and sign-off stay blank."""
+    header, rule, rest = template.partition("\n---\n")
+    header = header.replace(r"**Project:** **\_\_\_**", f"**Project:** {project}", 1)
+    header = header.replace(r"**Date:** **\_\_\_**", f"**Date:** {date}", 1)
+    rows = "\n".join(f"| {' | '.join(row)} |" for row in findings)
+    evidence = ("## Evidence\n\nTickets:\n" + "\n".join(f"- #{n} {title}" for n, title in tickets)
+                + "\n\nPRs:\n" + "\n".join(f"- #{n} {title}" for n, title in pulls)
+                + f"\n\nTests: {tests}\n\n| # | Finding | Sev | Disposition |\n|---|---|---|---|\n{rows}\n")
+    return header + rule + "\n" + evidence + "\n---\n" + rest.lstrip("\n")
+
+
+def finish(call, repo, number):
+    """Close ticket N, put it in DoD, and return the column it is in."""
+    call("PATCH", f"repos/{repo}/issues/{number}", {"state": "closed"})
+    move(call, repo, number, "DoD")
+    board_id, columns = find_board(call, repo)
+    held = column_issues(call, repo, board_id, columns)
+    return next((title for title, issues in held.items() if any(i["number"] == number for i in issues)), None)
+
+
+def reopen(call, repo, number, text):
+    """Reopen ticket N to Backlog with a Progress comment."""
+    call("POST", f"repos/{repo}/issues/{number}/comments", {"body": text})
+    call("PATCH", f"repos/{repo}/issues/{number}", {"state": "open"})
+    move(call, repo, number, "Backlog")
+
+
 def pointer(call, repo, number, text):
     """Post a Pointer comment on ticket N, refusing text outside the Pointer shape."""
     if not POINTER.fullmatch(text):
@@ -172,3 +226,13 @@ def pointer(call, repo, number, text):
                          " (Verdict: Covered, Carried forward, Obsolete, Duplicate or Done)")
     call("POST", f"repos/{repo}/issues/{number}/comments", {"body": text})
     return {"number": number, "text": text}
+
+
+def milestone_pointers(call, repo, milestone, date):
+    """Post a Done Pointer on each closed ticket of a milestone; the tickets posted on."""
+    closed = paged(call, f"repos/{repo}/issues?state=closed&type=issues")
+    tickets = [t for t in closed if (t.get("milestone") or {}).get("title") == milestone]
+    return [{**pointer(call, repo, t["number"],
+                       f"Released {milestone}, {date}. Done: {t['title']}. → #{t['number']}"),
+             "title": t["title"]}
+            for t in tickets]

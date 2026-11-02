@@ -9,7 +9,8 @@
 # Per step:
 #   skill     the skill that runs the step. Two have no skill file: `agent`,
 #             a step the agent does directly in its `formats` shape (a commit,
-#             a tag), and `human`, a person's action the guide waits for.
+#             a tag; `dp guide` runs `finish` and `defect` itself, with no
+#             agent), and `human`, a person's action the guide waits for.
 #   env       where the step runs (gitea-workflows, Environments), so the
 #             guide can say whether it touches the laptop, CI or a server
 #   does      the choice line the guide prints
@@ -40,7 +41,7 @@ columns:
 flows:
   ticket:
     does: One ticket from Backlog to merged and tested on prep
-    steps: [pick, shape, build, diagnose, check, commit, review, fix, pr, merge, test]
+    steps: [pick, shape, build, diagnose, check, commit, review, fix, pr, merge, test, finish, defect]
   release:
     does: A milestone through its DoD gate to a tagged release
     steps: [gate, review, fix, release-pr, sign-off, tag, close]
@@ -52,14 +53,14 @@ flows:
     steps: [deploy-prep, test]
   session:
     does: Start or end a working session
-    steps: [board, handoff, retro]
+    steps: [board, retro, handoff]
 
 steps:
   board:
     skill: board
     env: dev
     does: Sync the board and suggest the next ticket
-    next: [handoff]
+    next: [retro]
     fork: {work a ticket: pick, the backlog or plans drifted: align, a milestone is ready: gate}
   pick:
     skill: board
@@ -85,7 +86,8 @@ steps:
   check:
     skill: change-ready
     env: dev
-    does: Tick the change checklist, with the tests passing locally
+    does: Tick the change checklist, with the tests passing in the dev container
+    brief: [change-ready#Change checklist, testing-conventions#The local loop]
     next: [commit]
   commit:
     skill: agent
@@ -120,10 +122,21 @@ steps:
     skill: human
     env: prep
     does: You test the change by hand where it runs
-    next: [pick]
+    next: [finish, defect]
     fork: {every ticket in the milestone is tested: {step: gate, when: milestone_tested}, carry on: board}
+  finish:
+    skill: board
+    env: prep
+    does: Tested OK? Records the Tested Pointer and closes the ticket
+    next: [pick]
+    fork: {carry on: board}
+  defect:
+    skill: board
+    env: prep
+    does: A defect at test; reopens the ticket to Backlog
+    next: [pick]
   gate:
-    skill: change-ready
+    skill: dp
     env: prep
     does: Move the milestone's tickets to DoD
     next: [review]
@@ -138,9 +151,9 @@ steps:
     does: You sign the worksheet and merge the release PR
     next: [tag]
   tag:
-    skill: agent
+    skill: dp
     env: prod
-    does: Tag vX.Y.Z on main and update the plugin in each repo
+    does: Tag vX.Y.Z on main and push the tag
     next: [close]
   close:
     skill: gitea
@@ -164,9 +177,9 @@ steps:
     skill: handoff
     env: dev
     does: Write the handoff document and its Handover block
-    next: [retro]
+    next: []
   retro:
     skill: retro
     env: dev
     does: Review the session and suggest improvements
-    next: []
+    next: [handoff]

@@ -16,7 +16,7 @@ Gitea holds the board, the repo's project titled `Board`; this flow reads it, sh
 3. **Outbox.** If `.factory/outbox/` holds drafts from an offline `shape`, list them and push the ones the user accepts, exactly as `shape` step 6 does.
 4. **Sync.** Run `dp board --json` (`gitea`): the board's columns and their tickets, open issues off the board, each open ticket's last comment (`gitea`, Calling dp), open PRs, and open milestones with their closed and open counts. If Gitea is unreachable, print `.factory/board.md` with its sync time marked stale, and stop. If the repo has no board, say so and point to `align`.
 5. **Sort.** Each ticket sits in its board column. An open issue not on the board (`unsorted`) goes in `UNSORTED`.
-6. **Flag.** Collect: no `TYPE`; no milestone (In Progress onwards; `gitea`, Milestones); any `STATUS/*`; a closed ticket outside Done; an open ticket in Done; an open ticket whose last agent comment is a `Covered`, `Carried forward`, `Obsolete` or `Duplicate` pointer (to close); no `COMPONENT` where the repo declares components.
+6. **Flag.** Collect: no `TYPE`; no milestone (In Progress onwards; `gitea`, Milestones); any `STATUS/*`; a closed ticket outside DoD and Done; an open ticket in Done; an open ticket whose last agent comment is a `Covered`, `Carried forward`, `Obsolete` or `Duplicate` pointer (to close); no `COMPONENT` where the repo declares components.
 7. **Suggest.** Pick `board.suggest` tickets from Backlog, skipping any with a `STATUS` label. Order them, since a release ships one milestone at a time:
    1. a `CRITICAL` ticket, wherever it sits;
    2. the earliest open milestone's tickets, then the next milestone's, then tickets with none;

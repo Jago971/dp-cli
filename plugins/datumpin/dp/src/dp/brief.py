@@ -11,13 +11,14 @@ Output:  the brief and its prompt. A review brief asks for findings.json
 import json
 import re
 from dataclasses import dataclass
-from importlib.resources import files
 from pathlib import Path
 
 import yaml
 
+from dp import data
+
 FINDINGS = "findings.json"
-NO_SKILL_FILE = ("agent", "human")
+NO_SKILL_FILE = ("agent", "human", "dp")
 HEADING = re.compile(r"(#{1,6}) (.+)")
 FENCE = re.compile(r"\s*```")
 ASK_FINDINGS = (
@@ -28,6 +29,10 @@ ASK_FINDINGS = (
 ACT_ON_FINDINGS = (
     "Act on each disposition: `Fix` is fixed in this step and becomes `Fixed (<sha>)`; `Defer` "
     "becomes `Deferred: #N`, with N a Triage ticket opened for it; the others stand as written.")
+STEP_ENDING = (
+    "End the step with the `formats` Step ending block: one required input as numbered choices, "
+    "each with its effect, the recommended one first and `Other` last, then one line saying stay "
+    "or `/exit`, and what `dp guide` then offers. Propose any decision, seams included, as such choices; never end on an open question.")
 
 
 @dataclass
@@ -49,7 +54,7 @@ def folder(root, ticket, flow):
 
 def split_skill(name):
     """A packaged skill's frontmatter and body."""
-    text = (files("dp") / "data" / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+    text = data("skills", name, "SKILL.md").read_text(encoding="utf-8")
     head, _, body = text.removeprefix("---\n").partition("\n---\n")
     return head, body.strip()
 
@@ -84,7 +89,7 @@ def section(markdown, heading):
 
 def skill_section(name, heading):
     """A heading's section from a packaged skill: its SKILL.md, else the sibling files it loads."""
-    folder = files("dp") / "data" / "skills" / name
+    folder = data("skills", name)
     siblings = sorted(f for f in folder.iterdir() if f.name.endswith(".md") and f.name != "SKILL.md")
     for text in [split_skill(name)[1], *(f.read_text(encoding="utf-8") for f in siblings)]:
         try:
@@ -116,7 +121,7 @@ def render(job, findings, findings_path):
     parts = [f"# Step {job.step}: {title}", f"{job.does}. {where}.",
              "This brief carries what the step needs, its skill text included: do not load that skill "
              "again. Print in the `formats` shapes with nothing between tool calls (Quiet steps), and stop "
-             "when the step is done."]
+             "when the step is done.", STEP_ENDING]
     if ticket:
         comments = "\n\n".join(f"**{c['author']}:** {c['text'].strip()}" for c in ticket["comments"])
         parts += ["## Ticket", ticket["body"].strip() or "(no body)", "## Comments", comments or "(none)"]

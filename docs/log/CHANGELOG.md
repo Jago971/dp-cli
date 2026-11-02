@@ -4,6 +4,98 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-11-02 - dp pr copies the labels and milestone of the ticket in the branch name (plugin 0.8.32)
+
+- `dp pr` reads the ticket from a `<type>/<N>-<slug>` branch when `--ticket` is not given, so the copy no longer depends on the agent adding the flag (#145).
+
+### [CHANGED] 2026-10-31 - choosing test at a board-placed test asks nothing (plugin 0.8.31)
+
+- When the board places a ticket at `test`, choosing `test` enters it: no "Tested OK?", and the line says leaving records Tested. Leaving for `finish` or any step but `defect` still asks (#205).
+
+### [CHANGED] 2026-10-31 - the handoff prompts the user to run dp guide (plugin 0.8.30)
+
+- The handoff's Next section never tells a chat to start a ticket, and the Handover block tells the user to run `dp guide` with the recommended ticket and step. The block is fenced and prints the path repo-relative with forward slashes, so markdown keeps it (#214).
+
+### [CHANGED] 2026-10-31 - dp guide re-reads the PR at merge (plugin 0.8.29)
+
+- Choosing `merge` reads the PR's state again, so a PR merged while the menu waited passes at the first choice. An open PR still gets the "is not merged" note (#211).
+
+### [CHANGED] 2026-10-30 - the check brief names the dev-container test command (plugin 0.8.28)
+
+- The `check` step's brief carries `The local loop`, so tests run in the dev container (`ci/local-check.sh` in DEVKIT), not on the host, and a host-only failure no longer fails a check (#223). `ci/local-check.sh` also mounts `.gitea` read-only, so the board workflow tests find their files in the container.
+
+### [CHANGED] 2026-10-29 - dp pick branches from origin/prep (plugin 0.8.27)
+
+- `dp pick` fetches `origin` and cuts the branch from `origin/prep`, so it starts current. A failed fetch prints one `dp:` line and moves nothing (#228).
+
+### [CHANGED] 2026-10-29 - dp fills the fixed texts (plugin 0.8.26)
+
+- `dp pr-body` fills the PR body shape, `dp pointers` posts a Done Pointer per closed ticket of a milestone, and `dp worksheet` pre-fills the release worksheet's evidence. Each of the first and last prints an estimated tokens-saved line (#122).
+
+### [CHANGED] 2026-10-29 - dp runs the release gate and tag (plugin 0.8.25)
+
+- `dp gate MILESTONE` moves each ticket with a Tested Pointer to DoD, or lists the untested and moves none. `dp tag vX.Y.Z` checks the `vX.Y.Z` release PR (matched by title) is merged on `main`, then tags and pushes after a confirm. `dp guide` runs both as CLI steps with no agent turn; the guide skill calls the same commands (#133).
+
+### [CHANGED] 2026-10-29 - Closed tickets count toward the milestone (plugin 0.8.24)
+
+- `gitea` says a ticket closes when it leaves `test` with "Tested OK?" yes, and that the milestone bar is the management view. The `gate` fork waits for a Tested Pointer on tickets in DoD as well as Testing (#156).
+
+### [CHANGED] 2026-10-28 - DoD is the milestone's release gate (plugin 0.8.23)
+
+- `gitea` defines DoD as waiting for the milestone's sign-off. `change-ready`'s gate is per milestone: the agent prepares the evidence pack, humans sign, the model never signs. `gitea-workflows` has one release PR and tag per milestone; `formats` says the milestone is gated by DoD (#59).
+
+### [CHANGED] 2026-10-28 - Home menu: pause any ticket, pick another (plugin 0.8.22)
+
+- With no ticket current, `dp guide` shows a home menu: `tickets`, `resume…`, `end`, `flows…`, `stop`. Finishing a ticket lands there (#170).
+- Every ticket step's menu offers `pause`, which saves the step and returns home, without asking `Tested OK?`. Several tickets can be paused; `guide.yaml` holds them as a `paused:` list, replacing `paused_ticket` and `paused_step`.
+- The session flow runs board, retro, handoff; `end` starts at retro.
+
+### [CHANGED] 2026-10-28 - dp prints its version (plugin 0.8.21)
+
+- `dp version` and `dp --version` print the installed dp version, such as `dp 0.8.21` (#193).
+
+### [CHANGED] 2026-10-28 - Guide shows the PR number and link at merge (plugin 0.8.20)
+
+- Entering `merge`, `dp guide` prints `PR #N` and its link, and the menu reads "You merge PR #N into prep" when a PR is found (#192).
+
+### [CHANGED] 2026-10-28 - Steps end on numbered choices (plugin 0.8.19)
+
+- `formats` defines a Step ending block, and every job brief carries the rule: one input as numbered choices, a recommended one, and a line saying stay or `/exit` (#157).
+
+### [CHANGED] 2026-10-27 - Re-pick and resume (plugin 0.8.18)
+
+- When the board places a ticket at a step that has not run, `dp guide` offers that step first, such as `build` (#168).
+- A pick over an existing branch asks: switch to it, delete it (only if merged into prep) and start new, or name a new branch (#168).
+
+### [CHANGED] 2026-10-27 - Guide recognises a merged PR (plugin 0.8.17)
+
+- At `merge`, `dp guide` finds the ticket's newest PR by `Refs #N` in its body, then falls back to the branch name. A merged PR skips `Done?` even when Gitea reads its head as `refs/pull/N/head` (#189).
+
+### [CHANGED] 2026-10-27 - A cancelled pick does not re-ask Tested OK (plugin 0.8.16)
+
+- Leaving `test` skips `Tested OK?` when the ticket already has a Tested Pointer, so `back` at the picker no longer posts a second one (#162).
+
+### [CHANGED] 2026-10-27 - Closed tickets wait in DoD (plugin 0.8.15)
+
+- board-sync moves a closed issue to DoD, forward only, not to Done; it had overridden `finish`'s move. The release merge moves it to Done (#61).
+- `finish` reads the ticket's column back and prints it (#183).
+- The gitea skill says a ticket retired as obsolete or duplicate is moved to Done by hand (#183).
+
+### [CHANGED] 2026-10-27 - dp tests run from the source tree (plugin 0.8.14)
+
+- `dp.data` falls back to `../flows.yaml` and `../skills` when `dp/data` is absent, in a source checkout only.
+- `ci/tests` puts dp on the path from source; `conftest.py` fails if an installed copy shadows it. `requirements.txt` lists dp's pins, so it installs on Windows (#159).
+
+### [CHANGED] 2026-10-27 - Master pyyaml pin is 6.0.3
+
+- `ci/master/requirements.txt` pins `pyyaml==6.0.3`: 6.0 has no wheel for Python 3.12 or later. `dp` conforms, so its deviation note is gone. A repo pinning 6.0 shows DRIFT and follows (#130).
+
+### [CHANGED] 2026-10-27 - finish a ticket at test (plugin 0.8.13)
+
+- `test` offers `finish`: choosing it is the `Tested OK?` answer; it asks the evidence once, posts the Tested Pointer, closes the ticket, moves it to DoD and prints `DONE`. Only then does the menu offer `pick` or `board` (#167).
+- `test` also offers `defect`: it reopens the ticket to Backlog with a Progress comment.
+- The home menu after `finish` waits for #170.
+
 ### [CHANGED] 2026-10-27 - dp guide reads state instead of asking (plugin 0.8.12)
 
 - Entering `test` no longer asks "Done?". The step says that leaving it records `Tested OK?` (#145).
@@ -85,7 +177,6 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 - `flows.yaml` gains `columns` (where a board column places a ticket, moved from the `guide` skill) and per-step `brief` sections; `dp` ships with the map and the skills. The `guide` skill finds its position through `dp guide --json`.
 - `dp tokens` books turns to the step the last Job prompt names. `formats` gains the Job prompt.
 - At a terminal, `dp guide` uses the DP palette (`dp/terminal.py`): a rail of the flow's path, a spinner on Gitea reads, number shortcuts, and the Job prompt in a panel copied to the clipboard.
-- `dp` pins `pyyaml==6.0.3`, not the master's 6.0, which has no wheel for Python 3.12 or later.
 
 ---
 

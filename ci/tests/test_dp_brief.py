@@ -132,3 +132,55 @@ def test_the_close_brief_carries_the_pointer_format():
     text = brief.skill_text(flows.load()["steps"]["close"])
 
     assert "**Pointer**" in text
+
+
+@pytest.mark.unit
+def test_every_brief_carries_the_step_ending_rule(tmp_path):
+    text = brief.write(tmp_path, job()).read_text(encoding="utf-8")
+    assert "Step ending" in text
+    assert "numbered choices" in text and "the recommended one first" in text
+    assert "`Other` last" in text
+    assert "stay or `/exit`, and what `dp guide` then offers" in text
+
+
+@pytest.mark.unit
+def test_formats_defines_the_step_ending_block_beside_the_handover_block():
+    text = brief.data("skills", "formats", "terminal.md").read_text(encoding="utf-8")
+    assert text.index("## Handover") < text.index("## Step ending") < text.index("## Guide prompt")
+
+
+@pytest.mark.unit
+def test_the_check_brief_names_the_dev_container_test_command():
+    text = brief.skill_text(flows.load()["steps"]["check"])
+    assert "ci/local-check.sh" in text
+    assert "docker compose <dev> exec <service> python -m pytest" in text
+
+
+def handover_block():
+    text = brief.data("skills", "formats", "terminal.md").read_text(encoding="utf-8")
+    return text.split("## Handover")[1].split("## Step ending")[0]
+
+
+@pytest.mark.unit
+def test_the_handover_block_is_fenced_with_a_repo_relative_forward_slash_path():
+    block = handover_block()
+    assert block.count("```") == 2
+    assert ".factory/handoff-" in block
+    assert "\\" not in block
+
+
+@pytest.mark.unit
+def test_the_handover_next_prompt_tells_the_user_to_run_dp_guide_not_start_a_ticket():
+    line = next(l for l in handover_block().splitlines() if l.startswith("Next prompt"))
+    assert "dp guide" in line
+    assert "continue #" not in line and "/datumpin:board" not in line
+    assert "paste" not in line
+    assert "does not start the ticket" in line
+
+
+@pytest.mark.unit
+def test_the_handoff_skill_never_tells_the_next_chat_to_start_a_ticket():
+    text = brief.data("skills", "handoff", "SKILL.md").read_text(encoding="utf-8")
+    assert "never tells the chat to start or build a ticket" in text
+    assert "run `dp guide` in dp-cli" in text
+    assert "repo-relative" in text

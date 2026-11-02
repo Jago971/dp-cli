@@ -1,6 +1,6 @@
 """dp's command line: one command per repeated Gitea task, the guide and the token report.
 
-Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp guide` and `dp tokens`.
+Summary: `dp board`, `dp move`, `dp pick`, `dp pr`, `dp pointer`, `dp pointers`, `dp pr-body`, `dp worksheet`, `dp gate`, `dp tag`, `dp guide`, `dp tokens` and `dp version`.
 Input:   the repo in the working directory (its git remote and
          `.claude/flow.yaml`) and tea's logins; writes go as the agent login.
 Output:  text through dp.terminal (NO_COLOR, `--plain` and pipes give it
@@ -9,7 +9,10 @@ Output:  text through dp.terminal (NO_COLOR, `--plain` and pipes give it
 """
 import functools
 import json
+import re
 import sys
+from datetime import date
+from importlib import metadata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -24,8 +27,16 @@ app = typer.Typer(no_args_is_help=True, help="Repeated Gitea work and token repo
 JSON = typer.Option(False, "--json", help="Print JSON for the agent.")
 
 
+def print_version(requested: bool):
+    if requested:
+        version()
+        raise typer.Exit()
+
+
 @app.callback()
-def options(plain: bool = typer.Option(False, "--plain", help="No colour and no spinners, for logs.")):
+def options(plain: bool = typer.Option(False, "--plain", help="No colour and no spinners, for logs."),
+            show_version: bool = typer.Option(False, "--version", callback=print_version, is_eager=True,
+                                              help="Print the installed dp version.")):
     use_plain(plain)
 
 
@@ -130,13 +141,16 @@ def pr(title: str = typer.Option(..., help="The PR title, as a ticket title."),
        body_file: Path = typer.Option(..., exists=True, dir_okay=False, help="The PR body, in the formats shape."),
        labels: str = typer.Option("", help="Label names, comma-separated."),
        base: str = typer.Option("prep", help="The branch to merge into."),
-       ticket: int = typer.Option(None, help="The ticket whose labels and milestone the PR copies."),
+       ticket: int = typer.Option(None, help="The ticket whose labels and milestone the PR copies; by default the one in the branch name."),
        as_json: bool = JSON):
     """Open a PR from the current branch as the agent."""
     gitea = connect()
     names = [name.strip() for name in labels.split(",") if name.strip()]
+    branch = current_branch()
+    named = re.match(r"[^/]+/(\d+)-", branch)
+    ticket = ticket or (int(named.group(1)) if named else None)
     with busy("Opening the PR", quiet=as_json):
-        opened = commands.pr(gitea.call, gitea.repo, current_branch(), base, title,
+        opened = commands.pr(gitea.call, gitea.repo, branch, base, title,
                              body_file.read_text(encoding="utf-8"), names, ticket)
     emit(opened, as_json, lambda o: done(f"#{o['number']} {o['url']}"))
 
@@ -149,6 +163,81 @@ def pointer(number: int, text: str, as_json: bool = JSON):
     with busy(f"Posting on #{number}", quiet=as_json):
         posted = commands.pointer(gitea.call, gitea.repo, number, text)
     emit(posted, as_json, lambda p: done(f"#{p['number']} pointer posted"))
+
+
+@app.command()
+@reports_errors
+def pointers(milestone: str, as_json: bool = JSON):
+    """Post a Done Pointer on every closed ticket of MILESTONE."""
+    gitea = connect()
+    with busy(f"Posting on {milestone}", quiet=as_json):
+        posted = commands.milestone_pointers(gitea.call, gitea.repo, milestone, date.today().isoformat())
+    saved = sum(tokens.saving(row["text"], row["title"]) for row in posted)
+    emit({"pointers": posted, "saved_tokens": saved}, as_json,
+         lambda r: done(f"{len(r['pointers'])} pointers posted · ~{r['saved_tokens']} tokens saved"))
+
+
+def fill(build, parts, **fixed):
+    """Run build on the JSON parts file; bad JSON or a wrong key set is a GiteaError, not a traceback."""
+    try:
+        given = json.loads(parts.read_text(encoding="utf-8"))
+        return given, build(**fixed, **given)
+    except (ValueError, TypeError) as error:
+        raise GiteaError(f"{parts.name}: {error}")
+
+
+@app.command(name="pr-body")
+@reports_errors
+def pr_body_command(parts: Path = typer.Argument(..., exists=True, dir_okay=False, help="JSON: summary, changes, evidence, findings, refs (or no_ticket), see, check."),
+                    as_json: bool = JSON):
+    """Print the PR body in the formats shape, filled from the JSON parts; for `dp pr --body-file`."""
+    given, body = fill(commands.pr_body, parts)
+    saved = tokens.saving(body, json.dumps(given, ensure_ascii=False))
+    emit({"body": body, "saved_tokens": saved}, as_json, lambda r: (say(r["body"]), done(f"~{r['saved_tokens']} tokens saved")))
+
+
+@app.command()
+@reports_errors
+def gate(milestone: str, as_json: bool = JSON):
+    """Move each ticket of MILESTONE to DoD; stops, moving none, when one has no Tested Pointer."""
+    gitea = connect()
+    with busy(f"Gating {milestone}", quiet=as_json):
+        moved = guide.gate(gitea, milestone)
+    emit({"milestone": milestone, "moved": moved}, as_json,
+         lambda g: done(f"{g['milestone']} · {len(g['moved'])} to DoD"))
+
+
+class Asks(guide.Plain):
+    """The confirm for a command: typer asks it, and say() prints."""
+
+    def confirm(self, message):
+        return typer.confirm(message)
+
+    def say(self, line):
+        typer.echo(line)
+
+
+@app.command()
+@reports_errors
+def worksheet(parts: Path = typer.Argument(..., exists=True, dir_okay=False, help="JSON: project, tickets, pulls, tests, findings."),
+              template: Path = typer.Option(..., exists=True, dir_okay=False, help="The WIKI review worksheet template."),
+              as_json: bool = JSON):
+    """Print the release worksheet with its evidence filled; judgement and sign-off stay blank."""
+    given, sheet = fill(lambda **kw: commands.worksheet(template.read_text(encoding="utf-8"), **kw),
+                        parts, date=date.today().isoformat())
+    saved = tokens.saving(sheet, json.dumps(given, ensure_ascii=False))
+    emit({"worksheet": sheet, "saved_tokens": saved}, as_json,
+         lambda r: (say(r["worksheet"]), done(f"~{r['saved_tokens']} tokens saved")))
+
+
+@app.command()
+@reports_errors
+def tag(version: str):
+    """Tag VERSION on main and push the tag, after a confirm; main's release PR must be merged."""
+    if not guide.tag(connect(), git, Asks(), version):
+        failed("dp: not tagged")
+        raise typer.Exit(1)
+    done(f"{version} tagged and pushed")
 
 
 @app.command(name="guide")
@@ -167,6 +256,12 @@ def guide_command(as_json: bool = JSON):
         guide.walk(root, Terminal(), gitea, git)
     except KeyboardInterrupt:
         raise typer.Exit(130)
+
+
+@app.command()
+def version():
+    """Print the installed dp version."""
+    typer.echo(f"dp {metadata.version('datumpin-dp')}")
 
 
 @app.command(name="tokens")
