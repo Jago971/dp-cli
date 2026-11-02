@@ -182,8 +182,8 @@ def milestone_tested(gitea, ticket, root):
 
 def deploys_images(gitea, ticket, root):
     """True when the repo has a Dockerfile, so it builds images a server can pull."""
-    for folder, subfolders, files in os.walk(root):
-        subfolders[:] = [s for s in subfolders if s not in (".git", "node_modules")]
+    for _, subfolders, files in os.walk(root):
+        subfolders[:] = [s for s in subfolders if not s.startswith(".") and s not in ("node_modules", "build", "dist")]
         if any(name.startswith("Dockerfile") for name in files):
             return True
     return False
@@ -303,7 +303,7 @@ def covering(gitea, ticket, finding):
         found = commands.paged(gitea.call, f"repos/{gitea.repo}/issues?state=open&type=issues&q={quote(finding['file'])}")
     except GiteaError:
         return []
-    return [i["number"] for i in found if i["number"] != ticket]
+    return [i["number"] for i in found if i["number"] != ticket and finding["file"] in i["title"]]
 
 
 def adjudicate(root, flow, ticket, prompts, gitea=None):
