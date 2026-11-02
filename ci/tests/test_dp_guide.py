@@ -532,3 +532,31 @@ def test_a_git_error_on_the_promotion_diff_is_not_an_empty_diff(tmp_path, gitea)
 
     with pytest.raises(GiteaError, match="unknown revision"):
         walk(tmp_path, Script("review", "stop"), gitea, no_main)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("files, offered", [(["svc/Dockerfile"], True), ([], False)])
+def test_deploy_prep_is_offered_after_merge_only_in_a_repo_that_deploys_images(tmp_path, gitea, files, offered):
+    for name in files:
+        (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / name).write_text("FROM scratch\n")
+    guide.write_state(tmp_path, {"flow": "ticket", "step": "merge", "ticket": 4})
+
+    names = [c["name"] for c in guide.show(tmp_path, gitea.connection)["choices"]]
+
+    assert ("deploy-prep" in names) is offered
+
+
+@pytest.mark.unit
+def test_a_findings_menu_names_the_open_ticket_that_covers_it(tmp_path, gitea):
+    gitea.add_issue(4)
+    gitea.add_issue(12, title="Tidy a.py error handling")
+    findings = tmp_path / ".factory" / "jobs" / "4" / "findings.json"
+    findings.parent.mkdir(parents=True)
+    findings.write_text(json.dumps([
+        {"id": "S1", "file": "a.py", "line": 3, "severity": "low", "finding": "Too long"}]))
+    script = Script("Fix")
+
+    guide.adjudicate(tmp_path, "ticket", 4, script, gitea.connection)
+
+    assert any("#12" in label for label in script.menus[0][0])

@@ -8,6 +8,7 @@ Issues, pull requests, milestones and labels are plain dicts in Gitea's
 shape; an issue nobody added answers as its id and number alone.
 """
 import re
+from urllib.parse import unquote
 
 COLUMNS = ["Triage", "Backlog", "In Progress", "Review", "Testing", "DoD", "Done"]
 PAGE = 50
@@ -42,7 +43,7 @@ class FakeGitea:
         self.issues[number] = {
             "id": 1000 + number, "number": number, "title": title, "state": state,
             "labels": [{"name": name} for name in labels],
-            "milestone": {"title": milestone} if milestone else None,
+            "milestone": {"id": 7, "title": milestone} if milestone else None,
             "assignees": [{"login": login} for login in assignees] or None,
             "comments": len(comments)}
 
@@ -69,7 +70,8 @@ class FakeGitea:
             title = next(t for t, cid in self.column_ids.items() if cid == int(found.group(1)))
             return [self.issue(n) for n in self.page(self.cards[title], params)]
         if method == "GET" and re.search(r"^repos/[^/]+/[^/]+/issues$", path):
-            wanted = [i for i in self.issues.values() if i["state"] == params.get("state", "open")]
+            wanted = [i for i in self.issues.values() if i["state"] == params.get("state", "open")
+                      and unquote(params.get("q", "")) in i["title"]]
             return self.page(wanted, params)
         found = re.search(r"/issues/(\d+)$", path)
         if method == "GET" and found:

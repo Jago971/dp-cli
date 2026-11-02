@@ -19,7 +19,8 @@
 #             fork `{step, when}` is offered only when `dp` finds its check
 #             holds: `unscoped` (the ticket has no Acceptance), or
 #             `milestone_tested` (every other ticket in the ticket's milestone
-#             is in Testing with a Tested Pointer, or past it)
+#             is in Testing with a Tested Pointer, or past it), or
+#             `deploys_images` (the repo has a Dockerfile)
 #   brief     the skill sections (`skill#Heading`) a job brief from `dp guide`
 #             carries; without it, a brief carries the step's whole skill
 #
@@ -114,7 +115,7 @@ steps:
     env: ci
     does: You merge the PR into prep once CI is green
     next: [test, pick]
-    fork: {prep must pull first: deploy-prep}
+    fork: {prep must pull first: {step: deploy-prep, when: deploys_images}}
   test:
     skill: human
     env: prep
@@ -145,6 +146,7 @@ steps:
     skill: gitea
     env: prod
     does: Post Done pointers for the tickets and milestone to close
+    brief: [gitea#Calling dp, gitea#What the agent may write, formats#Comment]
     next: []
     fork: {carry on: board}
   align:

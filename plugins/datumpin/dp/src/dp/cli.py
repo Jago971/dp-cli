@@ -130,13 +130,14 @@ def pr(title: str = typer.Option(..., help="The PR title, as a ticket title."),
        body_file: Path = typer.Option(..., exists=True, dir_okay=False, help="The PR body, in the formats shape."),
        labels: str = typer.Option("", help="Label names, comma-separated."),
        base: str = typer.Option("prep", help="The branch to merge into."),
+       ticket: int = typer.Option(None, help="The ticket whose labels and milestone the PR copies."),
        as_json: bool = JSON):
     """Open a PR from the current branch as the agent."""
     gitea = connect()
     names = [name.strip() for name in labels.split(",") if name.strip()]
     with busy("Opening the PR", quiet=as_json):
         opened = commands.pr(gitea.call, gitea.repo, current_branch(), base, title,
-                             body_file.read_text(encoding="utf-8"), names)
+                             body_file.read_text(encoding="utf-8"), names, ticket)
     emit(opened, as_json, lambda o: done(f"#{o['number']} {o['url']}"))
 
 

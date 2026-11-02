@@ -148,16 +148,20 @@ def join_earliest_milestone(call, repo, number):
     return earliest["title"]
 
 
-def pr(call, repo, head, base, title, body, labels):
-    """Open a pull request; labels are names, from the repo's labels or its org's."""
+def pr(call, repo, head, base, title, body, labels, ticket=None):
+    """Open a pull request; labels are names, from the repo's labels or its org's. Ticket N's labels and milestone are copied on."""
+    found = call("GET", f"repos/{repo}/issues/{ticket}") if ticket else {}
+    labels = list(dict.fromkeys([*labels, *(label["name"] for label in found.get("labels") or [])]))
     org = repo.split("/")[0]
     ids = {label["name"]: label["id"]
            for path in (f"orgs/{org}/labels", f"repos/{repo}/labels") for label in paged(call, path)}
     missing = [name for name in labels if name not in ids]
     if missing:
         raise GiteaError(f"no label {', '.join(missing)} in {repo} or {org}")
-    pull = call("POST", f"repos/{repo}/pulls", {"head": head, "base": base, "title": title,
-                                                "body": body, "labels": [ids[name] for name in labels]})
+    fields = {"head": head, "base": base, "title": title, "body": body, "labels": [ids[name] for name in labels]}
+    if found.get("milestone"):
+        fields["milestone"] = found["milestone"]["id"]
+    pull = call("POST", f"repos/{repo}/pulls", fields)
     return {"number": pull["number"], "url": pull["html_url"]}
 
 

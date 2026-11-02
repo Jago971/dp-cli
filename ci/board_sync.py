@@ -11,8 +11,9 @@ anyone dragging cards:
     issue reopened                  -> Backlog
 
 A pull request names a ticket with "Refs #N" (the formats skill) or through
-its branch, <type>/<N>-<slug>. A ticket it only relates to goes on a "See #N"
-line and is not moved. A ticket already further along (DoD, Done) is
+its branch, <type>/<N>-<slug>, but only the branch's ticket is moved: a Refs
+line names a ticket for the reader and never moves its column. A ticket it
+only relates to goes on a "See #N" line. A ticket already further along (DoD, Done) is
 never moved back by a pull request event. Another repo's tickets
 (Owner/Repo#N) are left alone. A ticket not on the Board is placed on it.
 
@@ -49,6 +50,12 @@ def tickets_named(pull):
         numbers.add(int(branch.group(1)))
     numbers.discard(pull.get("number"))
     return sorted(numbers)
+
+
+def tickets_moved(pull):
+    """The ticket a pull request moves: the one in its branch name."""
+    branch = re.match(r"^[a-z]+/(\d+)-", pull.get("head", {}).get("ref", ""))
+    return [int(branch.group(1))] if branch and int(branch.group(1)) != pull.get("number") else []
 
 
 def column_holding(repo, board_id, columns, issue_id):
@@ -106,7 +113,7 @@ def main():
         else:
             print(f"SKIP  pull request {action}: nothing to move")
             return
-        for number in tickets_named(pull):
+        for number in tickets_moved(pull):
             move(repo, number, target, forward_only=True)
     elif "issue" in event and not event["issue"].get("pull_request"):
         # forward_only on opened: shape may already have placed the ticket further on

@@ -123,3 +123,12 @@ def test_a_brief_section_is_found_in_a_skills_sibling_file():
     text = brief.skill_text({"skill": "agent", "brief": ["docker-compose-conventions#Cron services"]})
 
     assert text.startswith("# Cron services")
+
+
+@pytest.mark.unit
+def test_the_close_brief_carries_the_pointer_format():
+    from dp import flows
+
+    text = brief.skill_text(flows.load()["steps"]["close"])
+
+    assert "**Pointer**" in text

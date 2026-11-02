@@ -114,6 +114,17 @@ def test_pr_opens_with_label_ids_from_repo_and_org(gitea):
 
 
 @pytest.mark.unit
+def test_pr_copies_the_tickets_labels_and_milestone(gitea):
+    gitea.labels["org"].append({"id": 9, "name": "TYPE/FEATURE"})
+    gitea.add_issue(4, labels=["TYPE/FEATURE"], milestone="v1")
+
+    commands.pr(gitea.call, REPO, "feat/4-x", "prep", "Title", "Body", [], ticket=4)
+
+    assert gitea.writes == [("pull", {"head": "feat/4-x", "base": "prep", "title": "Title",
+                                      "body": "Body", "labels": [9], "milestone": 7})]
+
+
+@pytest.mark.unit
 def test_pr_with_an_unknown_label_writes_nothing(gitea):
     with pytest.raises(GiteaError, match="TYPE/NOPE"):
         commands.pr(gitea.call, REPO, "feat/4-x", "prep", "Title", "Body", ["TYPE/NOPE"])

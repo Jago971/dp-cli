@@ -16,7 +16,9 @@ Output:  the state file, job briefs, findings dispositions, Tested Pointers
 """
 import contextlib
 import json
+import os
 import re
+from urllib.parse import quote
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -154,17 +156,17 @@ def locate(flow_map, state, gitea, prompts):
     return position
 
 
-def unscoped(gitea, ticket):
+def unscoped(gitea, ticket, root):
     """True when the ticket has no Acceptance section (formats, Ticket)."""
     return bool(ticket) and "## Acceptance" not in commands.issue(gitea.call, gitea.repo, ticket)["body"]
 
 
-def tested(gitea, ticket):
+def tested(gitea, ticket, root=None):
     """True when the ticket carries a Tested Pointer."""
     return any(c["text"].startswith(f"{TESTED}, ") for c in commands.issue(gitea.call, gitea.repo, ticket)["comments"])
 
 
-def milestone_tested(gitea, ticket):
+def milestone_tested(gitea, ticket, root):
     """True when every other open ticket in the ticket's milestone is past Testing, or in it with a Tested Pointer."""
     milestone = ticket and commands.issue(gitea.call, gitea.repo, ticket)["milestone"]
     if not milestone:
@@ -178,15 +180,24 @@ def milestone_tested(gitea, ticket):
     return all(commands.each(lambda n: tested(gitea, n), others["Testing"]))
 
 
-CHECKS = {"unscoped": unscoped, "milestone_tested": milestone_tested}
+def deploys_images(gitea, ticket, root):
+    """True when the repo has a Dockerfile, so it builds images a server can pull."""
+    for folder, subfolders, files in os.walk(root):
+        subfolders[:] = [s for s in subfolders if s not in (".git", "node_modules")]
+        if any(name.startswith("Dockerfile") for name in files):
+            return True
+    return False
 
 
-def checks(gitea, position, prompts):
+CHECKS = {"unscoped": unscoped, "milestone_tested": milestone_tested, "deploys_images": deploys_images}
+
+
+def checks(root, gitea, position, prompts):
     """holds(check) for a fork's `when` at this position; a check Gitea cannot answer holds, so the person decides."""
     def holds(check):
         try:
             with prompts.busy("Checking"):
-                return CHECKS[check](gitea, position and position["ticket"])
+                return CHECKS[check](gitea, position and position["ticket"], root)
         except GiteaError:
             return True
     return holds
@@ -199,7 +210,7 @@ def show(root, gitea):
     position = locate(flow_map, state, gitea, notes)
     return {"position": position, "env": position and flow_map["steps"][position["step"]]["env"],
             "paused": state and state["paused"], "notes": notes.lines,
-            "choices": flows.choices(flow_map, position, checks(gitea, position, notes))}
+            "choices": flows.choices(flow_map, position, checks(root, gitea, position, notes))}
 
 
 def header(position, env):
@@ -286,7 +297,16 @@ def pick(prompts, gitea, git):
     return chosen["number"]
 
 
-def adjudicate(root, flow, ticket, prompts):
+def covering(gitea, ticket, finding):
+    """Numbers of the other open tickets whose title names the finding's file; none when Gitea cannot say."""
+    try:
+        found = commands.paged(gitea.call, f"repos/{gitea.repo}/issues?state=open&type=issues&q={quote(finding['file'])}")
+    except GiteaError:
+        return []
+    return [i["number"] for i in found if i["number"] != ticket]
+
+
+def adjudicate(root, flow, ticket, prompts, gitea=None):
     """Ask the person for the disposition of each finding the review left undecided.
 
     Output: the step the dispositions point to (`fix` when one is to fix or
@@ -300,7 +320,9 @@ def adjudicate(root, flow, ticket, prompts):
         if finding.get("disposition"):
             continue
         prompts.finding(finding)
-        kind = prompts.choose(f"{finding['id']}?", [(f"{name:<9} {hint}", name) for name, hint in DISPOSITIONS.items()])
+        covered = covering(gitea, ticket, finding) if gitea else []
+        hints = {**DISPOSITIONS, "Defer": DISPOSITIONS["Defer"] + "; open " + ", ".join(f"#{n}" for n in covered) + " may cover it"} if covered else DISPOSITIONS
+        kind = prompts.choose(f"{finding['id']}?", [(f"{name:<9} {hint}", name) for name, hint in hints.items()])
         if kind == "Dismiss":
             kind = f"Dismissed: {prompts.text('Reason', '')}"
         elif kind == "Escalate":
@@ -413,7 +435,7 @@ def run(root, flow_map, position, choice, prompts, gitea, git):
         if step == "tag" and not prompts.confirm("Is the release PR merged on main?"):
             return None
         if step != "review":
-            adjudicate(root, flow, ticket, prompts)  # findings a resumed walk passed by undecided
+            adjudicate(root, flow, ticket, prompts, gitea)  # findings a resumed walk passed by undecided
         work = job(flow_map, flow, step, ticket, gitea, git, prompts)
         if flow == "release" and step == "review" and not work.diffstat.strip():
             raise GiteaError(f"empty diff {PROMOTION}: nothing to review, no findings written")
@@ -455,11 +477,11 @@ def walk(root, prompts, gitea, git):
     while True:
         # A review's dispositions come before the menu, so they can preselect fix or pr.
         preselect = position and position["step"] == "review" \
-            and adjudicate(root, position["flow"], position["ticket"], prompts)
+            and adjudicate(root, position["flow"], position["ticket"], prompts, gitea)
         here = position and flow_map["steps"][position["step"]]
         prompts.header(position, here and here["env"], position and flows.rail(flow_map, position),
                        here and here["does"])
-        options = menu(flows.choices(flow_map, position, checks(gitea, position, prompts)), position)
+        options = menu(flows.choices(flow_map, position, checks(root, gitea, position, prompts)), position)
         default = next((v for _, v in options if isinstance(v, dict) and v["step"] == preselect), None)
         choice = prompts.choose("Next?", options, default)
         if choice is None:
