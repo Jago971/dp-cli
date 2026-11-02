@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-11-02 - dp pr copies the labels and milestone of the ticket in the branch name (plugin 0.8.32)
+
+- `dp pr` reads the ticket from a `<type>/<N>-<slug>` branch when `--ticket` is not given, so the copy no longer depends on the agent adding the flag (#145).
+
 ### [CHANGED] 2026-10-31 - choosing test at a board-placed test asks nothing (plugin 0.8.31)
 
 - When the board places a ticket at `test`, choosing `test` enters it: no "Tested OK?", and the line says leaving records Tested. Leaving for `finish` or any step but `defect` still asks (#205).

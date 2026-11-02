@@ -78,6 +78,20 @@ def test_pr_reads_its_body_from_a_file(gitea, tmp_path, monkeypatch):
 
 
 @pytest.mark.unit
+def test_pr_copies_the_labels_of_the_ticket_in_the_branch_name(gitea, tmp_path, monkeypatch):
+    gitea.labels["org"].append({"id": 9, "name": "TYPE/BUG"})
+    gitea.add_issue(4, labels=["TYPE/BUG"])
+    body = tmp_path / "pr.md"
+    body.write_text("## Summary\nWhy.\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "current_branch", lambda: "fix/4-x")
+
+    result = run("pr", "--title", "Title", "--body-file", str(body), "--json")
+
+    assert result.exit_code == 0
+    assert len(gitea.writes[0][1]["labels"]) == 1
+
+
+@pytest.mark.unit
 def test_a_gitea_error_prints_one_line_and_exits_1(monkeypatch):
     def unreachable():
         raise GiteaError("Gitea unreachable: connection refused")

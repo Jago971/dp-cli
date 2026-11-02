@@ -41,6 +41,26 @@ flowchart LR
 - `ci/master/`: the approved dependency versions every repo's pins must match (the `versions` job); a version changes here first, through a reviewed PR.
 - `ci/`: the scripts the shared workflows fetch from `main`: `conformance.py`, `versions.py`, `board_sync.py`, `check-entrypoint.sh`, `push-image.sh`, `release-channel.sh`; their tests are in `ci/tests/`. Before pushing, `ci/local-check.sh` runs every check CI runs, in containers on your own Docker; `ci.yml` runs them again.
 
+## Walk a ticket
+
+Run `dp guide` and pick the step it offers. Who acts at each step of the `ticket` flow:
+
+| Step | Who | What happens |
+|---|---|---|
+| pick | dp guide | Chooses a Backlog ticket and opens its branch |
+| shape | Claude | Scopes an unscoped ticket |
+| build | Claude | Builds test-first in the dev containers |
+| diagnose | Claude | Finds the cause of a bug, when needed |
+| check | Claude | Runs the checks before a commit |
+| commit | Claude | Commits the work |
+| review | Claude | Writes findings; dp guide then asks a disposition for each |
+| fix | Claude | Fixes or defers the findings you chose |
+| pr | dp guide | Opens the PR with the ticket's labels and milestone |
+| merge | You, in Gitea | Merge the PR once CI is green; dp guide reads the merge state |
+| test | You | Test by hand; leaving the step records "Tested OK?" |
+
+When dp guide hands control to Claude it prints a banner; `/exit` returns to the guide. Commands handed to you on Windows are PowerShell.
+
 ## How to deploy
 
 A DEVKIT release is a promotion: merge PRs into `prep`, then an Owner merges a `prep` → `main` PR. Repos follow `main`, so nothing reaches them before that. Then, in each repo: `claude plugin marketplace update datumpin` and `claude plugin update datumpin@datumpin --scope project`. A plugin change bumps `plugins/datumpin/.claude-plugin/plugin.json`.

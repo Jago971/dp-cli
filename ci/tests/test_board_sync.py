@@ -88,6 +88,14 @@ def test_tickets_named_takes_refs_and_branch_not_see():
 
 
 @pytest.mark.unit
+def test_tickets_moved_takes_the_branch_not_refs_or_see():
+    pull = {"number": 9, "head": {"ref": "fix/3-slug"},
+            "body": "## Refs\nRefs #1 and Other/Repo#4\nSee #2\n"}
+
+    assert board_sync.tickets_moved(pull) == [3]
+
+
+@pytest.mark.unit
 def test_issue_opened_off_the_board_lands_in_triage(gitea, monkeypatch, tmp_path):
     run_event(monkeypatch, tmp_path, {"action": "opened", "issue": {"number": 7}})
 
