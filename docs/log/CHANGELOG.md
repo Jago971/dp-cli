@@ -4,6 +4,10 @@ Dated record of what changed in DEVKIT, newest first. Plugin versions are in `pl
 
 ---
 
+### [CHANGED] 2026-11-02 - change-review says release PR; gate work is in 0.8.x (plugin 0.8.33)
+
+- `change-review` names the gate a release PR (`prep` → `main`, one per milestone), as `gitea-workflows` and `change-ready` do. The roadmap notes the gate work (#59, #133, #122) shipped in 0.8.x under the v0.9.0 milestone.
+
 ### [CHANGED] 2026-11-02 - dp pr copies the labels and milestone of the ticket in the branch name (plugin 0.8.32)
 
 - `dp pr` reads the ticket from a `<type>/<N>-<slug>` branch when `--ticket` is not given, so the copy no longer depends on the agent adding the flag (#145).

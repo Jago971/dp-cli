@@ -2,7 +2,7 @@
 
 **Scope:** Where DEVKIT is heading and where its work is tracked. Not history (see [../log/CHANGELOG.md](../log/CHANGELOG.md)) and not a task list: the tasks are Gitea tickets.
 **Status:** current
-**Last reviewed:** 2026-10-26
+**Last reviewed:** 2026-11-02
 
 ---
 
@@ -20,7 +20,7 @@ Tickets are on the [DEVKIT board](http://192.168.10.101:3393/Datumpin/DEVKIT/pro
 
 | Milestone | Goal |
 |---|---|
-| v0.9.0 – Milestone release gate | The DoD column is the release gate, a release closes its milestone, and `dp` runs the release flow |
+| v0.9.0 – Milestone release gate | The DoD column is the release gate, a release closes its milestone, and `dp` runs the release flow (gate work #59, #133, #122 shipped in plugin 0.8.x) |
 
 v0.5.0 (Shared CI and images), v0.6.0 (Guided flows), v0.7.0 (Local-first, containers only) and v0.8.0 (Lean flows: the `dp` CLI, `dp guide` and the token report) are released.
 

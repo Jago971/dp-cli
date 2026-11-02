@@ -29,7 +29,7 @@ A change can pass one axis and fail the other, so the report keeps them separate
    A reviewer works from its brief and opens only the hunks and files it checks.
    - Docs, skill text or config only: one reviewer covering both axes, on the model `flow.yaml` sets for `change_review.single`, under 250 words, keeping the two axes as separate headings.
    - Code: both subagents together, in the foreground, under 400 words each.
-   - A promotion: both, plus `security-review` (see Security).
+   - A release PR: both, plus `security-review` (see Security).
    - **Standards brief:** report every place the diff breaks a documented rule, citing the skill and the rule, and quote the hunk. Skip what a linter or test already enforces.
    - **Spec brief:** report requirements that are missing or partial, behaviour in the diff nobody asked for, and requirements that look implemented but wrong. Quote the spec line for each.
 5. **Report** under `## Standards` and `## Spec` headings, each finding with file, line, severity and the rule or spec line. End with the finding count per axis and the worst finding within each axis.
@@ -37,7 +37,7 @@ A change can pass one axis and fail the other, so the report keeps them separate
 
 ## Security
 
-At a promotion PR (dev → prep → prod), also call the `security-review` skill on the same diff. Its findings go in a third section, `## Security`, and are adjudicated the same way (see `change-ready`).
+At a release PR (`prep` → `main`, one per milestone), also call the `security-review` skill on the same diff. Its findings go in a third section, `## Security`, and are adjudicated the same way (see `change-ready`).
 
 ## Done when
 
